@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+:root {
+  --canvas: #eef2f6;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-muted: #f4f7fb;
+  --ink: #0b1220;
+  --muted: #5b6b7c;
+  --border: #d7e0ea;
+  --accent: #0d9488;
+  --accent-ink: #0f766e;
+  --accent-soft: rgba(13, 148, 136, 0.14);
+  --danger: #e11d48;
+  --shadow-card: 0 10px 28px rgba(11, 18, 32, 0.06);
+  --shadow-card-hover: 0 18px 40px rgba(11, 18, 32, 0.12);
+}
+
+@theme inline {
+  --color-background: var(--canvas);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-outfit);
+  --font-display: var(--font-sora);
+}
+
+* { box-sizing: border-box; }
+
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1000px 520px at 8% -8%, rgba(13, 148, 136, 0.12), transparent 55%),
+    radial-gradient(900px 480px at 100% 0%, rgba(14, 165, 233, 0.08), transparent 50%),
+    var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-outfit), "Segoe UI", sans-serif;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-sora), var(--font-outfit), sans-serif;
+}
+
+a { color: inherit; text-decoration: none; }
+
+::selection { background: rgba(13, 148, 136, 0.25); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #b7c4d4; border-radius: 999px; }
+
+/* Fast page enter — opacity only, no blur/layout thrash */
+@keyframes page-enter {
+  from { opacity: 0.92; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: page-enter 120ms ease-out;
+}
+
+.stagger-fast > .stagger-item {
+  animation: page-enter 140ms ease-out both;
+}
+
+.stagger-fast > .stagger-item:nth-child(1) { animation-delay: 0ms; }
+.stagger-fast > .stagger-item:nth-child(2) { animation-delay: 20ms; }
+.stagger-fast > .stagger-item:nth-child(3) { animation-delay: 40ms; }
+.stagger-fast > .stagger-item:nth-child(4) { animation-delay: 60ms; }
+.stagger-fast > .stagger-item:nth-child(5) { animation-delay: 80ms; }
+.stagger-fast > .stagger-item:nth-child(6) { animation-delay: 100ms; }
+.stagger-fast > .stagger-item:nth-child(n + 7) { animation-delay: 110ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .stagger-fast > .stagger-item {
+    animation: none;
+  }
+}
+
