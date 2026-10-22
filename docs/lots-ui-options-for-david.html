@@ -276,9 +276,9 @@
       }
       .a3d-stage {
         position: relative;
-        height: min(62vh, 520px);
-        min-height: 420px;
-        background: radial-gradient(ellipse at 50% 20%, #eef6ea, #c5d6b8 75%);
+        height: min(68vh, 560px);
+        min-height: 460px;
+        background: radial-gradient(ellipse at 50% 18%, #f3f7ef, #c8d6bc 78%);
         overflow: hidden;
         touch-action: none;
         cursor: grab;
@@ -290,29 +290,44 @@
       .a3d-viewport {
         position: absolute;
         inset: 0;
-        perspective: 1100px;
-        perspective-origin: 50% 45%;
+        perspective: 1400px;
+        perspective-origin: 50% 42%;
       }
       .a3d-world {
         position: absolute;
         left: 50%;
-        top: 52%;
-        width: 640px;
-        height: 340px;
-        margin-left: -320px;
-        margin-top: -170px;
+        top: 50%;
+        width: 860px;
+        height: 520px;
+        margin-left: -430px;
+        margin-top: -260px;
         transform-style: preserve-3d;
-        transform: rotateX(58deg) rotateZ(-28deg) scale(1);
+        transform: rotateX(56deg) rotateZ(-26deg) scale(0.92);
         will-change: transform;
       }
       .a3d-ground {
         position: absolute;
         inset: 0;
-        background: #9fb892;
-        border: 10px solid #e8ecef;
-        border-radius: 8px;
-        box-shadow: 0 28px 40px rgba(15, 23, 42, 0.22);
+        background: linear-gradient(180deg, #a8bf96, #8fad7c);
+        border: 12px solid #eef1f4;
+        border-radius: 10px;
+        box-shadow: 0 30px 50px rgba(15, 23, 42, 0.2);
         transform: translateZ(0);
+      }
+      .a3d-scale-note {
+        position: absolute;
+        left: 0.75rem;
+        bottom: 0.75rem;
+        z-index: 5;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid #dbe1ea;
+        border-radius: 10px;
+        padding: 0.4rem 0.65rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #334155;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        pointer-events: none;
       }
       .slot3d {
         position: absolute;
@@ -326,8 +341,6 @@
         position: absolute;
         left: 0;
         top: 0;
-        width: 100%;
-        height: 100%;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -335,31 +348,35 @@
         color: #fff;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
         font-weight: 800;
-        line-height: 1.15;
+        line-height: 1.1;
         box-sizing: border-box;
-        padding: 0.25rem;
+        padding: 0.2rem;
+        backface-visibility: hidden;
       }
       .slot3d .face small {
         font-weight: 700;
-        font-size: 0.72em;
+        font-size: 0.78em;
         opacity: 0.95;
+        margin-top: 0.1rem;
       }
       .slot3d .face.top {
-        font-size: 0.78rem;
+        font-size: clamp(0.55rem, 2.1vw, 0.82rem);
       }
       .slot3d .face.south {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
       }
       .slot3d.dim {
-        opacity: 0.18;
+        opacity: 0.16;
         pointer-events: none;
       }
       .slot3d.sel .face.top {
-        outline: 3px solid #0f172a;
-        outline-offset: -3px;
+        box-shadow: inset 0 0 0 3px #0f172a;
       }
       .slot3d.busy .face {
-        filter: brightness(0.88);
+        filter: brightness(0.9);
+      }
+      .slot3d.fixed {
+        cursor: default;
       }
       .a3d-hud {
         position: absolute;
@@ -841,9 +858,9 @@
             <p class="kicker">Option A</p>
             <h2>Interactive 3D yard map</h2>
             <p class="diff">
-              Proper 3D scene like your reference. <em>You</em> rotate it (drag),
-              zoom (scroll), click any slot to inspect, and filter by acre or
-              status — nothing is locked at a weird angle.
+              Drag to rotate (smoothed), zoom, click, filter. Footprints are
+              <em>scaled to acres</em> — a 5-acre block is larger than 2-acre
+              Taken; driveway is a thin aisle, not a fake acre parcel.
             </p>
           </div>
           <button type="button" class="pick-btn" data-pick="A">Choose A</button>
@@ -868,6 +885,9 @@
                   <div class="a3d-ground"></div>
                   <div id="a3d-slots"></div>
                 </div>
+              </div>
+              <div class="a3d-scale-note">
+                Scale: footprint ∝ acres (1 ac ≈ square) · 5 ac is largest
               </div>
               <div class="a3d-tools">
                 <button type="button" id="a3d-zoom-in" title="Zoom in">+</button>
@@ -1137,59 +1157,120 @@
         });
       }
 
-      /* ---------- A: CSS 3D yard (no CDN — always visible) ---------- */
+      /* ---------- A: CSS 3D yard — footprints proportional to acres ---------- */
       let aAcre = "all",
         aStatus = "all",
         aSel = null;
 
-      const A3D_LAYOUT = [
-        { id: "_taken", kind: "taken", left: 12, top: 18, w: 110, d: 300, h: 28, label: "TAKEN", acres: "2", color: "#6b7280" },
-        { id: "_park", kind: "parking", left: 132, top: 18, w: 70, d: 300, h: 18, label: "PARK", acres: "—", color: "#f97316" },
-        { id: "A1", left: 220, top: 24, w: 88, d: 70, h: 26 },
-        { id: "A2", left: 318, top: 24, w: 88, d: 70, h: 26 },
-        { id: "A12", left: 416, top: 24, w: 88, d: 70, h: 26 },
-        { id: "A3", left: 220, top: 108, w: 70, d: 58, h: 22 },
-        { id: "A4", left: 300, top: 108, w: 70, d: 58, h: 22 },
-        { id: "A13", left: 380, top: 108, w: 70, d: 58, h: 22 },
-        { id: "A5", left: 460, top: 108, w: 58, d: 50, h: 20 },
-        { id: "A6", left: 220, top: 186, w: 110, d: 78, h: 28 },
-        { id: "A11", left: 350, top: 186, w: 110, d: 78, h: 28 },
-        { id: "A8", left: 480, top: 170, w: 130, d: 90, h: 32 },
-        { id: "A7", left: 220, top: 280, w: 130, d: 90, h: 32 },
-        { id: "A14", left: 370, top: 280, w: 130, d: 90, h: 32 },
-        { id: "A9", left: 520, top: 280, w: 100, d: 100, h: 36 },
-        { id: "A10", left: 480, top: 108, w: 58, d: 50, h: 20 },
-      ];
+      /** 1 acre ≈ SIDE×SIDE px square; area scales with acres */
+      const ACRE_SIDE = 78;
+      function footprintFromAcres(acres) {
+        const a = Math.max(0.25, Number(acres) || 0.25);
+        const side = Math.round(ACRE_SIDE * Math.sqrt(a));
+        return {
+          w: side,
+          d: side,
+          h: Math.round(12 + Math.sqrt(a) * 8),
+        };
+      }
+
+      function buildScaledLayout() {
+        const gap = 10;
+        const pad = 16;
+        const boardW = 860;
+        const items = [];
+
+        /* Taken = exactly 2 acres (same scale as any 2ac lot) */
+        const takenFp = footprintFromAcres(2);
+        items.push({
+          id: "_taken",
+          kind: "taken",
+          label: "TAKEN",
+          acres: "2",
+          color: "#6b7280",
+          left: pad,
+          top: pad,
+          ...takenFp,
+        });
+
+        /* Driveway is a corridor — not an acre parcel (narrow strip) */
+        items.push({
+          id: "_park",
+          kind: "parking",
+          label: "DRIVE",
+          acres: "lanes",
+          color: "#f97316",
+          left: pad + takenFp.w + gap,
+          top: pad,
+          w: 36,
+          d: takenFp.d,
+          h: 14,
+        });
+
+        /* Remaining acre lots packed left→right, top→bottom with true scale */
+        const startX = pad + takenFp.w + gap + 36 + gap;
+        let x = startX;
+        let y = pad;
+        let rowH = 0;
+        const maxX = boardW - pad;
+
+        const order = [...LOTS].sort(
+          (a, b) => Number(b.acres) - Number(a.acres),
+        );
+
+        order.forEach((lot) => {
+          const fp = footprintFromAcres(lot.acres);
+          if (x + fp.w > maxX) {
+            x = startX;
+            y += rowH + gap;
+            rowH = 0;
+          }
+          items.push({
+            id: lot.id,
+            left: x,
+            top: y,
+            ...fp,
+          });
+          x += fp.w + gap;
+          rowH = Math.max(rowH, fp.d);
+        });
+
+        return items;
+      }
+
+      const A3D_LAYOUT = buildScaledLayout();
 
       const aWorld = document.getElementById("a3d-world");
       const aSlots = document.getElementById("a3d-slots");
       const aStage = document.getElementById("a3d-stage");
-      let rotX = 58,
-        rotZ = -28,
-        zoom = 1;
+
+      let targetX = 56,
+        targetZ = -26,
+        targetZoom = 0.92;
+      let curX = 56,
+        curZ = -26,
+        curZoom = 0.92;
       let dragging = false,
         lastX = 0,
-        lastY = 0,
-        moved = false;
+        lastY = 0;
 
-      document.getElementById("a3d-legend").innerHTML = [
-        "0.25",
-        "0.5",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-      ]
-        .map(
-          (a) =>
-            `<span><i style="background:${ACRE_COLOR[a]}"></i>${a} acre</span>`,
-        )
-        .join("");
+      document.getElementById("a3d-legend").innerHTML = ACRES.map((a) => {
+        const fp = footprintFromAcres(a);
+        return `<span><i style="background:${ACRE_COLOR[a]}"></i>${a} ac · ${fp.w}×${fp.d}px</span>`;
+      }).join("");
 
       function applyWorldTransform() {
-        aWorld.style.transform = `rotateX(${rotX}deg) rotateZ(${rotZ}deg) scale(${zoom})`;
+        aWorld.style.transform = `rotateX(${curX}deg) rotateZ(${curZ}deg) scale(${curZoom})`;
       }
+
+      function tickCamera() {
+        curX += (targetX - curX) * 0.18;
+        curZ += (targetZ - curZ) * 0.18;
+        curZoom += (targetZoom - curZoom) * 0.18;
+        applyWorldTransform();
+        requestAnimationFrame(tickCamera);
+      }
+      tickCamera();
 
       function extrusionFaces(color, h, w, d) {
         return `
@@ -1209,14 +1290,14 @@
           const acres = lot ? lot.acres : item.acres;
           const color = lot ? ACRE_COLOR[lot.acres] : item.color;
           const label = lot ? "LOT " + lot.id : item.label;
-          const status = lot ? lot.status : item.kind;
           const matchAcre =
-            item.kind || aAcre === "all" || (lot && lot.acres === aAcre);
+            aAcre === "all" ||
+            (lot && lot.acres === aAcre) ||
+            (item.kind === "taken" && aAcre === "2");
           const matchSt =
             item.kind || aStatus === "all" || (lot && lot.status === aStatus);
-          /* specials always visible unless acre filter is on for lots only */
           const show =
-            item.kind === "taken" || item.kind === "parking"
+            item.kind === "parking"
               ? aAcre === "all"
               : matchAcre && matchSt;
 
@@ -1224,6 +1305,7 @@
           btn.type = "button";
           btn.className =
             "slot3d" +
+            (item.kind ? " fixed" : "") +
             (!show ? " dim" : "") +
             (lot && aSel === lot.id ? " sel" : "") +
             (lot &&
@@ -1234,11 +1316,15 @@
           btn.style.top = item.top + "px";
           btn.style.width = item.w + "px";
           btn.style.height = item.d + "px";
+          btn.title = `${label} · ${acres} acre · ${item.w}×${item.d}px footprint`;
           btn.innerHTML = extrusionFaces(color, item.h, item.w, item.d);
           const top = btn.querySelector(".face.top");
           const south = btn.querySelector(".face.south");
-          top.innerHTML = `${label}<small>${acres} acre</small>`;
-          south.innerHTML = `${acres} ac`;
+          const acreText =
+            item.kind === "parking" ? "drive aisle" : acres + " acre";
+          top.innerHTML = `${label}<small>${acreText}</small>`;
+          south.innerHTML =
+            item.kind === "parking" ? "DRV" : acres + " ac";
 
           btn.addEventListener("pointerdown", (e) => e.stopPropagation());
           btn.addEventListener("click", (e) => {
@@ -1253,20 +1339,19 @@
               " · " +
               money(lot.rate) +
               " · Tenant: " +
-              lot.tenant;
+              lot.tenant +
+              " · Footprint scaled to acres";
             renderA3d();
           });
           aSlots.appendChild(btn);
         });
       }
 
-      applyWorldTransform();
       renderA3d();
 
       aStage.addEventListener("pointerdown", (e) => {
         if (e.target.closest(".a3d-tools")) return;
         dragging = true;
-        moved = false;
         lastX = e.clientX;
         lastY = e.clientY;
         aStage.classList.add("grabbing");
@@ -1276,12 +1361,10 @@
         if (!dragging) return;
         const dx = e.clientX - lastX;
         const dy = e.clientY - lastY;
-        if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
         lastX = e.clientX;
         lastY = e.clientY;
-        rotZ += dx * 0.35;
-        rotX = Math.max(25, Math.min(75, rotX - dy * 0.25));
-        applyWorldTransform();
+        targetZ += dx * 0.28;
+        targetX = Math.max(28, Math.min(72, targetX - dy * 0.2));
       });
       function endDrag(e) {
         if (!dragging) return;
@@ -1298,25 +1381,24 @@
         "wheel",
         (e) => {
           e.preventDefault();
-          zoom = Math.max(0.55, Math.min(1.6, zoom - e.deltaY * 0.0012));
-          applyWorldTransform();
+          targetZoom = Math.max(
+            0.55,
+            Math.min(1.45, targetZoom - e.deltaY * 0.001),
+          );
         },
         { passive: false },
       );
 
       document.getElementById("a3d-zoom-in").onclick = () => {
-        zoom = Math.min(1.6, zoom + 0.12);
-        applyWorldTransform();
+        targetZoom = Math.min(1.45, targetZoom + 0.1);
       };
       document.getElementById("a3d-zoom-out").onclick = () => {
-        zoom = Math.max(0.55, zoom - 0.12);
-        applyWorldTransform();
+        targetZoom = Math.max(0.55, targetZoom - 0.1);
       };
       document.getElementById("a3d-reset").onclick = () => {
-        rotX = 58;
-        rotZ = -28;
-        zoom = 1;
-        applyWorldTransform();
+        targetX = 56;
+        targetZ = -26;
+        targetZoom = 0.92;
       };
 
       buildAcrePills(document.getElementById("a-acre"), (v) => {
