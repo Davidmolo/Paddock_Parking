@@ -3,23 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Paddock Parking — Lots UI options for review</title>
-    <meta
-      name="description"
-      content="Four professional lot map UI directions for Paddock Parking. Acre sizes 0.25 through 5. Pick one to build."
-    />
+    <title>Paddock Parking Ops — Lots UI options for David</title>
     <style>
       :root {
-        --ink: #0c1222;
-        --muted: #5b6578;
-        --line: #e6eaf0;
-        --paper: #ffffff;
-        --canvas: #f4f6f9;
+        --ink: #0b1524;
+        --muted: #5c6b7f;
+        --line: #e2e8f0;
+        --paper: #fff;
+        --canvas: #f3f5f8;
         --brand: #0f766e;
-        --brand-ink: #0b3d3a;
-        --brand-soft: #e6f5f3;
-        --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
-        --radius: 18px;
+        --brand-dark: #0b3d3a;
+        --brand-soft: #e7f6f4;
+        --accent: #14b8a6;
+        --shadow: 0 16px 40px rgba(11, 21, 36, 0.08);
         --a025: #7c3aed;
         --a05: #0d9488;
         --a1: #2563eb;
@@ -27,940 +23,1059 @@
         --a3: #16a34a;
         --a4: #ca8a04;
         --a5: #ea580c;
-        --taken: #64748b;
-        --park: #f97316;
       }
-
       * {
         box-sizing: border-box;
       }
-
-      html {
-        scroll-behavior: smooth;
-      }
-
       body {
         margin: 0;
-        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-        color: var(--ink);
+        font-family: "Segoe UI", system-ui, sans-serif;
         background: var(--canvas);
-        line-height: 1.5;
+        color: var(--ink);
+        line-height: 1.45;
       }
-
-      a {
-        color: var(--brand);
+      button,
+      select,
+      input {
+        font: inherit;
       }
-
-      .top {
-        background: linear-gradient(180deg, #0b3d3a 0%, #0f766e 100%);
+      .hero {
+        background: linear-gradient(135deg, #0b3d3a, #0f766e 55%, #115e59);
         color: #ecfeff;
-        padding: 2.25rem 1.25rem 2rem;
+        padding: 2rem 1.25rem 1.75rem;
       }
-
-      .top-inner {
-        max-width: 1080px;
+      .hero-inner {
+        max-width: 1100px;
         margin: 0 auto;
       }
-
-      .eyebrow {
-        margin: 0 0 0.5rem;
-        font-size: 0.75rem;
+      .hero .eye {
+        margin: 0;
+        font-size: 0.72rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         opacity: 0.8;
       }
-
-      .top h1 {
-        margin: 0;
-        font-size: clamp(1.6rem, 3vw, 2.35rem);
+      .hero h1 {
+        margin: 0.4rem 0 0;
+        font-size: clamp(1.5rem, 3vw, 2.2rem);
         letter-spacing: -0.03em;
-        font-weight: 700;
-        max-width: 18ch;
       }
-
-      .top .lead {
-        margin: 0.85rem 0 0;
-        max-width: 52ch;
-        color: rgba(236, 254, 255, 0.88);
-        font-size: 1.05rem;
+      .hero p {
+        margin: 0.7rem 0 0;
+        max-width: 62ch;
+        color: rgba(236, 254, 255, 0.9);
       }
-
-      .badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 1.25rem;
-      }
-
-      .badge {
-        background: rgba(255, 255, 255, 0.12);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        border-radius: 999px;
-        padding: 0.4rem 0.8rem;
-        font-size: 0.82rem;
-        font-weight: 600;
-      }
-
-      .wrap {
-        max-width: 1080px;
-        margin: 0 auto;
-        padding: 1.5rem 1.25rem 3rem;
-      }
-
-      .note {
-        margin: -1.5rem auto 1.5rem;
-        max-width: 1080px;
+      .ctx {
+        max-width: 1100px;
+        margin: -1rem auto 0;
         padding: 0 1.25rem;
       }
-
-      .note-card {
+      .ctx-card {
         background: var(--paper);
         border: 1px solid var(--line);
-        border-radius: var(--radius);
+        border-radius: 16px;
         box-shadow: var(--shadow);
-        padding: 1.1rem 1.25rem;
+        padding: 1rem 1.15rem;
       }
-
-      .note-card strong {
+      .ctx-card strong {
         display: block;
         margin-bottom: 0.25rem;
       }
-
-      .note-card p {
+      .ctx-card p {
         margin: 0;
         color: var(--muted);
+        font-size: 0.92rem;
       }
-
-      .acres {
+      .tags {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.45rem;
-        margin-top: 0.85rem;
-      }
-
-      .acre-chip {
-        display: inline-flex;
-        align-items: center;
         gap: 0.4rem;
-        background: var(--canvas);
-        border: 1px solid var(--line);
+        margin-top: 0.75rem;
+      }
+      .tag {
+        background: var(--brand-soft);
+        color: var(--brand-dark);
         border-radius: 999px;
-        padding: 0.35rem 0.7rem;
-        font-size: 0.8rem;
-        font-weight: 650;
+        padding: 0.28rem 0.65rem;
+        font-size: 0.75rem;
+        font-weight: 700;
       }
-
-      .dot {
-        width: 0.55rem;
-        height: 0.55rem;
-        border-radius: 50%;
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 1.25rem 1.25rem 3rem;
       }
-
-      .options {
+      .toc {
         display: grid;
-        gap: 1.25rem;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.6rem;
+        margin-bottom: 1.25rem;
       }
-
+      @media (max-width: 800px) {
+        .toc {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .toc a {
+        text-decoration: none;
+        color: inherit;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 0.85rem;
+        box-shadow: var(--shadow);
+      }
+      .toc a:hover {
+        border-color: var(--brand);
+      }
+      .toc b {
+        display: block;
+        font-size: 0.95rem;
+      }
+      .toc span {
+        display: block;
+        margin-top: 0.25rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
       .option {
         background: var(--paper);
         border: 1px solid var(--line);
-        border-radius: calc(var(--radius) + 4px);
+        border-radius: 20px;
         box-shadow: var(--shadow);
+        margin-bottom: 1.35rem;
         overflow: hidden;
       }
-
       .option-head {
-        display: grid;
-        gap: 0.75rem;
-        padding: 1.25rem 1.25rem 1rem;
+        padding: 1.2rem 1.25rem 1rem;
         border-bottom: 1px solid var(--line);
+        display: grid;
+        gap: 0.85rem;
       }
-
-      @media (min-width: 760px) {
+      @media (min-width: 820px) {
         .option-head {
           grid-template-columns: 1fr auto;
           align-items: start;
         }
       }
-
-      .opt-kicker {
+      .kicker {
         margin: 0;
+        color: var(--brand);
         font-size: 0.72rem;
+        font-weight: 800;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        color: var(--brand);
-        font-weight: 700;
       }
-
       .option h2 {
-        margin: 0.2rem 0 0;
-        font-size: 1.35rem;
+        margin: 0.25rem 0 0;
+        font-size: 1.3rem;
         letter-spacing: -0.02em;
       }
-
-      .option .desc {
+      .diff {
         margin: 0.45rem 0 0;
         color: var(--muted);
-        max-width: 60ch;
+        font-size: 0.92rem;
+        max-width: 62ch;
       }
-
-      .pros {
-        margin: 0.65rem 0 0;
-        padding: 0;
-        list-style: none;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.4rem;
+      .diff em {
+        color: var(--ink);
+        font-style: normal;
+        font-weight: 700;
       }
-
-      .pros li {
-        background: var(--brand-soft);
-        color: var(--brand-ink);
-        border-radius: 999px;
-        padding: 0.28rem 0.65rem;
-        font-size: 0.78rem;
-        font-weight: 650;
-      }
-
-      .choose {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        align-items: stretch;
-      }
-
-      .choose button {
-        appearance: none;
-        border: 1px solid var(--brand);
+      .pick-btn {
+        border: none;
         background: var(--brand);
         color: #fff;
         border-radius: 12px;
-        padding: 0.7rem 1rem;
-        font-weight: 700;
-        font-size: 0.92rem;
+        padding: 0.7rem 1.1rem;
+        font-weight: 750;
         cursor: pointer;
+        white-space: nowrap;
       }
-
-      .choose button.secondary {
-        background: #fff;
-        color: var(--brand);
+      .pick-btn.selected {
+        background: var(--brand-dark);
       }
-
-      .choose button.selected {
-        background: var(--brand-ink);
-        border-color: var(--brand-ink);
-      }
-
-      .mock {
+      .demo {
         background: #eef2f6;
-        padding: 1rem;
+        padding: 0.85rem;
+      }
+      .hint {
+        margin: 0 0 0.65rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+        font-weight: 600;
       }
 
-      .device {
-        background: #fff;
-        border: 1px solid #dbe1ea;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-      }
-
-      .device-bar {
+      /* Shared filter chrome */
+      .bar {
         display: flex;
         flex-wrap: wrap;
-        align-items: center;
         gap: 0.4rem;
-        padding: 0.75rem 0.9rem;
-        border-bottom: 1px solid var(--line);
+        align-items: center;
+        padding: 0.7rem 0.8rem;
         background: #fbfcfd;
+        border-bottom: 1px solid var(--line);
       }
-
       .pill {
         border: 1px solid var(--line);
         background: #fff;
         border-radius: 999px;
-        padding: 0.35rem 0.65rem;
-        font-size: 0.75rem;
-        font-weight: 650;
-        color: #334155;
+        padding: 0.32rem 0.65rem;
+        font-size: 0.74rem;
+        font-weight: 700;
         cursor: pointer;
+        color: #334155;
       }
-
       .pill.on {
         background: var(--ink);
         border-color: var(--ink);
         color: #fff;
       }
-
+      .pill .d {
+        display: inline-block;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        margin-right: 0.3rem;
+        vertical-align: middle;
+      }
       .loc {
         margin-left: auto;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         color: #94a3b8;
-        letter-spacing: 0.06em;
+        font-weight: 700;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
-        font-weight: 650;
       }
 
-      .legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.55rem;
-        padding: 0.55rem 0.9rem;
-        border-bottom: 1px solid var(--line);
+      /* ===== A: Interactive isometric ===== */
+      .a-shell {
         background: #fff;
-        font-size: 0.72rem;
-        color: var(--muted);
+        border: 1px solid #dbe1ea;
+        border-radius: 14px;
+        overflow: hidden;
       }
-
-      .legend span {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-      }
-
-      .sw {
-        width: 0.65rem;
-        height: 0.65rem;
-        border-radius: 3px;
-      }
-
-      /* A isometric */
-      .iso-wrap {
-        padding: 1.5rem 1rem 2rem;
+      .iso-stage {
+        position: relative;
+        min-height: 360px;
         background: linear-gradient(180deg, #f8fafc, #e2e8f0);
-        min-height: 340px;
+        padding: 1.25rem 1rem 1rem;
       }
-
       .iso {
-        width: min(100%, 760px);
+        width: min(100%, 720px);
         margin: 0 auto;
         display: grid;
-        grid-template-columns: 1.15fr 0.95fr 0.85fr 1fr 0.9fr;
+        grid-template-columns: repeat(5, 1fr);
         gap: 0.4rem;
-        transform: rotateX(52deg) rotateZ(-26deg);
+        transform: rotateX(50deg) rotateZ(-24deg);
         transform-style: preserve-3d;
-        perspective: 1000px;
       }
-
-      .blk {
-        min-height: 70px;
+      .parcel {
+        min-height: 68px;
         border-radius: 8px;
-        padding: 0.55rem 0.6rem;
+        border: 2px solid transparent;
+        padding: 0.45rem 0.5rem;
         color: #fff;
-        font-size: 0.72rem;
-        font-weight: 700;
-        box-shadow: 0 10px 0 rgba(15, 23, 42, 0.12);
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+        font-size: 0.7rem;
+        font-weight: 750;
+        text-align: left;
+        cursor: pointer;
+        box-shadow: 0 9px 0 rgba(15, 23, 42, 0.12);
+        transition: transform 0.12s ease, opacity 0.15s ease, border-color 0.12s;
       }
-
-      .blk small {
+      .parcel small {
+        display: block;
         font-weight: 500;
         opacity: 0.92;
       }
-
-      /* B / C plan */
-      .split {
-        display: grid;
-        grid-template-columns: 1.35fr 0.9fr;
-        min-height: 360px;
+      .parcel:hover {
+        transform: translateY(-2px);
       }
-
-      @media (max-width: 800px) {
-        .split {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .plan {
-        padding: 0.9rem;
-        background: #e8f0fe;
-      }
-
-      .plan.c {
-        background: #e7f7f3;
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(8, 1fr);
-        gap: 6px;
-        grid-auto-rows: 46px;
-      }
-
-      .cell {
-        border-radius: 8px;
-        color: #fff;
-        font-size: 0.62rem;
-        font-weight: 700;
-        display: grid;
-        place-items: center;
-        text-align: center;
-        padding: 0.2rem;
-        border: 2px solid transparent;
-        cursor: pointer;
-        transition: transform 0.12s ease;
-      }
-
-      .cell:hover {
-        transform: translateY(-1px);
-      }
-
-      .cell.sel {
+      .parcel.sel {
         border-color: #0f172a;
+        outline: 2px solid #fff;
       }
-
-      .side {
-        padding: 1.1rem 1.15rem;
+      .parcel.dim {
+        opacity: 0.18;
+        pointer-events: none;
+        box-shadow: none;
+      }
+      .parcel.busy {
+        opacity: 0.72;
+        filter: saturate(0.75);
+      }
+      .a-dock {
+        display: none;
+        border-top: 1px solid var(--line);
         background: #fff;
-        border-left: 1px solid var(--line);
-      }
-
-      @media (max-width: 800px) {
-        .side {
-          border-left: none;
-          border-top: 1px solid var(--line);
-        }
-      }
-
-      .side h3 {
-        margin: 0;
-        font-size: 1.05rem;
-      }
-
-      .side .meta {
-        margin: 0.35rem 0 0;
-        color: var(--muted);
-        font-size: 0.9rem;
-      }
-
-      .kv {
-        margin-top: 0.9rem;
-        display: grid;
-        gap: 0.45rem;
-      }
-
-      .kv div {
-        display: flex;
-        justify-content: space-between;
+        padding: 0.9rem 1rem;
+        grid-template-columns: 1fr auto;
         gap: 0.75rem;
-        font-size: 0.9rem;
-        padding: 0.45rem 0;
-        border-bottom: 1px solid #f1f5f9;
+        align-items: center;
       }
-
-      .kv span {
+      .a-dock.show {
+        display: grid;
+      }
+      .a-dock h4 {
+        margin: 0;
+        font-size: 1rem;
+      }
+      .a-dock p {
+        margin: 0.2rem 0 0;
         color: var(--muted);
+        font-size: 0.85rem;
       }
-
-      .kv b {
-        font-weight: 700;
-      }
-
-      .actions {
+      .a-actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.45rem;
-        margin-top: 1rem;
+        gap: 0.4rem;
       }
-
-      .actions button {
+      .btn {
         border: none;
         border-radius: 10px;
-        padding: 0.55rem 0.85rem;
+        padding: 0.5rem 0.8rem;
         font-weight: 700;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         cursor: pointer;
       }
-
-      .actions .primary {
+      .btn.pri {
         background: var(--brand);
         color: #fff;
       }
-
-      .actions .ghost {
+      .btn.ghost {
         background: #f1f5f9;
         color: #334155;
       }
 
-      /* D cards */
-      .strip {
-        display: flex;
-        gap: 0.5rem;
-        overflow-x: auto;
+      /* ===== B: Full map + modal ===== */
+      .b-shell {
+        background: #fff;
+        border: 1px solid #dbe1ea;
+        border-radius: 14px;
+        overflow: hidden;
+        position: relative;
+        min-height: 420px;
+      }
+      .b-map {
         padding: 0.85rem;
+        background: #dbeafe;
+        min-height: 360px;
+      }
+      .b-grid {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 5px;
+        grid-auto-rows: 42px;
+      }
+      .b-cell {
+        border: none;
+        border-radius: 7px;
+        color: #fff;
+        font-size: 0.6rem;
+        font-weight: 750;
+        cursor: pointer;
+        padding: 0.15rem;
+      }
+      .b-cell:hover {
+        filter: brightness(1.08);
+      }
+      .modal-bg {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        align-items: flex-end;
+        justify-content: center;
+        padding: 1rem;
+        z-index: 3;
+      }
+      .modal-bg.show {
+        display: flex;
+      }
+      .modal {
+        width: min(100%, 380px);
+        background: #fff;
+        border-radius: 16px;
+        padding: 1.1rem;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      }
+      .modal h3 {
+        margin: 0;
+      }
+      .modal .row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.45rem 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.9rem;
+      }
+      .modal .row span {
+        color: var(--muted);
+      }
+
+      /* ===== C: Ops workbench (app shell) ===== */
+      .c-shell {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        min-height: 460px;
+        background: #fff;
+        border: 1px solid #dbe1ea;
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      @media (max-width: 800px) {
+        .c-shell {
+          grid-template-columns: 1fr;
+        }
+        .c-nav {
+          display: none;
+        }
+      }
+      .c-nav {
+        background: #0b1524;
+        color: #cbd5e1;
+        padding: 0.9rem 0.7rem;
+        font-size: 0.8rem;
+      }
+      .c-brand {
+        color: #5eead4;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        padding: 0.35rem 0.5rem;
+      }
+      .c-nav .sec {
+        margin: 0.85rem 0 0.35rem;
+        padding: 0 0.5rem;
+        font-size: 0.65rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #64748b;
+        font-weight: 800;
+      }
+      .c-nav a {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+        padding: 0.45rem 0.55rem;
+        border-radius: 8px;
+        margin-bottom: 0.15rem;
+      }
+      .c-nav a.on {
+        background: rgba(20, 184, 166, 0.18);
+        color: #fff;
+      }
+      .c-main {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        background: var(--canvas);
+      }
+      .c-top {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        padding: 0.75rem 0.9rem;
         background: #fff;
         border-bottom: 1px solid var(--line);
       }
-
-      .acre-btn {
-        flex: 0 0 auto;
-        min-width: 92px;
+      .c-top h3 {
+        margin: 0;
+        font-size: 1rem;
+        margin-right: auto;
+      }
+      .c-top select {
+        height: 34px;
+        border-radius: 8px;
         border: 1px solid var(--line);
-        background: #f8fafc;
-        border-radius: 14px;
-        padding: 0.6rem 0.75rem;
-        text-align: left;
-        cursor: pointer;
+        padding: 0 0.5rem;
+        background: #fff;
       }
-
-      .acre-btn.on {
-        border-color: var(--brand);
-        background: var(--brand-soft);
-        box-shadow: inset 0 0 0 1px var(--brand);
-      }
-
-      .acre-btn b {
-        display: block;
-        font-size: 0.95rem;
-      }
-
-      .acre-btn span {
-        font-size: 0.72rem;
-        color: var(--muted);
-      }
-
-      .cards {
+      .c-body {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 0.7rem;
-        padding: 0.9rem;
-        background: #f8fafc;
+        grid-template-columns: 1fr 280px;
+        flex: 1;
+        min-height: 0;
       }
-
-      .card {
+      @media (max-width: 900px) {
+        .c-body {
+          grid-template-columns: 1fr;
+        }
+      }
+      .c-table-wrap {
+        padding: 0.75rem;
+        overflow: auto;
+      }
+      table.ops {
+        width: 100%;
+        border-collapse: collapse;
         background: #fff;
         border: 1px solid var(--line);
-        border-radius: 14px;
-        padding: 0.85rem;
-        border-top-width: 3px;
-      }
-
-      .card .id {
-        font-weight: 750;
-        font-size: 1.05rem;
-      }
-
-      .card .sub {
-        color: var(--muted);
+        border-radius: 12px;
+        overflow: hidden;
         font-size: 0.82rem;
-        margin-top: 0.15rem;
       }
-
-      .status {
+      table.ops th,
+      table.ops td {
+        text-align: left;
+        padding: 0.55rem 0.65rem;
+        border-bottom: 1px solid var(--line);
+      }
+      table.ops th {
+        background: #f8fafc;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      table.ops tr {
+        cursor: pointer;
+      }
+      table.ops tr:hover,
+      table.ops tr.on {
+        background: var(--brand-soft);
+      }
+      .badge {
         display: inline-block;
-        margin-top: 0.55rem;
+        border-radius: 999px;
+        padding: 0.12rem 0.45rem;
         font-size: 0.68rem;
         font-weight: 750;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        padding: 0.2rem 0.5rem;
-        border-radius: 999px;
+        text-transform: capitalize;
       }
-
-      .status.open {
+      .badge.available {
+        background: #e0f2fe;
+        color: #075985;
+      }
+      .badge.occupied {
         background: #dcfce7;
         color: #166534;
       }
-
-      .status.busy {
-        background: #fee2e2;
-        color: #991b1b;
-      }
-
-      .status.hold {
+      .badge.reserved {
         background: #fef3c7;
         color: #92400e;
       }
+      .badge.maintenance {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .c-drawer {
+        background: #fff;
+        border-left: 1px solid var(--line);
+        padding: 0.9rem;
+      }
+      .c-drawer h4 {
+        margin: 0 0 0.35rem;
+      }
+      .c-drawer label {
+        display: block;
+        margin-top: 0.65rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .c-drawer select,
+      .c-drawer input {
+        width: 100%;
+        margin-top: 0.25rem;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        padding: 0 0.55rem;
+      }
+      .empty-draw {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-top: 1rem;
+      }
 
+      /* ===== D: Acre columns ===== */
+      .d-shell {
+        background: #fff;
+        border: 1px solid #dbe1ea;
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .d-board {
+        display: flex;
+        gap: 0.65rem;
+        overflow-x: auto;
+        padding: 0.85rem;
+        background: #f1f5f9;
+        min-height: 340px;
+      }
+      .col {
+        flex: 0 0 150px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        max-height: 360px;
+      }
+      .col-h {
+        padding: 0.55rem 0.65rem;
+        border-bottom: 1px solid var(--line);
+        border-top: 3px solid #64748b;
+        font-weight: 800;
+        font-size: 0.85rem;
+      }
+      .col-h small {
+        display: block;
+        font-weight: 600;
+        color: var(--muted);
+        font-size: 0.7rem;
+      }
+      .col-b {
+        padding: 0.5rem;
+        overflow-y: auto;
+        display: grid;
+        gap: 0.4rem;
+      }
+      .d-card {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.5rem 0.55rem;
+        font-size: 0.78rem;
+        background: #fafbfc;
+        cursor: pointer;
+      }
+      .d-card:hover {
+        border-color: var(--brand);
+      }
+      .d-card b {
+        display: block;
+      }
       .decision {
-        margin-top: 1.75rem;
         background: var(--paper);
         border: 1px solid var(--line);
-        border-radius: var(--radius);
+        border-radius: 16px;
         box-shadow: var(--shadow);
-        padding: 1.35rem 1.25rem;
+        padding: 1.2rem;
       }
-
       .decision h2 {
         margin: 0;
-        font-size: 1.2rem;
       }
-
       .decision p {
         margin: 0.4rem 0 0;
         color: var(--muted);
       }
-
-      .picked {
-        margin-top: 1rem;
-        padding: 0.9rem 1rem;
-        border-radius: 12px;
-        background: var(--brand-soft);
-        color: var(--brand-ink);
-        font-weight: 700;
+      #picked {
         display: none;
+        margin-top: 0.85rem;
+        padding: 0.85rem 1rem;
+        background: var(--brand-soft);
+        color: var(--brand-dark);
+        border-radius: 12px;
+        font-weight: 750;
       }
-
-      .picked.show {
+      #picked.show {
         display: block;
       }
-
       footer {
-        max-width: 1080px;
+        max-width: 1100px;
         margin: 0 auto;
-        padding: 0 1.25rem 2.5rem;
+        padding: 0 1.25rem 2rem;
         color: var(--muted);
-        font-size: 0.85rem;
+        font-size: 0.82rem;
       }
     </style>
   </head>
   <body>
-    <header class="top">
-      <div class="top-inner">
-        <p class="eyebrow">Paddock Parking · Design review</p>
-        <h1>Lots UI — which direction should we build?</h1>
-        <p class="lead">
-          Four professional options for the yard lot map. All support acre sizes
-          <strong>0.25, 0.5, 1, 2, 3, 4, and 5</strong>. Tap an option, preview
-          the mock, then choose one at the bottom — we’ll implement that in the
-          ops app.
+    <header class="hero">
+      <div class="hero-inner">
+        <p class="eye">Paddock Parking Ops · Design review for David</p>
+        <h1>Lots screen — 4 different UI directions</h1>
+        <p>
+          These are interactive prototypes for the <strong>ops admin</strong>
+          (not the public Book Now site). Same data model as the app: yard
+          filter, status (available / occupied / reserved / maintenance), monthly
+          rate, assigned tenant, and acre sizes
+          <strong>0.25 · 0.5 · 1 · 2 · 3 · 4 · 5</strong>.
         </p>
-        <div class="badges">
-          <span class="badge">For David Molo</span>
-          <span class="badge">Ops staff UI</span>
-          <span class="badge">Replace current Lots screen</span>
-        </div>
       </div>
     </header>
 
-    <div class="note">
-      <div class="note-card">
-        <strong>Acre sizes in every option</strong>
+    <div class="ctx">
+      <div class="ctx-card">
+        <strong>App context</strong>
         <p>
-          Color coding is consistent across all four designs so staff can scan
-          inventory quickly.
+          Lives under sidebar <em>Compliance → Lots</em>. Staff flip status,
+          change price, assign customers. Parking stalls and acre parcels both
+          exist; this review focuses on the acre map experience you asked for.
         </p>
-        <div class="acres" id="acreLegend"></div>
+        <div class="tags">
+          <span class="tag">Ops staff</span>
+          <span class="tag">/lots</span>
+          <span class="tag">Edit status · rate · tenant</span>
+          <span class="tag">Multi-yard</span>
+        </div>
       </div>
     </div>
 
     <div class="wrap">
-      <div class="options">
-        <!-- A -->
-        <article class="option" id="opt-a">
-          <div class="option-head">
-            <div>
-              <p class="opt-kicker">Option A · Recommended if you liked your sketch</p>
-              <h2>Isometric yard map</h2>
-              <p class="desc">
-                Closest to the visual you shared: a 3D-style yard with color
-                blocks by acre size, parking lanes, and taken parcels. Filter
-                pills across the top for each acre size.
-              </p>
-              <ul class="pros">
-                <li>Most visual / sales-friendly</li>
-                <li>Matches your reference</li>
-                <li>Great for showing clients the yard</li>
-              </ul>
+      <nav class="toc">
+        <a href="#opt-a"
+          ><b>A · Isometric</b><span>Click parcels · filters work</span></a
+        >
+        <a href="#opt-b"
+          ><b>B · Full map + modal</b><span>Map-first · popup details</span></a
+        >
+        <a href="#opt-c"
+          ><b>C · Ops workbench</b><span>Table + edit drawer</span></a
+        >
+        <a href="#opt-d"
+          ><b>D · Acre columns</b><span>Kanban by acre size</span></a
+        >
+      </nav>
+
+      <!-- A -->
+      <article class="option" id="opt-a">
+        <div class="option-head">
+          <div>
+            <p class="kicker">Option A</p>
+            <h2>Interactive isometric yard</h2>
+            <p class="diff">
+              Like your sketch — but <em>usable</em>: acre + status filters dim
+              non-matching parcels; click a lot to open an action dock (edit
+              rate / assign tenant). Visual for owners; still ops-capable.
+            </p>
+          </div>
+          <button type="button" class="pick-btn" data-pick="A">Choose A</button>
+        </div>
+        <div class="demo">
+          <p class="hint">Try: filter “0.5” or “Available”, then click a lot.</p>
+          <div class="a-shell">
+            <div class="bar" id="a-acre"></div>
+            <div class="bar" id="a-status"></div>
+            <div class="iso-stage">
+              <div class="iso" id="a-iso"></div>
             </div>
-            <div class="choose">
-              <button type="button" data-pick="A">Choose A</button>
-              <button type="button" class="secondary" data-jump="opt-a">
-                Preview
-              </button>
+            <div class="a-dock" id="a-dock">
+              <div>
+                <h4 id="a-title">—</h4>
+                <p id="a-meta">—</p>
+              </div>
+              <div class="a-actions">
+                <button type="button" class="btn pri">Save changes</button>
+                <button type="button" class="btn ghost">Assign tenant</button>
+                <button type="button" class="btn ghost" id="a-clear">
+                  Clear
+                </button>
+              </div>
             </div>
           </div>
-          <div class="mock">
-            <div class="device">
-              <div class="device-bar" data-filters="a"></div>
-              <div class="legend" data-legend></div>
-              <div class="iso-wrap">
-                <div class="iso">
-                  <div class="blk" style="background: var(--taken); min-height: 150px">
-                    Taken<br /><small>2 acres leased</small>
-                  </div>
-                  <div class="blk" style="background: var(--a1)">
-                    LOT 1<br /><small>1 acre · open</small>
-                  </div>
-                  <div class="blk" style="background: var(--a05)">
-                    LOT 4<br /><small>0.5 acre</small>
-                  </div>
-                  <div class="blk" style="background: var(--a2)">
-                    LOT 9<br /><small>2 acres</small>
-                  </div>
-                  <div class="blk" style="background: var(--a025)">
-                    LOT 12<br /><small>0.25 acre</small>
-                  </div>
-                  <div class="blk" style="background: var(--a1)">
-                    LOT 2<br /><small>1 acre</small>
-                  </div>
-                  <div class="blk" style="background: var(--a05)">
-                    LOT 5<br /><small>0.5 acre</small>
-                  </div>
-                  <div class="blk" style="background: var(--park); min-height: 120px">
-                    Driveway<br /><small>Parking stalls</small>
-                  </div>
-                  <div class="blk" style="background: var(--a3)">
-                    LOT 10<br /><small>3 acres</small>
-                  </div>
-                  <div class="blk" style="background: var(--a1)">
-                    LOT 3<br /><small>1 acre · leased</small>
-                  </div>
-                  <div class="blk" style="background: var(--a05)">
-                    LOT 6<br /><small>0.5 acre</small>
-                  </div>
-                  <div class="blk" style="background: var(--a4)">
-                    LOT 11<br /><small>4 acres</small>
-                  </div>
-                  <div class="blk" style="background: var(--a5)">
-                    LOT 13<br /><small>5 acres</small>
-                  </div>
-                  <div class="blk" style="background: var(--a05)">
-                    LOT 7<br /><small>0.5 acre</small>
-                  </div>
-                  <div class="blk" style="background: var(--a05)">
-                    LOT 8<br /><small>0.5 acre</small>
-                  </div>
+        </div>
+      </article>
+
+      <!-- B -->
+      <article class="option" id="opt-b">
+        <div class="option-head">
+          <div>
+            <p class="kicker">Option B · Different from C</p>
+            <h2>Full-bleed site plan + modal</h2>
+            <p class="diff">
+              <em>Map is the whole screen</em> — no permanent side panel. Click a
+              parcel → details open in a <em>modal</em> (storage/truck-yard style).
+              Best when you want a clean visual plan without ops chrome in the way.
+            </p>
+          </div>
+          <button type="button" class="pick-btn" data-pick="B">Choose B</button>
+        </div>
+        <div class="demo">
+          <p class="hint">Try: filter acres, click any colored cell → modal opens.</p>
+          <div class="b-shell">
+            <div class="bar" id="b-acre"></div>
+            <div class="b-map">
+              <div class="b-grid" id="b-grid"></div>
+            </div>
+            <div class="modal-bg" id="b-modal">
+              <div class="modal">
+                <h3 id="b-mtitle">Lot</h3>
+                <div class="row"><span>Acres</span><b id="b-macre">—</b></div>
+                <div class="row"><span>Status</span><b id="b-mstatus">—</b></div>
+                <div class="row"><span>Rate</span><b id="b-mrate">—</b></div>
+                <div class="row"><span>Tenant</span><b id="b-mtenant">—</b></div>
+                <div class="a-actions" style="margin-top: 0.85rem">
+                  <button type="button" class="btn pri">Edit in ops</button>
+                  <button type="button" class="btn ghost" id="b-close">
+                    Close
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </article>
+        </div>
+      </article>
 
-        <!-- B -->
-        <article class="option" id="opt-b">
-          <div class="option-head">
-            <div>
-              <p class="opt-kicker">Option B · Clearest on phone & laptop</p>
-              <h2>Flat site plan</h2>
-              <p class="desc">
-                Top-down parcels (like modern self-storage / truck-yard maps).
-                Click a lot → details appear on the right. Easier to scale to
-                real yard drawings later.
-              </p>
-              <ul class="pros">
-                <li>Best readability</li>
-                <li>Mobile-friendly</li>
-                <li>Easy to sync with real CAD later</li>
-              </ul>
-            </div>
-            <div class="choose">
-              <button type="button" data-pick="B">Choose B</button>
-              <button type="button" class="secondary" data-jump="opt-b">
-                Preview
-              </button>
-            </div>
+      <!-- C -->
+      <article class="option" id="opt-c">
+        <div class="option-head">
+          <div>
+            <p class="kicker">Option C · Matches Paddock Ops app</p>
+            <h2>Ops workbench (table + edit drawer)</h2>
+            <p class="diff">
+              Looks like your real admin: sidebar <em>Compliance → Lots</em>, yard
+              switcher, status chips, <em>sortable table</em>, and an edit drawer
+              (status / rate / tenant) — same workflow as today’s Lots page, ready
+              for acre columns. Not a map-first UI.
+            </p>
           </div>
-          <div class="mock">
-            <div class="device">
-              <div class="device-bar" data-filters="b"></div>
-              <div class="split">
-                <div class="plan">
-                  <div class="grid" id="grid-b"></div>
+          <button type="button" class="pick-btn" data-pick="C">Choose C</button>
+        </div>
+        <div class="demo">
+          <p class="hint">
+            Try: change yard or status filter, click a row → drawer updates.
+          </p>
+          <div class="c-shell">
+            <aside class="c-nav">
+              <div class="c-brand">PP · Ops</div>
+              <a href="#">Dashboard</a>
+              <a href="#">Collections</a>
+              <a href="#">Customers</a>
+              <div class="sec">Compliance</div>
+              <a class="on" href="#">Lots</a>
+              <a href="#">Properties</a>
+              <div class="sec">More</div>
+              <a href="#">Leases</a>
+              <a href="#">Notices</a>
+            </aside>
+            <div class="c-main">
+              <div class="c-top">
+                <h3>Lots</h3>
+                <select id="c-yard">
+                  <option value="all">All yards</option>
+                  <option value="elwood">Paddock · Elwood</option>
+                  <option value="325">Paddock 325</option>
+                </select>
+                <select id="c-status">
+                  <option value="all">All status</option>
+                  <option value="available">Available</option>
+                  <option value="occupied">Occupied</option>
+                  <option value="reserved">Reserved</option>
+                  <option value="maintenance">Maintenance</option>
+                </select>
+                <select id="c-acre">
+                  <option value="all">All acres</option>
+                  <option value="0.25">0.25</option>
+                  <option value="0.5">0.5</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+              </div>
+              <div class="c-body">
+                <div class="c-table-wrap">
+                  <table class="ops">
+                    <thead>
+                      <tr>
+                        <th>Lot</th>
+                        <th>Acres</th>
+                        <th>Status</th>
+                        <th>Rate</th>
+                        <th>Tenant</th>
+                      </tr>
+                    </thead>
+                    <tbody id="c-tbody"></tbody>
+                  </table>
                 </div>
-                <div class="side">
-                  <h3 id="b-title">Select a lot</h3>
-                  <p class="meta" id="b-meta">Tap any parcel on the plan.</p>
-                  <div class="kv">
-                    <div><span>Acre size</span><b id="b-acre">—</b></div>
-                    <div><span>Status</span><b id="b-status">—</b></div>
-                    <div><span>Monthly rate</span><b id="b-rate">—</b></div>
-                  </div>
-                  <div class="actions">
-                    <button type="button" class="primary">Edit lot</button>
-                    <button type="button" class="ghost">Assign tenant</button>
-                  </div>
+                <div class="c-drawer" id="c-drawer">
+                  <p class="empty-draw">Select a lot row to edit.</p>
                 </div>
               </div>
             </div>
           </div>
-        </article>
+        </div>
+      </article>
 
-        <!-- C -->
-        <article class="option" id="opt-c">
-          <div class="option-head">
-            <div>
-              <p class="opt-kicker">Option C · Best for daily ops staff</p>
-              <h2>Map + detail panel</h2>
-              <p class="desc">
-                Simplified yard on the left; rate, tenant, status, and actions
-                always visible on the right. Built for people who change status
-                and price all day — not just for looking pretty.
-              </p>
-              <ul class="pros">
-                <li>Fastest for staff</li>
-                <li>Actions always in view</li>
-                <li>Same acre filters</li>
-              </ul>
-            </div>
-            <div class="choose">
-              <button type="button" data-pick="C">Choose C</button>
-              <button type="button" class="secondary" data-jump="opt-c">
-                Preview
-              </button>
-            </div>
+      <!-- D -->
+      <article class="option" id="opt-d">
+        <div class="option-head">
+          <div>
+            <p class="kicker">Option D</p>
+            <h2>Acre columns (kanban)</h2>
+            <p class="diff">
+              One column per acre size. Scan inventory by size first — useful when
+              David asks “what 2-acre parcels are open?” No map; pure ops board.
+            </p>
           </div>
-          <div class="mock">
-            <div class="device">
-              <div class="device-bar" data-filters="c"></div>
-              <div class="split">
-                <div class="plan c">
-                  <div class="grid" id="grid-c"></div>
-                </div>
-                <div class="side">
-                  <h3>LOT 4 · 0.5 acre</h3>
-                  <p class="meta">E Elwood St · Phoenix</p>
-                  <div class="kv">
-                    <div><span>Status</span><b style="color: #166534">Available</b></div>
-                    <div><span>Rate</span><b>$1,850 / mo</b></div>
-                    <div><span>Tenant</span><b>—</b></div>
-                    <div><span>Type</span><b>Acre parcel</b></div>
-                  </div>
-                  <div class="actions">
-                    <button type="button" class="primary">Assign tenant</button>
-                    <button type="button" class="ghost">Change rate</button>
-                    <button type="button" class="ghost">Mark maintenance</button>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <button type="button" class="pick-btn" data-pick="D">Choose D</button>
+        </div>
+        <div class="demo">
+          <p class="hint">Scroll horizontally across acre columns. Click a card.</p>
+          <div class="d-shell">
+            <div class="bar" id="d-status"></div>
+            <div class="d-board" id="d-board"></div>
           </div>
-        </article>
-
-        <!-- D -->
-        <article class="option" id="opt-d">
-          <div class="option-head">
-            <div>
-              <p class="opt-kicker">Option D · Fastest inventory board</p>
-              <h2>Acre filter strip + lot cards</h2>
-              <p class="desc">
-                Pick an acre size first, then work a clean card list. Less map
-                drama, more speed when you have dozens of parcels across yards.
-              </p>
-              <ul class="pros">
-                <li>Fastest scanning</li>
-                <li>Scales to many lots</li>
-                <li>Can add a mini-map later</li>
-              </ul>
-            </div>
-            <div class="choose">
-              <button type="button" data-pick="D">Choose D</button>
-              <button type="button" class="secondary" data-jump="opt-d">
-                Preview
-              </button>
-            </div>
-          </div>
-          <div class="mock">
-            <div class="device">
-              <div class="strip" id="strip-d"></div>
-              <div class="cards" id="cards-d"></div>
-            </div>
-          </div>
-        </article>
-      </div>
+        </div>
+      </article>
 
       <section class="decision">
         <h2>Your pick</h2>
         <p>
-          Reply with <strong>A, B, C, or D</strong> (or tap Choose above). We’ll
-          build that Lots screen next in the Paddock Parking ops app.
+          Reply with <strong>A, B, C, or D</strong>. A/B are visual maps; C is the
+          closest to how staff work in the app today; D is acre-first inventory.
         </p>
-        <div class="picked" id="picked">No option selected yet.</div>
+        <div id="picked"></div>
       </section>
     </div>
 
     <footer>
-      Paddock Parking Ops · Design review for David · Acre inventory UI options
+      Paddock Parking Ops · Interactive Lots UI review · Not the public Book Now
+      site
     </footer>
 
     <script>
-      const ACRES = [
-        { id: "all", label: "All", color: "#0c1222" },
-        { id: "0.25", label: "0.25", color: "#7c3aed" },
-        { id: "0.5", label: "0.5", color: "#0d9488" },
-        { id: "1", label: "1", color: "#2563eb" },
-        { id: "2", label: "2", color: "#0284c7" },
-        { id: "3", label: "3", color: "#16a34a" },
-        { id: "4", label: "4", color: "#ca8a04" },
-        { id: "5", label: "5", color: "#ea580c" },
-      ];
+      const ACRES = ["0.25", "0.5", "1", "2", "3", "4", "5"];
+      const ACRE_COLOR = {
+        "0.25": "#7c3aed",
+        "0.5": "#0d9488",
+        "1": "#2563eb",
+        "2": "#0284c7",
+        "3": "#16a34a",
+        "4": "#ca8a04",
+        "5": "#ea580c",
+      };
+      const STATUSES = ["available", "occupied", "reserved", "maintenance"];
 
       const LOTS = [
-        { id: "L1", acres: "1", status: "available", rate: 2200 },
-        { id: "L2", acres: "1", status: "occupied", rate: 2200 },
-        { id: "L3", acres: "0.5", status: "available", rate: 1850 },
-        { id: "L4", acres: "0.5", status: "available", rate: 1850 },
-        { id: "L5", acres: "0.25", status: "reserved", rate: 950 },
-        { id: "L6", acres: "2", status: "available", rate: 3800 },
-        { id: "L7", acres: "3", status: "occupied", rate: 5200 },
-        { id: "L8", acres: "4", status: "available", rate: 6400 },
-        { id: "L9", acres: "5", status: "available", rate: 7800 },
-        { id: "L10", acres: "0.25", status: "available", rate: 950 },
-        { id: "L11", acres: "2", status: "occupied", rate: 3800 },
-        { id: "L12", acres: "1", status: "available", rate: 2200 },
+        { id: "A1", acres: "1", status: "available", rate: 2200, tenant: "—", yard: "elwood" },
+        { id: "A2", acres: "1", status: "occupied", rate: 2200, tenant: "Valley Haul", yard: "elwood" },
+        { id: "A3", acres: "0.5", status: "available", rate: 1850, tenant: "—", yard: "elwood" },
+        { id: "A4", acres: "0.5", status: "reserved", rate: 1850, tenant: "Hold · BK-12", yard: "elwood" },
+        { id: "A5", acres: "0.25", status: "available", rate: 950, tenant: "—", yard: "elwood" },
+        { id: "A6", acres: "2", status: "available", rate: 3800, tenant: "—", yard: "elwood" },
+        { id: "A7", acres: "3", status: "occupied", rate: 5200, tenant: "Desert Fleet", yard: "325" },
+        { id: "A8", acres: "4", status: "available", rate: 6400, tenant: "—", yard: "325" },
+        { id: "A9", acres: "5", status: "maintenance", rate: 7800, tenant: "—", yard: "325" },
+        { id: "A10", acres: "0.25", status: "occupied", rate: 950, tenant: "Mesa Storage", yard: "elwood" },
+        { id: "A11", acres: "2", status: "occupied", rate: 3800, tenant: "AZ Logistics", yard: "325" },
+        { id: "A12", acres: "1", status: "available", rate: 2200, tenant: "—", yard: "325" },
+        { id: "A13", acres: "0.5", status: "available", rate: 1850, tenant: "—", yard: "325" },
+        { id: "A14", acres: "3", status: "available", rate: 5200, tenant: "—", yard: "elwood" },
       ];
 
-      const colorFor = (a) =>
-        ({
-          "0.25": "#7c3aed",
-          "0.5": "#0d9488",
-          "1": "#2563eb",
-          "2": "#0284c7",
-          "3": "#16a34a",
-          "4": "#ca8a04",
-          "5": "#ea580c",
-        })[a] || "#64748b";
+      function money(n) {
+        return "$" + n.toLocaleString() + "/mo";
+      }
 
-      document.getElementById("acreLegend").innerHTML = ACRES.slice(1)
-        .map(
-          (a) =>
-            `<span class="acre-chip"><i class="dot" style="background:${a.color}"></i>${a.label} acre</span>`,
-        )
-        .join("");
-
-      document.querySelectorAll("[data-legend]").forEach((el) => {
-        el.innerHTML = ACRES.slice(1)
-          .map(
-            (a) =>
-              `<span><i class="sw" style="background:${a.color}"></i>${a.label} ac</span>`,
-          )
-          .join("");
-      });
-
-      function buildFilterBar(el, onChange) {
+      function buildAcrePills(el, onChange) {
         el.innerHTML = "";
-        ACRES.forEach((a, i) => {
+        const all = document.createElement("button");
+        all.type = "button";
+        all.className = "pill on";
+        all.textContent = "All acres";
+        all.dataset.v = "all";
+        el.appendChild(all);
+        ACRES.forEach((a) => {
           const b = document.createElement("button");
           b.type = "button";
-          b.className = "pill" + (i === 0 ? " on" : "");
-          b.innerHTML =
-            a.id === "all"
-              ? "All"
-              : `<span class="dot" style="background:${a.color};display:inline-block;margin-right:0.3rem;vertical-align:middle"></span>${a.label}`;
-          b.addEventListener("click", () => {
-            el.querySelectorAll(".pill").forEach((p) => p.classList.remove("on"));
-            b.classList.add("on");
-            onChange(a.id);
-          });
+          b.className = "pill";
+          b.dataset.v = a;
+          b.innerHTML = `<i class="d" style="background:${ACRE_COLOR[a]}"></i>${a}`;
           el.appendChild(b);
         });
         const loc = document.createElement("span");
         loc.className = "loc";
-        loc.textContent = "E Elwood St · Phoenix";
+        loc.textContent = "Compliance · Lots";
         el.appendChild(loc);
+        el.querySelectorAll(".pill").forEach((p) => {
+          p.addEventListener("click", () => {
+            el.querySelectorAll(".pill").forEach((x) => x.classList.remove("on"));
+            p.classList.add("on");
+            onChange(p.dataset.v);
+          });
+        });
       }
 
-      function renderGrid(gridId, acre, selectable) {
-        const grid = document.getElementById(gridId);
-        const list =
-          acre === "all" ? LOTS : LOTS.filter((l) => l.acres === acre);
+      function buildStatusPills(el, onChange) {
+        el.innerHTML = "";
+        ["all", ...STATUSES].forEach((s, i) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "pill" + (i === 0 ? " on" : "");
+          b.dataset.v = s;
+          b.textContent = s === "all" ? "All status" : s;
+          el.appendChild(b);
+        });
+        el.querySelectorAll(".pill").forEach((p) => {
+          p.addEventListener("click", () => {
+            el.querySelectorAll(".pill").forEach((x) => x.classList.remove("on"));
+            p.classList.add("on");
+            onChange(p.dataset.v);
+          });
+        });
+      }
+
+      /* ---------- A ---------- */
+      let aAcre = "all",
+        aStatus = "all",
+        aSel = null;
+
+      function renderA() {
+        const iso = document.getElementById("a-iso");
+        iso.innerHTML = "";
+        LOTS.forEach((lot) => {
+          const matchAcre = aAcre === "all" || lot.acres === aAcre;
+          const matchSt = aStatus === "all" || lot.status === aStatus;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className =
+            "parcel" +
+            (lot.status === "occupied" || lot.status === "maintenance"
+              ? " busy"
+              : "") +
+            (!matchAcre || !matchSt ? " dim" : "") +
+            (aSel === lot.id ? " sel" : "");
+          btn.style.background = ACRE_COLOR[lot.acres];
+          btn.style.gridColumn = Number(lot.acres) >= 4 ? "span 2" : "span 1";
+          btn.innerHTML = `${lot.id}<small>${lot.acres} ac · ${lot.status}</small>`;
+          btn.addEventListener("click", () => {
+            if (!matchAcre || !matchSt) return;
+            aSel = lot.id;
+            const dock = document.getElementById("a-dock");
+            dock.classList.add("show");
+            document.getElementById("a-title").textContent =
+              lot.id + " · " + lot.acres + " acre";
+            document.getElementById("a-meta").textContent =
+              lot.status + " · " + money(lot.rate) + " · Tenant: " + lot.tenant;
+            renderA();
+          });
+          iso.appendChild(btn);
+        });
+      }
+
+      buildAcrePills(document.getElementById("a-acre"), (v) => {
+        aAcre = v;
+        renderA();
+      });
+      buildStatusPills(document.getElementById("a-status"), (v) => {
+        aStatus = v;
+        renderA();
+      });
+      document.getElementById("a-clear").onclick = () => {
+        aSel = null;
+        document.getElementById("a-dock").classList.remove("show");
+        renderA();
+      };
+      renderA();
+
+      /* ---------- B ---------- */
+      let bAcre = "all";
+
+      function renderB() {
+        const grid = document.getElementById("b-grid");
         grid.innerHTML = "";
+        const list =
+          bAcre === "all" ? LOTS : LOTS.filter((l) => l.acres === bAcre);
         list.forEach((lot) => {
           const cell = document.createElement("button");
           cell.type = "button";
-          cell.className = "cell";
+          cell.className = "b-cell";
           const span =
             Number(lot.acres) >= 5
               ? 4
@@ -969,116 +1084,159 @@
                 : Number(lot.acres) >= 2
                   ? 2
                   : 1;
-          cell.style.gridColumn = `span ${span}`;
-          cell.style.background = colorFor(lot.acres);
-          cell.style.opacity = lot.status === "occupied" ? "0.55" : "1";
-          cell.textContent = `${lot.id} · ${lot.acres}ac`;
-          if (selectable) {
-            cell.addEventListener("click", () => {
-              grid.querySelectorAll(".cell").forEach((c) => c.classList.remove("sel"));
-              cell.classList.add("sel");
-              document.getElementById("b-title").textContent = `${lot.id}`;
-              document.getElementById("b-meta").textContent =
-                "E Elwood St · Phoenix";
-              document.getElementById("b-acre").textContent = lot.acres + " acre";
-              document.getElementById("b-status").textContent = lot.status;
-              document.getElementById("b-rate").textContent =
-                "$" + lot.rate.toLocaleString() + " / mo";
-            });
-          }
+          cell.style.gridColumn = "span " + span;
+          cell.style.background = ACRE_COLOR[lot.acres];
+          cell.style.opacity = lot.status === "available" ? "1" : "0.55";
+          cell.textContent = lot.id + " · " + lot.acres;
+          cell.addEventListener("click", () => {
+            document.getElementById("b-mtitle").textContent = "Lot " + lot.id;
+            document.getElementById("b-macre").textContent = lot.acres + " acre";
+            document.getElementById("b-mstatus").textContent = lot.status;
+            document.getElementById("b-mrate").textContent = money(lot.rate);
+            document.getElementById("b-mtenant").textContent = lot.tenant;
+            document.getElementById("b-modal").classList.add("show");
+          });
           grid.appendChild(cell);
         });
       }
 
-      function renderCards(acre) {
-        const wrap = document.getElementById("cards-d");
-        const list =
-          acre === "all" ? LOTS : LOTS.filter((l) => l.acres === acre);
-        wrap.innerHTML = list
-          .map((lot) => {
-            const st =
-              lot.status === "available"
-                ? "open"
-                : lot.status === "reserved"
-                  ? "hold"
-                  : "busy";
-            return `<div class="card" style="border-top-color:${colorFor(lot.acres)}">
-              <div class="id">${lot.id}</div>
-              <div class="sub">${lot.acres} acre · $${lot.rate.toLocaleString()}/mo</div>
-              <span class="status ${st}">${lot.status}</span>
-            </div>`;
-          })
-          .join("");
-      }
-
-      function renderStrip() {
-        const strip = document.getElementById("strip-d");
-        strip.innerHTML = "";
-        ACRES.forEach((a, i) => {
-          const count =
-            a.id === "all"
-              ? LOTS.length
-              : LOTS.filter((l) => l.acres === a.id).length;
-          const chip = document.createElement("button");
-          chip.type = "button";
-          chip.className = "acre-btn" + (i === 0 ? " on" : "");
-          chip.innerHTML = `<b>${a.id === "all" ? "All" : a.label + " ac"}</b><span>${count} lots</span>`;
-          chip.addEventListener("click", () => {
-            strip.querySelectorAll(".acre-btn").forEach((c) => c.classList.remove("on"));
-            chip.classList.add("on");
-            renderCards(a.id);
-          });
-          strip.appendChild(chip);
-        });
-      }
-
-      document.querySelectorAll("[data-filters]").forEach((el) => {
-        const key = el.getAttribute("data-filters");
-        buildFilterBar(el, (acre) => {
-          if (key === "b") renderGrid("grid-b", acre, true);
-          if (key === "c") renderGrid("grid-c", acre, false);
-        });
+      buildAcrePills(document.getElementById("b-acre"), (v) => {
+        bAcre = v;
+        renderB();
       });
+      document.getElementById("b-close").onclick = () =>
+        document.getElementById("b-modal").classList.remove("show");
+      document.getElementById("b-modal").addEventListener("click", (e) => {
+        if (e.target.id === "b-modal")
+          document.getElementById("b-modal").classList.remove("show");
+      });
+      renderB();
 
-      renderGrid("grid-b", "all", true);
-      renderGrid("grid-c", "all", false);
-      renderStrip();
-      renderCards("all");
+      /* ---------- C ---------- */
+      function renderC() {
+        const yard = document.getElementById("c-yard").value;
+        const st = document.getElementById("c-status").value;
+        const acre = document.getElementById("c-acre").value;
+        const tbody = document.getElementById("c-tbody");
+        tbody.innerHTML = "";
+        LOTS.filter((l) => {
+          if (yard !== "all" && l.yard !== yard) return false;
+          if (st !== "all" && l.status !== st) return false;
+          if (acre !== "all" && l.acres !== acre) return false;
+          return true;
+        }).forEach((lot) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td><strong>${lot.id}</strong></td>
+            <td>${lot.acres}</td>
+            <td><span class="badge ${lot.status}">${lot.status}</span></td>
+            <td>${money(lot.rate)}</td>
+            <td>${lot.tenant}</td>`;
+          tr.addEventListener("click", () => {
+            tbody.querySelectorAll("tr").forEach((r) => r.classList.remove("on"));
+            tr.classList.add("on");
+            const drawer = document.getElementById("c-drawer");
+            drawer.innerHTML = `
+              <h4>Edit ${lot.id}</h4>
+              <p style="margin:0;color:var(--muted);font-size:0.85rem">${lot.acres} acre parcel</p>
+              <label>Status</label>
+              <select id="c-ed-status">
+                ${STATUSES.map(
+                  (s) =>
+                    `<option value="${s}" ${s === lot.status ? "selected" : ""}>${s}</option>`,
+                ).join("")}
+              </select>
+              <label>Monthly rate</label>
+              <input type="number" value="${lot.rate}" />
+              <label>Assigned tenant</label>
+              <select>
+                <option>${lot.tenant === "—" ? "Unassigned" : lot.tenant}</option>
+                <option>Valley Haul</option>
+                <option>Desert Fleet</option>
+                <option>AZ Logistics</option>
+              </select>
+              <div class="a-actions" style="margin-top:0.9rem">
+                <button type="button" class="btn pri">Save</button>
+                <button type="button" class="btn ghost">Cancel</button>
+              </div>`;
+          });
+          tbody.appendChild(tr);
+        });
+      }
 
-      const picked = document.getElementById("picked");
+      ["c-yard", "c-status", "c-acre"].forEach((id) => {
+        document.getElementById(id).addEventListener("change", renderC);
+      });
+      renderC();
+
+      /* ---------- D ---------- */
+      let dStatus = "all";
+
+      function renderD() {
+        const board = document.getElementById("d-board");
+        board.innerHTML = "";
+        ACRES.forEach((acre) => {
+          const lots = LOTS.filter(
+            (l) =>
+              l.acres === acre &&
+              (dStatus === "all" || l.status === dStatus),
+          );
+          const col = document.createElement("div");
+          col.className = "col";
+          col.innerHTML = `<div class="col-h" style="border-top-color:${ACRE_COLOR[acre]}">${acre} acre<small>${lots.length} lots</small></div>`;
+          const body = document.createElement("div");
+          body.className = "col-b";
+          lots.forEach((lot) => {
+            const card = document.createElement("button");
+            card.type = "button";
+            card.className = "d-card";
+            card.innerHTML = `<b>${lot.id}</b>${lot.status}<br/>${money(lot.rate)}`;
+            card.addEventListener("click", () => {
+              alert(
+                lot.id +
+                  " · " +
+                  lot.acres +
+                  " acre · " +
+                  lot.status +
+                  " · " +
+                  money(lot.rate),
+              );
+            });
+            body.appendChild(card);
+          });
+          if (!lots.length) {
+            body.innerHTML =
+              '<p style="margin:0;color:#94a3b8;font-size:0.75rem;padding:0.25rem">None</p>';
+          }
+          col.appendChild(body);
+          board.appendChild(col);
+        });
+      }
+
+      buildStatusPills(document.getElementById("d-status"), (v) => {
+        dStatus = v;
+        renderD();
+      });
+      renderD();
+
+      /* Pick */
       const names = {
-        A: "Option A — Isometric yard map",
-        B: "Option B — Flat site plan",
-        C: "Option C — Map + detail panel",
-        D: "Option D — Acre cards",
+        A: "A — Interactive isometric yard",
+        B: "B — Full map + modal",
+        C: "C — Ops workbench (table + drawer)",
+        D: "D — Acre columns",
       };
-
       document.querySelectorAll("[data-pick]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const val = btn.getAttribute("data-pick");
+          const v = btn.getAttribute("data-pick");
           document.querySelectorAll("[data-pick]").forEach((b) => {
             b.classList.toggle("selected", b === btn);
-            if (b.hasAttribute("data-pick") && !b.classList.contains("secondary")) {
-              b.textContent =
-                b === btn ? "Selected ✓" : "Choose " + b.getAttribute("data-pick");
-            }
+            b.textContent = b === btn ? "Selected ✓" : "Choose " + b.dataset.pick;
           });
-          picked.classList.add("show");
-          picked.textContent =
-            "Selected: " +
-            names[val] +
-            ". Reply with “" +
-            val +
-            "” and we’ll implement it.";
-          picked.scrollIntoView({ behavior: "smooth", block: "center" });
-        });
-      });
-
-      document.querySelectorAll("[data-jump]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          document
-            .getElementById(btn.getAttribute("data-jump"))
-            .scrollIntoView({ behavior: "smooth", block: "start" });
+          const el = document.getElementById("picked");
+          el.classList.add("show");
+          el.textContent =
+            "Selected: " + names[v] + ". Reply with “" + v + "” to build it.";
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
         });
       });
     </script>
