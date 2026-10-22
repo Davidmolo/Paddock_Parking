@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Paddock Parking — Lots UI options for review</title>
+    <meta
+      name="description"
+      content="Four professional lot map UI directions for Paddock Parking. Acre sizes 0.25 through 5. Pick one to build."
+    />
+    <style>
+      :root {
+        --ink: #0c1222;
+        --muted: #5b6578;
+        --line: #e6eaf0;
+        --paper: #ffffff;
+        --canvas: #f4f6f9;
+        --brand: #0f766e;
+        --brand-ink: #0b3d3a;
+        --brand-soft: #e6f5f3;
+        --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+        --radius: 18px;
+        --a025: #7c3aed;
+        --a05: #0d9488;
+        --a1: #2563eb;
+        --a2: #0284c7;
+        --a3: #16a34a;
+        --a4: #ca8a04;
+        --a5: #ea580c;
+        --taken: #64748b;
+        --park: #f97316;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        color: var(--ink);
+        background: var(--canvas);
+        line-height: 1.5;
+      }
+
+      a {
+        color: var(--brand);
+      }
+
+      .top {
+        background: linear-gradient(180deg, #0b3d3a 0%, #0f766e 100%);
+        color: #ecfeff;
+        padding: 2.25rem 1.25rem 2rem;
+      }
+
+      .top-inner {
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+
+      .eyebrow {
+        margin: 0 0 0.5rem;
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        opacity: 0.8;
+      }
+
+      .top h1 {
+        margin: 0;
+        font-size: clamp(1.6rem, 3vw, 2.35rem);
+        letter-spacing: -0.03em;
+        font-weight: 700;
+        max-width: 18ch;
+      }
+
+      .top .lead {
+        margin: 0.85rem 0 0;
+        max-width: 52ch;
+        color: rgba(236, 254, 255, 0.88);
+        font-size: 1.05rem;
+      }
+
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1.25rem;
+      }
+
+      .badge {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+      }
+
+      .wrap {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem 3rem;
+      }
+
+      .note {
+        margin: -1.5rem auto 1.5rem;
+        max-width: 1080px;
+        padding: 0 1.25rem;
+      }
+
+      .note-card {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 1.1rem 1.25rem;
+      }
+
+      .note-card strong {
+        display: block;
+        margin-bottom: 0.25rem;
+      }
+
+      .note-card p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .acres {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.85rem;
+      }
+
+      .acre-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--canvas);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.8rem;
+        font-weight: 650;
+      }
+
+      .dot {
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 50%;
+      }
+
+      .options {
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      .option {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: calc(var(--radius) + 4px);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .option-head {
+        display: grid;
+        gap: 0.75rem;
+        padding: 1.25rem 1.25rem 1rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      @media (min-width: 760px) {
+        .option-head {
+          grid-template-columns: 1fr auto;
+          align-items: start;
+        }
+      }
+
+      .opt-kicker {
+        margin: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--brand);
+        font-weight: 700;
+      }
+
+      .option h2 {
+        margin: 0.2rem 0 0;
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+      }
+
+      .option .desc {
+        margin: 0.45rem 0 0;
+        color: var(--muted);
+        max-width: 60ch;
+      }
+
+      .pros {
+        margin: 0.65rem 0 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+
+      .pros li {
+        background: var(--brand-soft);
+        color: var(--brand-ink);
+        border-radius: 999px;
+        padding: 0.28rem 0.65rem;
+        font-size: 0.78rem;
+        font-weight: 650;
+      }
+
+      .choose {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: stretch;
+      }
+
+      .choose button {
+        appearance: none;
+        border: 1px solid var(--brand);
+        background: var(--brand);
+        color: #fff;
+        border-radius: 12px;
+        padding: 0.7rem 1rem;
+        font-weight: 700;
+        font-size: 0.92rem;
+        cursor: pointer;
+      }
+
+      .choose button.secondary {
+        background: #fff;
+        color: var(--brand);
+      }
+
+      .choose button.selected {
+        background: var(--brand-ink);
+        border-color: var(--brand-ink);
+      }
+
+      .mock {
+        background: #eef2f6;
+        padding: 1rem;
+      }
+
+      .device {
+        background: #fff;
+        border: 1px solid #dbe1ea;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      }
+
+      .device-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.75rem 0.9rem;
+        border-bottom: 1px solid var(--line);
+        background: #fbfcfd;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 999px;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.75rem;
+        font-weight: 650;
+        color: #334155;
+        cursor: pointer;
+      }
+
+      .pill.on {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: #fff;
+      }
+
+      .loc {
+        margin-left: auto;
+        font-size: 0.72rem;
+        color: #94a3b8;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-weight: 650;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        padding: 0.55rem 0.9rem;
+        border-bottom: 1px solid var(--line);
+        background: #fff;
+        font-size: 0.72rem;
+        color: var(--muted);
+      }
+
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .sw {
+        width: 0.65rem;
+        height: 0.65rem;
+        border-radius: 3px;
+      }
+
+      /* A isometric */
+      .iso-wrap {
+        padding: 1.5rem 1rem 2rem;
+        background: linear-gradient(180deg, #f8fafc, #e2e8f0);
+        min-height: 340px;
+      }
+
+      .iso {
+        width: min(100%, 760px);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1.15fr 0.95fr 0.85fr 1fr 0.9fr;
+        gap: 0.4rem;
+        transform: rotateX(52deg) rotateZ(-26deg);
+        transform-style: preserve-3d;
+        perspective: 1000px;
+      }
+
+      .blk {
+        min-height: 70px;
+        border-radius: 8px;
+        padding: 0.55rem 0.6rem;
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        box-shadow: 0 10px 0 rgba(15, 23, 42, 0.12);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+      }
+
+      .blk small {
+        font-weight: 500;
+        opacity: 0.92;
+      }
+
+      /* B / C plan */
+      .split {
+        display: grid;
+        grid-template-columns: 1.35fr 0.9fr;
+        min-height: 360px;
+      }
+
+      @media (max-width: 800px) {
+        .split {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .plan {
+        padding: 0.9rem;
+        background: #e8f0fe;
+      }
+
+      .plan.c {
+        background: #e7f7f3;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 6px;
+        grid-auto-rows: 46px;
+      }
+
+      .cell {
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.62rem;
+        font-weight: 700;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        padding: 0.2rem;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: transform 0.12s ease;
+      }
+
+      .cell:hover {
+        transform: translateY(-1px);
+      }
+
+      .cell.sel {
+        border-color: #0f172a;
+      }
+
+      .side {
+        padding: 1.1rem 1.15rem;
+        background: #fff;
+        border-left: 1px solid var(--line);
+      }
+
+      @media (max-width: 800px) {
+        .side {
+          border-left: none;
+          border-top: 1px solid var(--line);
+        }
+      }
+
+      .side h3 {
+        margin: 0;
+        font-size: 1.05rem;
+      }
+
+      .side .meta {
+        margin: 0.35rem 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .kv {
+        margin-top: 0.9rem;
+        display: grid;
+        gap: 0.45rem;
+      }
+
+      .kv div {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+        padding: 0.45rem 0;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .kv span {
+        color: var(--muted);
+      }
+
+      .kv b {
+        font-weight: 700;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 1rem;
+      }
+
+      .actions button {
+        border: none;
+        border-radius: 10px;
+        padding: 0.55rem 0.85rem;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+
+      .actions .primary {
+        background: var(--brand);
+        color: #fff;
+      }
+
+      .actions .ghost {
+        background: #f1f5f9;
+        color: #334155;
+      }
+
+      /* D cards */
+      .strip {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding: 0.85rem;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .acre-btn {
+        flex: 0 0 auto;
+        min-width: 92px;
+        border: 1px solid var(--line);
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 0.6rem 0.75rem;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .acre-btn.on {
+        border-color: var(--brand);
+        background: var(--brand-soft);
+        box-shadow: inset 0 0 0 1px var(--brand);
+      }
+
+      .acre-btn b {
+        display: block;
+        font-size: 0.95rem;
+      }
+
+      .acre-btn span {
+        font-size: 0.72rem;
+        color: var(--muted);
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.7rem;
+        padding: 0.9rem;
+        background: #f8fafc;
+      }
+
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 0.85rem;
+        border-top-width: 3px;
+      }
+
+      .card .id {
+        font-weight: 750;
+        font-size: 1.05rem;
+      }
+
+      .card .sub {
+        color: var(--muted);
+        font-size: 0.82rem;
+        margin-top: 0.15rem;
+      }
+
+      .status {
+        display: inline-block;
+        margin-top: 0.55rem;
+        font-size: 0.68rem;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
+      }
+
+      .status.open {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .status.busy {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .status.hold {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .decision {
+        margin-top: 1.75rem;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 1.35rem 1.25rem;
+      }
+
+      .decision h2 {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+
+      .decision p {
+        margin: 0.4rem 0 0;
+        color: var(--muted);
+      }
+
+      .picked {
+        margin-top: 1rem;
+        padding: 0.9rem 1rem;
+        border-radius: 12px;
+        background: var(--brand-soft);
+        color: var(--brand-ink);
+        font-weight: 700;
+        display: none;
+      }
+
+      .picked.show {
+        display: block;
+      }
+
+      footer {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 1.25rem 2.5rem;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <div class="top-inner">
+        <p class="eyebrow">Paddock Parking · Design review</p>
+        <h1>Lots UI — which direction should we build?</h1>
+        <p class="lead">
+          Four professional options for the yard lot map. All support acre sizes
+          <strong>0.25, 0.5, 1, 2, 3, 4, and 5</strong>. Tap an option, preview
+          the mock, then choose one at the bottom — we’ll implement that in the
+          ops app.
+        </p>
+        <div class="badges">
+          <span class="badge">For David Molo</span>
+          <span class="badge">Ops staff UI</span>
+          <span class="badge">Replace current Lots screen</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="note">
+      <div class="note-card">
+        <strong>Acre sizes in every option</strong>
+        <p>
+          Color coding is consistent across all four designs so staff can scan
+          inventory quickly.
+        </p>
+        <div class="acres" id="acreLegend"></div>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="options">
+        <!-- A -->
+        <article class="option" id="opt-a">
+          <div class="option-head">
+            <div>
+              <p class="opt-kicker">Option A · Recommended if you liked your sketch</p>
+              <h2>Isometric yard map</h2>
+              <p class="desc">
+                Closest to the visual you shared: a 3D-style yard with color
+                blocks by acre size, parking lanes, and taken parcels. Filter
+                pills across the top for each acre size.
+              </p>
+              <ul class="pros">
+                <li>Most visual / sales-friendly</li>
+                <li>Matches your reference</li>
+                <li>Great for showing clients the yard</li>
+              </ul>
+            </div>
+            <div class="choose">
+              <button type="button" data-pick="A">Choose A</button>
+              <button type="button" class="secondary" data-jump="opt-a">
+                Preview
+              </button>
+            </div>
+          </div>
+          <div class="mock">
+            <div class="device">
+              <div class="device-bar" data-filters="a"></div>
+              <div class="legend" data-legend></div>
+              <div class="iso-wrap">
+                <div class="iso">
+                  <div class="blk" style="background: var(--taken); min-height: 150px">
+                    Taken<br /><small>2 acres leased</small>
+                  </div>
+                  <div class="blk" style="background: var(--a1)">
+                    LOT 1<br /><small>1 acre · open</small>
+                  </div>
+                  <div class="blk" style="background: var(--a05)">
+                    LOT 4<br /><small>0.5 acre</small>
+                  </div>
+                  <div class="blk" style="background: var(--a2)">
+                    LOT 9<br /><small>2 acres</small>
+                  </div>
+                  <div class="blk" style="background: var(--a025)">
+                    LOT 12<br /><small>0.25 acre</small>
+                  </div>
+                  <div class="blk" style="background: var(--a1)">
+                    LOT 2<br /><small>1 acre</small>
+                  </div>
+                  <div class="blk" style="background: var(--a05)">
+                    LOT 5<br /><small>0.5 acre</small>
+                  </div>
+                  <div class="blk" style="background: var(--park); min-height: 120px">
+                    Driveway<br /><small>Parking stalls</small>
+                  </div>
+                  <div class="blk" style="background: var(--a3)">
+                    LOT 10<br /><small>3 acres</small>
+                  </div>
+                  <div class="blk" style="background: var(--a1)">
+                    LOT 3<br /><small>1 acre · leased</small>
+                  </div>
+                  <div class="blk" style="background: var(--a05)">
+                    LOT 6<br /><small>0.5 acre</small>
+                  </div>
+                  <div class="blk" style="background: var(--a4)">
+                    LOT 11<br /><small>4 acres</small>
+                  </div>
+                  <div class="blk" style="background: var(--a5)">
+                    LOT 13<br /><small>5 acres</small>
+                  </div>
+                  <div class="blk" style="background: var(--a05)">
+                    LOT 7<br /><small>0.5 acre</small>
+                  </div>
+                  <div class="blk" style="background: var(--a05)">
+                    LOT 8<br /><small>0.5 acre</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- B -->
+        <article class="option" id="opt-b">
+          <div class="option-head">
+            <div>
+              <p class="opt-kicker">Option B · Clearest on phone & laptop</p>
+              <h2>Flat site plan</h2>
+              <p class="desc">
+                Top-down parcels (like modern self-storage / truck-yard maps).
+                Click a lot → details appear on the right. Easier to scale to
+                real yard drawings later.
+              </p>
+              <ul class="pros">
+                <li>Best readability</li>
+                <li>Mobile-friendly</li>
+                <li>Easy to sync with real CAD later</li>
+              </ul>
+            </div>
+            <div class="choose">
+              <button type="button" data-pick="B">Choose B</button>
+              <button type="button" class="secondary" data-jump="opt-b">
+                Preview
+              </button>
+            </div>
+          </div>
+          <div class="mock">
+            <div class="device">
+              <div class="device-bar" data-filters="b"></div>
+              <div class="split">
+                <div class="plan">
+                  <div class="grid" id="grid-b"></div>
+                </div>
+                <div class="side">
+                  <h3 id="b-title">Select a lot</h3>
+                  <p class="meta" id="b-meta">Tap any parcel on the plan.</p>
+                  <div class="kv">
+                    <div><span>Acre size</span><b id="b-acre">—</b></div>
+                    <div><span>Status</span><b id="b-status">—</b></div>
+                    <div><span>Monthly rate</span><b id="b-rate">—</b></div>
+                  </div>
+                  <div class="actions">
+                    <button type="button" class="primary">Edit lot</button>
+                    <button type="button" class="ghost">Assign tenant</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- C -->
+        <article class="option" id="opt-c">
+          <div class="option-head">
+            <div>
+              <p class="opt-kicker">Option C · Best for daily ops staff</p>
+              <h2>Map + detail panel</h2>
+              <p class="desc">
+                Simplified yard on the left; rate, tenant, status, and actions
+                always visible on the right. Built for people who change status
+                and price all day — not just for looking pretty.
+              </p>
+              <ul class="pros">
+                <li>Fastest for staff</li>
+                <li>Actions always in view</li>
+                <li>Same acre filters</li>
+              </ul>
+            </div>
+            <div class="choose">
+              <button type="button" data-pick="C">Choose C</button>
+              <button type="button" class="secondary" data-jump="opt-c">
+                Preview
+              </button>
+            </div>
+          </div>
+          <div class="mock">
+            <div class="device">
+              <div class="device-bar" data-filters="c"></div>
+              <div class="split">
+                <div class="plan c">
+                  <div class="grid" id="grid-c"></div>
+                </div>
+                <div class="side">
+                  <h3>LOT 4 · 0.5 acre</h3>
+                  <p class="meta">E Elwood St · Phoenix</p>
+                  <div class="kv">
+                    <div><span>Status</span><b style="color: #166534">Available</b></div>
+                    <div><span>Rate</span><b>$1,850 / mo</b></div>
+                    <div><span>Tenant</span><b>—</b></div>
+                    <div><span>Type</span><b>Acre parcel</b></div>
+                  </div>
+                  <div class="actions">
+                    <button type="button" class="primary">Assign tenant</button>
+                    <button type="button" class="ghost">Change rate</button>
+                    <button type="button" class="ghost">Mark maintenance</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- D -->
+        <article class="option" id="opt-d">
+          <div class="option-head">
+            <div>
+              <p class="opt-kicker">Option D · Fastest inventory board</p>
+              <h2>Acre filter strip + lot cards</h2>
+              <p class="desc">
+                Pick an acre size first, then work a clean card list. Less map
+                drama, more speed when you have dozens of parcels across yards.
+              </p>
+              <ul class="pros">
+                <li>Fastest scanning</li>
+                <li>Scales to many lots</li>
+                <li>Can add a mini-map later</li>
+              </ul>
+            </div>
+            <div class="choose">
+              <button type="button" data-pick="D">Choose D</button>
+              <button type="button" class="secondary" data-jump="opt-d">
+                Preview
+              </button>
+            </div>
+          </div>
+          <div class="mock">
+            <div class="device">
+              <div class="strip" id="strip-d"></div>
+              <div class="cards" id="cards-d"></div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <section class="decision">
+        <h2>Your pick</h2>
+        <p>
+          Reply with <strong>A, B, C, or D</strong> (or tap Choose above). We’ll
+          build that Lots screen next in the Paddock Parking ops app.
+        </p>
+        <div class="picked" id="picked">No option selected yet.</div>
+      </section>
+    </div>
+
+    <footer>
+      Paddock Parking Ops · Design review for David · Acre inventory UI options
+    </footer>
+
+    <script>
+      const ACRES = [
+        { id: "all", label: "All", color: "#0c1222" },
+        { id: "0.25", label: "0.25", color: "#7c3aed" },
+        { id: "0.5", label: "0.5", color: "#0d9488" },
+        { id: "1", label: "1", color: "#2563eb" },
+        { id: "2", label: "2", color: "#0284c7" },
+        { id: "3", label: "3", color: "#16a34a" },
+        { id: "4", label: "4", color: "#ca8a04" },
+        { id: "5", label: "5", color: "#ea580c" },
+      ];
+
+      const LOTS = [
+        { id: "L1", acres: "1", status: "available", rate: 2200 },
+        { id: "L2", acres: "1", status: "occupied", rate: 2200 },
+        { id: "L3", acres: "0.5", status: "available", rate: 1850 },
+        { id: "L4", acres: "0.5", status: "available", rate: 1850 },
+        { id: "L5", acres: "0.25", status: "reserved", rate: 950 },
+        { id: "L6", acres: "2", status: "available", rate: 3800 },
+        { id: "L7", acres: "3", status: "occupied", rate: 5200 },
+        { id: "L8", acres: "4", status: "available", rate: 6400 },
+        { id: "L9", acres: "5", status: "available", rate: 7800 },
+        { id: "L10", acres: "0.25", status: "available", rate: 950 },
+        { id: "L11", acres: "2", status: "occupied", rate: 3800 },
+        { id: "L12", acres: "1", status: "available", rate: 2200 },
+      ];
+
+      const colorFor = (a) =>
+        ({
+          "0.25": "#7c3aed",
+          "0.5": "#0d9488",
+          "1": "#2563eb",
+          "2": "#0284c7",
+          "3": "#16a34a",
+          "4": "#ca8a04",
+          "5": "#ea580c",
+        })[a] || "#64748b";
+
+      document.getElementById("acreLegend").innerHTML = ACRES.slice(1)
+        .map(
+          (a) =>
+            `<span class="acre-chip"><i class="dot" style="background:${a.color}"></i>${a.label} acre</span>`,
+        )
+        .join("");
+
+      document.querySelectorAll("[data-legend]").forEach((el) => {
+        el.innerHTML = ACRES.slice(1)
+          .map(
+            (a) =>
+              `<span><i class="sw" style="background:${a.color}"></i>${a.label} ac</span>`,
+          )
+          .join("");
+      });
+
+      function buildFilterBar(el, onChange) {
+        el.innerHTML = "";
+        ACRES.forEach((a, i) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "pill" + (i === 0 ? " on" : "");
+          b.innerHTML =
+            a.id === "all"
+              ? "All"
+              : `<span class="dot" style="background:${a.color};display:inline-block;margin-right:0.3rem;vertical-align:middle"></span>${a.label}`;
+          b.addEventListener("click", () => {
+            el.querySelectorAll(".pill").forEach((p) => p.classList.remove("on"));
+            b.classList.add("on");
+            onChange(a.id);
+          });
+          el.appendChild(b);
+        });
+        const loc = document.createElement("span");
+        loc.className = "loc";
+        loc.textContent = "E Elwood St · Phoenix";
+        el.appendChild(loc);
+      }
+
+      function renderGrid(gridId, acre, selectable) {
+        const grid = document.getElementById(gridId);
+        const list =
+          acre === "all" ? LOTS : LOTS.filter((l) => l.acres === acre);
+        grid.innerHTML = "";
+        list.forEach((lot) => {
+          const cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = "cell";
+          const span =
+            Number(lot.acres) >= 5
+              ? 4
+              : Number(lot.acres) >= 3
+                ? 3
+                : Number(lot.acres) >= 2
+                  ? 2
+                  : 1;
+          cell.style.gridColumn = `span ${span}`;
+          cell.style.background = colorFor(lot.acres);
+          cell.style.opacity = lot.status === "occupied" ? "0.55" : "1";
+          cell.textContent = `${lot.id} · ${lot.acres}ac`;
+          if (selectable) {
+            cell.addEventListener("click", () => {
+              grid.querySelectorAll(".cell").forEach((c) => c.classList.remove("sel"));
+              cell.classList.add("sel");
+              document.getElementById("b-title").textContent = `${lot.id}`;
+              document.getElementById("b-meta").textContent =
+                "E Elwood St · Phoenix";
+              document.getElementById("b-acre").textContent = lot.acres + " acre";
+              document.getElementById("b-status").textContent = lot.status;
+              document.getElementById("b-rate").textContent =
+                "$" + lot.rate.toLocaleString() + " / mo";
+            });
+          }
+          grid.appendChild(cell);
+        });
+      }
+
+      function renderCards(acre) {
+        const wrap = document.getElementById("cards-d");
+        const list =
+          acre === "all" ? LOTS : LOTS.filter((l) => l.acres === acre);
+        wrap.innerHTML = list
+          .map((lot) => {
+            const st =
+              lot.status === "available"
+                ? "open"
+                : lot.status === "reserved"
+                  ? "hold"
+                  : "busy";
+            return `<div class="card" style="border-top-color:${colorFor(lot.acres)}">
+              <div class="id">${lot.id}</div>
+              <div class="sub">${lot.acres} acre · $${lot.rate.toLocaleString()}/mo</div>
+              <span class="status ${st}">${lot.status}</span>
+            </div>`;
+          })
+          .join("");
+      }
+
+      function renderStrip() {
+        const strip = document.getElementById("strip-d");
+        strip.innerHTML = "";
+        ACRES.forEach((a, i) => {
+          const count =
+            a.id === "all"
+              ? LOTS.length
+              : LOTS.filter((l) => l.acres === a.id).length;
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "acre-btn" + (i === 0 ? " on" : "");
+          chip.innerHTML = `<b>${a.id === "all" ? "All" : a.label + " ac"}</b><span>${count} lots</span>`;
+          chip.addEventListener("click", () => {
+            strip.querySelectorAll(".acre-btn").forEach((c) => c.classList.remove("on"));
+            chip.classList.add("on");
+            renderCards(a.id);
+          });
+          strip.appendChild(chip);
+        });
+      }
+
+      document.querySelectorAll("[data-filters]").forEach((el) => {
+        const key = el.getAttribute("data-filters");
+        buildFilterBar(el, (acre) => {
+          if (key === "b") renderGrid("grid-b", acre, true);
+          if (key === "c") renderGrid("grid-c", acre, false);
+        });
+      });
+
+      renderGrid("grid-b", "all", true);
+      renderGrid("grid-c", "all", false);
+      renderStrip();
+      renderCards("all");
+
+      const picked = document.getElementById("picked");
+      const names = {
+        A: "Option A — Isometric yard map",
+        B: "Option B — Flat site plan",
+        C: "Option C — Map + detail panel",
+        D: "Option D — Acre cards",
+      };
+
+      document.querySelectorAll("[data-pick]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const val = btn.getAttribute("data-pick");
+          document.querySelectorAll("[data-pick]").forEach((b) => {
+            b.classList.toggle("selected", b === btn);
+            if (b.hasAttribute("data-pick") && !b.classList.contains("secondary")) {
+              b.textContent =
+                b === btn ? "Selected ✓" : "Choose " + b.getAttribute("data-pick");
+            }
+          });
+          picked.classList.add("show");
+          picked.textContent =
+            "Selected: " +
+            names[val] +
+            ". Reply with “" +
+            val +
+            "” and we’ll implement it.";
+          picked.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      });
+
+      document.querySelectorAll("[data-jump]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .getElementById(btn.getAttribute("data-jump"))
+            .scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    </script>
+  </body>
+</html>
