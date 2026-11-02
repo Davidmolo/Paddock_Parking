@@ -5,7 +5,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, FileText, ShieldCheck, CreditCard } from "lucide-react";
-import { ApiError, endpoints } from "@/lib/api";
+import { ApiError, endpoints, type LeaseStage } from "@/lib/api";
+import { LEASE_STAGES } from "@/lib/lease-stages";
 import { queryKeys } from "@/lib/prefetch";
 import { PageHeader } from "@/components/page-header";
 import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
@@ -31,6 +32,13 @@ const invoiceTone = {
   partial: "warning",
 } as const;
 
+function paidLabel(status: "current" | "past_due" | "notice", balance: number) {
+  if (status === "past_due") return "Past due";
+  if (status === "notice") return "On notice";
+  if (balance <= 0) return "Paid / current";
+  return "Current (balance open)";
+}
+
 export default function CustomerDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
@@ -39,6 +47,11 @@ export default function CustomerDetailPage() {
   const { data, isPending } = useQuery({
     queryKey: queryKeys.customer(id),
     queryFn: () => endpoints.customer(id),
+  });
+
+  const { data: plateQueue } = useQuery({
+    queryKey: ["compliance-queue"],
+    queryFn: () => endpoints.complianceQueue(),
   });
 
   const requiredEntity =
@@ -56,6 +69,9 @@ export default function CustomerDetailPage() {
   const [coiError, setCoiError] = useState("");
   const [uploadMsg, setUploadMsg] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [leaseStage, setLeaseStage] = useState<LeaseStage>("not_contacted");
+  const [notifyMsg, setNotifyMsg] = useState("");
+  const [notifyError, setNotifyError] = useState("");
 
   useEffect(() => {
     if (!data) return;
@@ -69,6 +85,7 @@ export default function CustomerDetailPage() {
         "",
     );
     setCoiNotes(data.certificate.notes ?? "");
+    setLeaseStage(data.lease?.stage ?? "not_contacted");
   }, [data]);
 
   const saveCoi = useMutation({
@@ -99,6 +116,65 @@ export default function CustomerDetailPage() {
       );
     },
   });
+
+  const saveLeaseStage = useMutation({
+    mutationFn: (stage: LeaseStage) => {
+      if (!data?.lease?.id) throw new Error("No lease");
+      return endpoints.patchLease(data.lease.id, { stage });
+    },
+    onSuccess: () => {
+      setNotifyMsg("Renewal status saved. Automation will not overwrite this.");
+      setNotifyError("");
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customer(id) });
+      void queryClient.invalidateQueries({ queryKey: ["leases"] });
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: (err) => {
+      setNotifyMsg("");
+      setNotifyError(
+        err instanceof ApiError ? err.message : "Could not update stage",
+      );
+    },
+  });
+
+  const runAutoCheck = useMutation({
+    mutationFn: () =>
+      endpoints.generateNotifications(data?.propertyId),
+    onSuccess: (res) => {
+      setNotifyMsg(
+        res.created > 0
+          ? `Auto-check queued ${res.created} notice(s) for ops / tenant.`
+          : "Auto-check ran — nothing new to queue (already notified or not due).",
+      );
+      setNotifyError("");
+      void queryClient.invalidateQueries({ queryKey: queryKeys.customer(id) });
+      void queryClient.invalidateQueries({ queryKey: ["leases"] });
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["notification-summary"],
+      });
+    },
+    onError: (err) => {
+      setNotifyMsg("");
+      setNotifyError(
+        err instanceof ApiError ? err.message : "Auto-check failed",
+      );
+    },
+  });
+
+  // Auto-run once when notice window is open (queue ops alert; stage stays manual after)
+  useEffect(() => {
+    if (!data?.lease?.noticeDue) return;
+    void endpoints
+      .generateNotifications(data.propertyId)
+      .then(() => {
+        void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        void queryClient.invalidateQueries({
+          queryKey: ["notification-summary"],
+        });
+      })
+      .catch(() => undefined);
+  }, [data?.lease?.id, data?.lease?.noticeDue, data?.propertyId, queryClient]);
 
   async function onUpload(
     file: File,
@@ -171,6 +247,221 @@ export default function CustomerDetailPage() {
           </div>
         }
       />
+
+      {/* Greta: one place — name, contact, monthly, paid, yard + lot, contract notify */}
+      <Card interactive={false} className="mb-5">
+        <CardHeader>
+          <h2 className="font-semibold">At a glance</h2>
+          <Badge tone={paymentTone[data.paymentStatus]}>
+            {paidLabel(data.paymentStatus, data.balanceDue)}
+          </Badge>
+        </CardHeader>
+        <CardBody className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Meta label="Name" value={data.name} />
+          <Meta
+            label="Contact"
+            value={`${data.contactName} · ${data.phone}`}
+          />
+          <Meta label="Email" value={data.email} />
+          <Meta
+            label="Monthly payment"
+            value={
+              data.lease
+                ? formatCurrency(data.lease.monthlyRent)
+                : data.lots.length
+                  ? formatCurrency(
+                      data.lots.reduce((s, l) => s + l.monthlyRate, 0),
+                    )
+                  : "—"
+            }
+          />
+          <Meta
+            label="Paid?"
+            value={paidLabel(data.paymentStatus, data.balanceDue)}
+          />
+          <Meta
+            label="Balance"
+            value={formatCurrency(data.balanceDue)}
+          />
+          <Meta
+            label="Yard"
+            value={data.property?.name ?? "—"}
+          />
+          <Meta
+            label="Lot number(s)"
+            value={
+              data.lots.map((l) => `#${l.number}`).join(", ") || "Unassigned"
+            }
+          />
+          <Meta
+            label="Contract"
+            value={
+              data.contractType === "fixed"
+                ? `Fixed${data.lease?.termMonths ? ` · ${data.lease.termMonths} mo` : ""}${data.lease?.endDate || data.leaseEnd ? ` · ends ${data.lease?.endDate ?? data.leaseEnd}` : ""}`
+                : "Month to month (runs until ended)"
+            }
+          />
+          <Meta label="Added" value={data.createdAt ?? "—"} />
+          <Meta
+            label="Notify-by (renewal)"
+            value={
+              data.lease?.notifyByDate
+                ? `${data.lease.notifyByDate}${data.lease.noticeDue ? " · DUE NOW" : ""}`
+                : data.lease?.renewalDate
+                  ? `Lead ${data.lease.notificationLeadDays}d before ${data.lease.renewalDate}`
+                  : "No renewal date set"
+            }
+          />
+          <div className="sm:col-span-2 lg:col-span-1">
+            <Link
+              href="/lots"
+              className="inline-flex text-sm font-medium text-[var(--accent-ink)] hover:underline"
+            >
+              Open yard map →
+            </Link>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card interactive={false} className="mb-5">
+        <CardHeader>
+          <h2 className="font-semibold">Access</h2>
+        </CardHeader>
+        <CardBody className="grid gap-3 sm:grid-cols-2">
+          <Meta label="Gate code" value={data.gateCode || "—"} />
+          <Meta
+            label="Lots / vehicles"
+            value={
+              data.lots.length
+                ? `${data.lots.length} lot${data.lots.length === 1 ? "" : "s"} · ${data.lots.map((l) => `#${l.number}`).join(", ")}`
+                : "Unassigned"
+            }
+          />
+          {(plateQueue ?? []).filter(
+            (p) =>
+              p.kind === "vehicle_plate" &&
+              p.email.toLowerCase() === data.email.toLowerCase(),
+          ).length > 0 && (
+            <div className="sm:col-span-2">
+              <p className="mb-1.5 text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
+                Plates owed
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(plateQueue ?? [])
+                  .filter(
+                    (p) =>
+                      p.kind === "vehicle_plate" &&
+                      p.email.toLowerCase() === data.email.toLowerCase(),
+                  )
+                  .map((p) => (
+                    <span
+                      key={`${p.bookingId}-${p.detail}`}
+                      className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900"
+                    >
+                      {p.detail}
+                    </span>
+                  ))}
+              </div>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      {data.lease && (
+        <Card interactive={false} className="mb-5 border-[#f5b301]/35 bg-[#fffbeb]/40">
+          <CardHeader>
+            <h2 className="font-semibold">Renewal follow-up</h2>
+            <Badge
+              tone={
+                data.lease.noticeDue
+                  ? "warning"
+                  : data.lease.urgency === "overdue"
+                    ? "danger"
+                    : "neutral"
+              }
+            >
+              {data.lease.noticeDue
+                ? "Action needed"
+                : data.lease.urgency === "overdue"
+                  ? "Past renewal"
+                  : "Tracking"}
+            </Badge>
+          </CardHeader>
+          <CardBody className="space-y-3">
+            <p className="text-sm text-[var(--muted)]">
+              {data.contractType === "fixed"
+                ? "Fixed term — notify before the contract end / renewal date."
+                : "Month-to-month runs until ended."}{" "}
+              <span className="font-medium text-[var(--ink)]">
+                Auto
+              </span>{" "}
+              queues an ops alert when notify-by hits; you still set renewal
+              status by hand after that. Notify-by:{" "}
+              <span className="font-medium text-[var(--ink)]">
+                {data.lease.notifyByDate ?? "—"}
+              </span>
+              {data.lease.renewalDate
+                ? ` · Renewal ${data.lease.renewalDate}`
+                : ""}
+              {data.lease.daysToRenewal != null
+                ? ` · ${data.lease.daysToRenewal}d to renewal`
+                : ""}
+            </p>
+            <ul className="grid gap-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-xs text-[var(--muted)] sm:grid-cols-2">
+              {LEASE_STAGES.map((s) => (
+                <li key={s.value}>
+                  <span className="font-medium text-[var(--ink)]">
+                    {s.label}
+                  </span>
+                  {" — "}
+                  {s.hint}
+                </li>
+              ))}
+            </ul>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="block min-w-[200px] space-y-1.5">
+                <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
+                  Renewal status
+                </span>
+                <select
+                  className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm outline-none focus:border-[var(--accent)]"
+                  value={leaseStage}
+                  onChange={(e) =>
+                    setLeaseStage(e.target.value as LeaseStage)
+                  }
+                >
+                  {LEASE_STAGES.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Button
+                size="sm"
+                disabled={saveLeaseStage.isPending}
+                onClick={() => saveLeaseStage.mutate(leaseStage)}
+              >
+                {saveLeaseStage.isPending ? "Saving…" : "Save status"}
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={runAutoCheck.isPending}
+                onClick={() => runAutoCheck.mutate()}
+              >
+                {runAutoCheck.isPending ? "Checking…" : "Run auto-check"}
+              </Button>
+            </div>
+            {notifyMsg && (
+              <p className="text-sm text-emerald-700">{notifyMsg}</p>
+            )}
+            {notifyError && (
+              <p className="text-sm text-rose-700">{notifyError}</p>
+            )}
+          </CardBody>
+        </Card>
+      )}
 
       <Stagger className="grid gap-5 lg:grid-cols-3">
         <StaggerItem className="space-y-5 lg:col-span-2">

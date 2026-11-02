@@ -4,12 +4,25 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, X, Building2, ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { NAV_ITEMS } from "@/lib/nav";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { NAV_GROUPS, NAV_ITEMS, type NavGroup } from "@/lib/nav";
 import { useApp } from "@/components/app-provider";
 import { ProfileMenu } from "@/components/profile-menu";
 import { cn } from "@/lib/utils";
 import { prefetchAllScreens, prefetchScreenData } from "@/lib/prefetch";
+
+function hrefPath(href: string) {
+  return href.split("?")[0];
+}
+
+function isNavActive(pathname: string, href: string) {
+  const path = hrefPath(href);
+  if (path === "/dashboard") return pathname === "/dashboard";
+  if (path === "/customers") {
+    return pathname === "/customers" || pathname.startsWith("/customers/");
+  }
+  return pathname === path || pathname.startsWith(`${path}/`);
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -20,11 +33,45 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [, startTransition] = useTransition();
   const warmed = useRef(false);
 
+  const defaultOpen = useMemo(() => {
+    const openLabels = new Set<string>();
+    for (const g of NAV_GROUPS) {
+      if (!g.expandable || !g.label) continue;
+      if (g.items.some((i) => isNavActive(pathname, i.href))) {
+        openLabels.add(g.label);
+      }
+    }
+    return openLabels;
+  }, [pathname]);
+
+  const [expanded, setExpanded] = useState<Set<string>>(defaultOpen);
+
+  useEffect(() => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      for (const label of defaultOpen) next.add(label);
+      return next;
+    });
+  }, [defaultOpen]);
+
+  /**
+   * Public (no admin auth):
+   * - Customer marketing website: /book/*
+   * - Customer portal: /portal
+   * - Admin login page: /login
+   */
+  const isPublic =
+    pathname === "/login" ||
+    pathname === "/portal" ||
+    pathname.startsWith("/portal/") ||
+    pathname === "/book" ||
+    pathname.startsWith("/book/");
+
   useEffect(() => {
     if (!ready) return;
-    if (!user && pathname !== "/login") router.replace("/login");
+    if (!user && !isPublic) router.replace("/login");
     if (user && pathname === "/login") router.replace("/dashboard");
-  }, [ready, user, pathname, router]);
+  }, [ready, user, pathname, router, isPublic]);
 
   useEffect(() => {
     setOpen(false);
@@ -32,7 +79,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     NAV_ITEMS.forEach((item) => {
-      void router.prefetch(item.href);
+      void router.prefetch(hrefPath(item.href));
     });
     void router.prefetch("/profile");
   }, [router]);
@@ -49,8 +96,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [propertyId, user, queryClient]);
 
   function warmRoute(href: string) {
-    void router.prefetch(href);
-    void prefetchScreenData(queryClient, href, propertyId);
+    const path = hrefPath(href);
+    void router.prefetch(path);
+    void prefetchScreenData(queryClient, path, propertyId);
+  }
+
+  function toggleGroup(label: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
   }
 
   if (!ready) {
@@ -61,7 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || pathname === "/login") {
+  if (!user || isPublic) {
     return <>{children}</>;
   }
 
@@ -75,32 +132,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="relative flex min-h-screen w-full">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface)] px-4 py-5 lg:flex">
           <Brand />
-          <nav className="mt-8 flex flex-1 flex-col gap-1">
-            {NAV_ITEMS.map((item) => {
-              const active = pathname.startsWith(item.href);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  prefetch
-                  onMouseEnter={() => warmRoute(item.href)}
-                  onFocus={() => warmRoute(item.href)}
-                  onClick={() => {
-                    startTransition(() => undefined);
-                  }}
-                  className={cn(
-                    "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-100",
-                    active
-                      ? "bg-[var(--accent-soft)] text-[var(--ink)]"
-                      : "text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]",
-                  )}
-                >
-                  <Icon className="relative z-10 h-4.5 w-4.5" />
-                  <span className="relative z-10">{item.label}</span>
-                </Link>
-              );
-            })}
+          <nav className="mt-8 flex flex-1 flex-col gap-0.5 overflow-y-auto pb-4">
+            {NAV_GROUPS.map((group, gi) => (
+              <NavBlock
+                key={group.label ?? `group-${gi}`}
+                group={group}
+                gi={gi}
+                pathname={pathname}
+                expanded={expanded}
+                onToggle={toggleGroup}
+                warmRoute={warmRoute}
+                startTransition={startTransition}
+              />
+            ))}
           </nav>
         </aside>
 
@@ -117,8 +161,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="lg:hidden">
                 <Brand compact />
               </div>
-              <div className="ml-auto flex items-center gap-2">
-                <div className="relative">
+              <div className="ml-auto flex min-w-0 items-center gap-2">
+                <div className="relative min-w-0 max-w-[9.5rem] sm:max-w-[14rem]">
                   <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
                   <select
                     value={propertyId}
@@ -127,7 +171,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         e.target.value === "all" ? "all" : e.target.value,
                       )
                     }
-                    className="h-10 appearance-none rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-9 pr-9 text-sm outline-none transition focus:border-[var(--accent)]"
+                    className="h-10 w-full max-w-full appearance-none truncate rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-9 pr-9 text-sm outline-none transition focus:border-[var(--accent)]"
+                    aria-label="Filter by yard"
                   >
                     <option value="all">All yards</option>
                     {properties.map((p) => (
@@ -145,28 +190,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {open && (
             <div className="border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3 lg:hidden">
-              <nav className="grid gap-1">
-                {NAV_ITEMS.map((item) => {
-                  const Icon = item.icon;
-                  const active = pathname.startsWith(item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      prefetch
-                      onMouseEnter={() => warmRoute(item.href)}
-                      className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium",
-                        active
-                          ? "bg-[var(--accent-soft)] text-[var(--ink)]"
-                          : "text-[var(--muted)]",
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {item.label}
-                    </Link>
-                  );
-                })}
+              <nav className="grid gap-0.5">
+                {NAV_GROUPS.map((group, gi) => (
+                  <NavBlock
+                    key={group.label ?? `m-group-${gi}`}
+                    group={group}
+                    gi={gi}
+                    pathname={pathname}
+                    expanded={expanded}
+                    onToggle={toggleGroup}
+                    warmRoute={warmRoute}
+                    startTransition={startTransition}
+                    mobile
+                  />
+                ))}
               </nav>
             </div>
           )}
@@ -177,6 +214,98 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     </div>
+  );
+}
+
+const navBtnClass =
+  "flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors duration-100";
+
+function NavBlock({
+  group,
+  pathname,
+  expanded,
+  onToggle,
+  warmRoute,
+  startTransition,
+}: {
+  group: NavGroup;
+  gi: number;
+  pathname: string;
+  expanded: Set<string>;
+  onToggle: (label: string) => void;
+  warmRoute: (href: string) => void;
+  startTransition: (cb: () => void) => void;
+  mobile?: boolean;
+}) {
+  const expandable = Boolean(group.expandable && group.label);
+  const isOpen = !expandable || expanded.has(group.label!);
+  const GroupIcon = group.icon;
+
+  return (
+    <section className="flex min-w-0 flex-col gap-0.5">
+      {expandable ? (
+        <button
+          type="button"
+          onClick={() => onToggle(group.label!)}
+          aria-expanded={isOpen}
+          className={cn(
+            navBtnClass,
+            "text-left text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]",
+          )}
+        >
+          {GroupIcon ? <GroupIcon className="h-4 w-4 shrink-0" /> : null}
+          <span className="min-w-0 flex-1 truncate">{group.label}</span>
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 text-[var(--muted)] transition-transform duration-200",
+              isOpen ? "rotate-0" : "-rotate-90",
+            )}
+          />
+        </button>
+      ) : null}
+
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-200 ease-out",
+          isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="overflow-hidden">
+          <div
+            className={cn(
+              "flex flex-col gap-0.5",
+              expandable && "ml-4 border-l border-[var(--border)] pl-2",
+            )}
+          >
+            {group.items.map((item) => {
+              const active = isNavActive(pathname, item.href);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href + item.label}
+                  href={item.href}
+                  prefetch
+                  onMouseEnter={() => warmRoute(item.href)}
+                  onFocus={() => warmRoute(item.href)}
+                  onClick={() => {
+                    startTransition(() => undefined);
+                  }}
+                  className={cn(
+                    navBtnClass,
+                    active
+                      ? "bg-[var(--accent-soft)] text-[var(--ink)]"
+                      : "text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]",
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 

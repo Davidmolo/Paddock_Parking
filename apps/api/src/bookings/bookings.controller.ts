@@ -1,7 +1,45 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { IsEmail, IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import {
+  IsArray,
+  IsBoolean,
+  IsEmail,
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import type { LotType } from '../data/seed.js';
 import { BookingsService } from './bookings.service.js';
+
+class BookingVehicleDto {
+  @IsString()
+  make!: string;
+
+  @IsString()
+  color!: string;
+
+  @IsString()
+  truckNumber!: string;
+
+  @IsString()
+  licensePlate!: string;
+
+  @IsBoolean()
+  submitLater!: boolean;
+}
 
 class CreateBookingDto {
   @IsString()
@@ -27,11 +65,67 @@ class CreateBookingDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsIn(['parking_spot', 'storage_acre'])
+  productType?: 'parking_spot' | 'storage_acre';
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  spotCount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.25)
+  acreSize?: number;
+
+  @IsOptional()
+  @IsString()
+  storageDescription?: string;
+
+  @IsOptional()
+  @IsString()
+  leaseStart?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BookingVehicleDto)
+  vehicles?: BookingVehicleDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  docsSubmitLater?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  wizardStep?: 1 | 2 | 3 | 4 | 5;
+
+  @IsOptional()
+  @IsIn(['card', 'ach', 'pending'])
+  paymentMethod?: 'card' | 'ach' | 'pending';
+
+  @IsOptional()
+  @IsBoolean()
+  autoPullAgreed?: boolean;
+
+  @IsOptional()
+  @IsString()
+  lotId?: string;
 }
 
 class ConvertBookingDto {
   @IsString()
   lotId!: string;
+}
+
+class PatchBookingDto {
+  @IsOptional()
+  @IsBoolean()
+  autoPullWaived?: boolean;
 }
 
 @Controller('bookings')
@@ -43,9 +137,20 @@ export class BookingsController {
     return this.bookingsService.findAll(propertyId);
   }
 
+  /** Compliance: plates / docs marked submit-later */
+  @Get('compliance-queue')
+  complianceQueue() {
+    return this.bookingsService.complianceQueue();
+  }
+
   @Post()
   create(@Body() dto: CreateBookingDto) {
     return this.bookingsService.create(dto);
+  }
+
+  @Patch(':id')
+  patch(@Param('id') id: string, @Body() dto: PatchBookingDto) {
+    return this.bookingsService.patch(id, dto);
   }
 
   @Post(':id/convert')

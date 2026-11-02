@@ -87,8 +87,10 @@ export default function PropertiesPage() {
                       value={formatCurrency(property.money.projectedMonthly)}
                     />
                     <Stat
-                      label="Outstanding"
-                      value={formatCurrency(property.money.outstandingDue)}
+                      label="Gross margin"
+                      value={formatCurrency(
+                        property.money.projectedGrossMargin,
+                      )}
                     />
                     <Stat
                       label="Overdue"

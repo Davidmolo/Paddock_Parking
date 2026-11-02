@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MiniTrend } from "@/components/mini-trend";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, formatPercent } from "@/lib/utils";
+import { formatCurrency, formatPercent, cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { propertyId } = useApp();
@@ -22,49 +22,63 @@ export default function DashboardPage() {
     queryFn: () => endpoints.dashboard(propertyParam(propertyId)),
   });
 
+  const alerts = data
+    ? [
+        data.renewalsDue > 0 && {
+          href: "/leases",
+          icon: ScrollText,
+          label: `${data.renewalsDue} lease renewal${data.renewalsDue === 1 ? "" : "s"}`,
+        },
+        data.coiIssues > 0 && {
+          href: "/customers/compliance",
+          icon: ShieldAlert,
+          label: `${data.coiIssues} COI issue${data.coiIssues === 1 ? "" : "s"}`,
+        },
+        data.newBookings > 0 && {
+          href: "/bookings",
+          icon: CalendarPlus,
+          label: `${data.newBookings} new booking${data.newBookings === 1 ? "" : "s"}`,
+        },
+      ].filter(Boolean)
+    : [];
+
   return (
     <PageTransition>
       <PageHeader
         title="Dashboard"
-        subtitle="Each yard’s money, occupancy, and open spots — the rundown David wants at login."
+        subtitle="Per yard: 30-day revenue, projected monthly, projected gross margin (rev − mortgage), and overdue."
         action={
-          <div className="flex flex-wrap gap-2">
-            {data && data.renewalsDue > 0 && (
-              <Link href="/leases">
-                <Button variant="secondary">
-                  <ScrollText className="h-4 w-4" />
-                  {data.renewalsDue} lease renewals
-                </Button>
-              </Link>
-            )}
-            {data && data.coiIssues > 0 && (
-              <Link href="/customers">
-                <Button variant="secondary">
-                  <ShieldAlert className="h-4 w-4" />
-                  {data.coiIssues} COI issues
-                </Button>
-              </Link>
-            )}
-            {data && data.newBookings > 0 && (
-              <Link href="/bookings">
-                <Button variant="secondary">
-                  <CalendarPlus className="h-4 w-4" />
-                  {data.newBookings} new bookings
-                </Button>
-              </Link>
-            )}
-            <Link href="/collections">
-              <Button>
-                Open collections
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+          <Link href="/collections" className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto">
+              Open collections
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
         }
       />
 
+      {alerts.length > 0 && (
+        <div className="mb-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {alerts.map((a) => {
+            if (!a) return null;
+            const Icon = a.icon;
+            return (
+              <Link key={a.href + a.label} href={a.href} className="min-w-0">
+                <Button
+                  variant="secondary"
+                  className="h-11 w-full justify-start px-3.5"
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
+                  <span className="truncate">{a.label}</span>
+                </Button>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
       {isPending && !data ? (
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-28" />
           ))}
@@ -86,8 +100,8 @@ export default function DashboardPage() {
             </StaggerItem>
             <StaggerItem>
               <Stat
-                label="Outstanding due"
-                value={formatCurrency(data.totals.outstandingDue)}
+                label="Projected gross margin"
+                value={formatCurrency(data.totals.projectedGrossMargin)}
               />
             </StaggerItem>
             <StaggerItem>
@@ -102,11 +116,15 @@ export default function DashboardPage() {
           <Stagger className="mt-6 grid gap-5 xl:grid-cols-2">
             {data.properties.map((p) => (
               <StaggerItem key={p.id}>
-                <Card glow>
-                  <CardHeader>
-                    <div>
-                      <h2 className="text-lg font-semibold">{p.name}</h2>
-                      <p className="text-xs text-[var(--muted)]">{p.address}</p>
+                <Card glow interactive={false}>
+                  <CardHeader className="items-start">
+                    <div className="min-w-0">
+                      <h2 className="truncate text-lg font-semibold">
+                        {p.name}
+                      </h2>
+                      <p className="mt-0.5 truncate text-xs text-[var(--muted)]">
+                        {p.address}
+                      </p>
                     </div>
                     <Badge
                       tone={
@@ -121,7 +139,7 @@ export default function DashboardPage() {
                     </Badge>
                   </CardHeader>
                   <CardBody className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                       <Money
                         label="30-day revenue"
                         value={formatCurrency(p.money.revenue30d)}
@@ -131,12 +149,13 @@ export default function DashboardPage() {
                         value={formatCurrency(p.money.projectedMonthly)}
                       />
                       <Money
-                        label="Outstanding due"
-                        value={formatCurrency(p.money.outstandingDue)}
+                        label="Gross margin"
+                        value={formatCurrency(p.money.projectedGrossMargin)}
+                        hint={`− mortgage ${formatCurrency(p.money.monthlyMortgage)}`}
                       />
                       <Money
                         label="Overdue"
-                        value={`${formatCurrency(p.money.overdue)}`}
+                        value={formatCurrency(p.money.overdue)}
                         hint={`${p.money.overdueInvoices} invoices`}
                         danger
                       />
@@ -147,7 +166,7 @@ export default function DashboardPage() {
                         Inventory — {p.inventory.occupied} occupied /{" "}
                         {p.inventory.available} available
                       </p>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex min-h-[2rem] flex-wrap gap-1.5">
                         {p.inventory.availableSpots.length === 0 ? (
                           <span className="text-sm text-[var(--muted)]">
                             No open spots
@@ -165,31 +184,19 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 text-sm">
-                      <div className="rounded-xl bg-[var(--surface-muted)] px-3 py-2">
-                        <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
-                          Active tenants
-                        </p>
-                        <p className="mt-1 font-semibold">
-                          {p.tenantHealth.totalActive}
-                        </p>
-                      </div>
-                      <div className="rounded-xl bg-[var(--surface-muted)] px-3 py-2">
-                        <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
-                          Good standing
-                        </p>
-                        <p className="mt-1 font-semibold">
-                          {formatPercent(p.tenantHealth.goodStandingPct)}
-                        </p>
-                      </div>
-                      <div className="rounded-xl bg-[var(--surface-muted)] px-3 py-2">
-                        <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
-                          Past due / notice
-                        </p>
-                        <p className="mt-1 font-semibold">
-                          {p.tenantHealth.pastDue} / {p.tenantHealth.notice}
-                        </p>
-                      </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <Metric
+                        label="Active tenants"
+                        value={String(p.tenantHealth.totalActive)}
+                      />
+                      <Metric
+                        label="Good standing"
+                        value={formatPercent(p.tenantHealth.goodStandingPct)}
+                      />
+                      <Metric
+                        label="Past due / notice"
+                        value={`${p.tenantHealth.pastDue} / ${p.tenantHealth.notice}`}
+                      />
                     </div>
 
                     <div>
@@ -219,14 +226,15 @@ function Stat({
   danger?: boolean;
 }) {
   return (
-    <Card className="p-5">
+    <Card interactive={false} className="flex h-full min-h-[7.25rem] flex-col p-5">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
         {label}
       </p>
       <p
-        className={`mt-3 text-2xl font-semibold tracking-tight ${
-          danger ? "text-rose-600" : ""
-        }`}
+        className={cn(
+          "mt-auto pt-3 text-2xl font-semibold tracking-tight tabular-nums",
+          danger && "text-[var(--danger)]",
+        )}
       >
         {value}
       </p>
@@ -246,14 +254,32 @@ function Money({
   danger?: boolean;
 }) {
   return (
-    <div className="rounded-xl bg-[var(--surface-muted)] px-3 py-2">
-      <p className="text-[10px] uppercase tracking-[0.1em] text-[var(--muted)]">
+    <div className="flex min-h-[5.25rem] flex-col rounded-xl bg-[var(--surface-muted)] px-3 py-2.5">
+      <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-[0.1em] text-[var(--muted)]">
         {label}
       </p>
-      <p className={`mt-1 text-sm font-semibold ${danger ? "text-rose-600" : ""}`}>
+      <p
+        className={cn(
+          "mt-1.5 text-sm font-semibold tabular-nums",
+          danger && "text-[var(--danger)]",
+        )}
+      >
         {value}
       </p>
-      {hint && <p className="text-[11px] text-[var(--muted)]">{hint}</p>}
+      <p className="mt-auto pt-1 text-[11px] leading-snug text-[var(--muted)]">
+        {hint ? hint : "\u00a0"}
+      </p>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex min-h-[4.5rem] flex-col rounded-xl bg-[var(--surface-muted)] px-3 py-2">
+      <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] text-[var(--muted)]">
+        {label}
+      </p>
+      <p className="mt-auto pt-1 text-sm font-semibold tabular-nums">{value}</p>
     </div>
   );
 }

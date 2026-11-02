@@ -34,6 +34,12 @@ export class CustomersService {
           c.phone.includes(needle),
       );
     }
+    // Greta: newest customers first (added date)
+    list = [...list].sort((a, b) =>
+      (b.createdAt || b.leaseStart || '').localeCompare(
+        a.createdAt || a.leaseStart || '',
+      ),
+    );
     return list.map((c) => this.summary(c));
   }
 
@@ -164,6 +170,10 @@ export class CustomersService {
               : null,
             noticeDue: isRenewalNoticeDue(lease),
             urgency: renewalUrgency(lease),
+            notifyByDate:
+              lease.renewalDate && lease.notificationLeadDays != null
+                ? shiftDate(lease.renewalDate, -lease.notificationLeadDays)
+                : undefined,
           }
         : undefined,
       certificate: this.enrichCertificate(coi, coiEval),
@@ -194,10 +204,18 @@ export class CustomersService {
 
     return {
       ...c,
+      /** Greta “Added” — fall back to lease start when seed has no createdAt */
+      createdAt: c.createdAt ?? c.leaseStart,
       insuranceOk: c.insuranceOk,
       coiStatus: coiEval.status,
       lotNumbers: lots.map((l) => l.number),
       hasAssignedLot: lots.length > 0,
     };
   }
+}
+
+function shiftDate(iso: string, deltaDays: number) {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + deltaDays);
+  return d.toISOString().slice(0, 10);
 }

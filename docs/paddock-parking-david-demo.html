@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Paddock Parking — Demo for David</title>
+    <title>Paddock Parking — Module walkthrough for David</title>
     <style>
       :root {
         --bg: #0f1419;
@@ -16,6 +16,7 @@
         --accent-soft: rgba(45, 212, 191, 0.12);
         --danger: #f87171;
         --ok: #4ade80;
+        --warn: #fbbf24;
       }
 
       * {
@@ -154,6 +155,11 @@
         background: rgba(74, 222, 128, 0.08);
       }
 
+      .callout.warn {
+        border-left-color: var(--warn);
+        background: rgba(251, 191, 36, 0.08);
+      }
+
       .callout strong {
         display: block;
         margin-bottom: 0.25rem;
@@ -161,6 +167,10 @@
 
       .muted {
         color: var(--muted);
+      }
+
+      a {
+        color: var(--accent);
       }
 
       .grid {
@@ -238,7 +248,8 @@
 
       .feature .what,
       .feature .why,
-      .feature .do {
+      .feature .do,
+      .feature .say {
         margin: 0.35rem 0 0;
         font-size: 0.92rem;
         line-height: 1.45;
@@ -246,13 +257,17 @@
 
       .feature .label {
         display: inline-block;
-        min-width: 4.2rem;
+        min-width: 4.6rem;
         font-size: 0.7rem;
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
         color: var(--accent);
         margin-right: 0.35rem;
+      }
+
+      .feature .label.say {
+        color: var(--warn);
       }
 
       .stats {
@@ -276,7 +291,7 @@
       }
 
       .stat .v {
-        font-size: 1.2rem;
+        font-size: 1.05rem;
         font-weight: 700;
         letter-spacing: -0.02em;
       }
@@ -304,10 +319,11 @@
       th,
       td {
         text-align: left;
-        padding: 0.75rem 0.9rem;
+        padding: 0.7rem 0.85rem;
         border-bottom: 1px solid var(--border);
         vertical-align: top;
         line-height: 1.4;
+        font-size: 0.92rem;
       }
 
       th {
@@ -322,14 +338,36 @@
         border-bottom: none;
       }
 
-      ol.steps {
-        margin: 0;
-        padding-left: 1.2rem;
+      .tag {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 0.15rem 0.55rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
       }
 
-      ol.steps li {
-        margin: 0.65rem 0;
-        line-height: 1.45;
+      .tag.ok {
+        background: rgba(74, 222, 128, 0.15);
+        color: var(--ok);
+      }
+
+      .tag.warn {
+        background: rgba(251, 191, 36, 0.15);
+        color: var(--warn);
+      }
+
+      .tag.mod {
+        background: var(--accent-soft);
+        color: var(--accent);
+        margin-right: 0.35rem;
+      }
+
+      .path {
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 0.85rem;
+        color: var(--accent);
       }
 
       .footer {
@@ -382,6 +420,16 @@
         padding: 0.1rem 0.35rem;
         font-size: 0.75rem;
       }
+
+      ol.steps {
+        margin: 0;
+        padding-left: 1.2rem;
+      }
+
+      ol.steps li {
+        margin: 0.55rem 0;
+        line-height: 1.45;
+      }
     </style>
   </head>
   <body>
@@ -402,196 +450,217 @@
     <footer class="footer">
       <div class="dots" id="dots"></div>
       <p class="hint">
-        Keys: <kbd>←</kbd> <kbd>→</kbd> · Open this file in any browser
+        Keys: <kbd>←</kbd> <kbd>→</kbd> · Open in browser · Live app
+        http://localhost:3001
       </p>
     </footer>
 
     <script>
       const slides = [
         {
-          title: "Paddock Parking Ops",
-          subtitle: "What this project is — in one minute",
+          title: "Paddock Parking Ops — for David",
+          subtitle: "Brief module walkthrough of the new backend",
           html: `
             <p class="lead">
-              A new ops admin for Paddock Parking: the tool staff use every day to run yards,
-              tenants, money, leases, and insurance — without the clutter of the old Jazzmin backend.
+              This deck walks <strong>every screen</strong> in the new ops app so you can show
+              David what replaced the crowded Jazzmin admin — and how it maps to what he asked for.
             </p>
             <div class="callout">
-              <strong>Who it’s for</strong>
-              Owners and ops (David’s team). Not the public Book Now site — that stays as the customer intake door.
-              This app is the <em>backend to manage</em> whatever customers and leases come in.
+              <strong>Reference sites David gave</strong>
+              Ops today: <a href="https://paddockparking.com/admin/" target="_blank" rel="noreferrer">paddockparking.com/admin</a>
+              · Public site: <a href="https://paddockparking.com/" target="_blank" rel="noreferrer">paddockparking.com</a>
+              · Book Now: <a href="https://paddockparking.com/book" target="_blank" rel="noreferrer">/book</a>
+              · New demo app: <strong>http://localhost:3001</strong> (admin / paddockparking)
             </div>
             <div class="grid cols-3">
-              <div class="card"><h3>Open it</h3><div class="body">
-                <p><strong>http://localhost:3001</strong></p>
-                <p class="muted">Login: admin / paddockparking</p>
+              <div class="card"><h3>Goal</h3><div class="body">
+                <p>Clean ops backend to run yards, tenants, money, leases &amp; insurance.</p>
               </div></div>
-              <div class="card"><h3>Built with</h3><div class="body">
-                <p><strong>Next.js</strong> — screens staff click</p>
-                <p class="muted"><strong>NestJS</strong> — API + demo seed data</p>
+              <div class="card"><h3>Keep</h3><div class="body">
+                <p>Public Book Now flow — it already works; this app is the inbox behind it.</p>
               </div></div>
-              <div class="card"><h3>Scope</h3><div class="body">
-                <p>Long-term parking: spots & acres</p>
-                <p class="muted">Multi-yard (16, 325, 51, 6060…)</p>
+              <div class="card"><h3>Cut</h3><div class="body">
+                <p>Blog, investor portal, valuation fluff, unused Jazzmin modules.</p>
               </div></div>
             </div>
           `,
         },
         {
-          title: "Why this exists",
-          subtitle: "Problem → solution",
+          title: "David’s requirements checklist",
+          subtitle: "From paddockparking.com walkthrough + lease/COI ask",
           html: `
-            <p class="lead">
-              The current admin has a lot of modules that aren’t useful day-to-day.
-              David wanted a cleaner system focused on running the business.
-            </p>
-            <div class="feature">
-              <h4>The problem</h4>
-              <p class="what"><span class="label">What</span>Jazzmin-style admin is crowded; hard to see money, open spots, who owes, and who’s insured.</p>
-              <p class="why"><span class="label">Why</span>Ops needs a fast “login → rundown → act” loop, not scrolling through unused screens.</p>
-            </div>
-            <div class="feature">
-              <h4>The solution</h4>
-              <p class="what"><span class="label">What</span>A focused Nest/Next app with Dashboard, Collections, Customers, Lots, Leases, Notices, Book Now inbox, Properties, Invoices.</p>
-              <p class="why"><span class="label">Why</span>Matches what David called valuable: money/occupancy, tenants, lot control, aging, Book Now intake, lease + COI automation.</p>
-            </div>
-            <div class="grid cols-2" style="margin-top:0.85rem">
-              <div class="card"><h3>In scope now</h3><div class="body">
-                <p>Yard ops, tenants, lots, aging, leases, COI, booking inbox</p>
-              </div></div>
-              <div class="card"><h3>Out of scope for now</h3><div class="body">
-                <p>Blog, investor portal, valuation fluff, full QB/ACH production sync</p>
-              </div></div>
+            <p class="lead">Everything below is what David said he needs. Status is against this demo.</p>
+            <table>
+              <thead><tr><th>Requirement</th><th>Where</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>Login rundown: 30d revenue, projected, due, overdue, open spots</td><td>Dashboard</td><td><span class="tag ok">Done</span></td></tr>
+                <tr><td>See if a yard is full / empty / bleeding overdue</td><td>Dashboard</td><td><span class="tag ok">Done</span></td></tr>
+                <tr><td>Customers with docs + signed lease</td><td>Customers</td><td><span class="tag ok">Done</span></td></tr>
+                <tr><td>Lots: occupied ↔ available, price, who is assigned</td><td>Lots</td><td><span class="tag ok">Done</span></td></tr>
+                <tr><td>Aging CRM by yard (not revenue) + action queues</td><td>Collections</td><td><span class="tag ok">Done</span></td></tr>
+                <tr><td>Book Now lands in a backend you can manage</td><td>Book Now inbox</td><td><span class="tag ok">Done</span> <span class="tag warn">demo</span></td></tr>
+                <tr><td>Landlord + tenant leases with renewal notice lead time</td><td>Leases</td><td><span class="tag ok">Done</span></td></tr>
+                <tr><td>COI + correct legal entity per yard as additional insured</td><td>Customers / COI</td><td><span class="tag ok">Done</span></td></tr>
+                <tr><td>Automated outreach before renewal / bad COI</td><td>Notices</td><td><span class="tag ok">Done</span> <span class="tag warn">log</span></td></tr>
+                <tr><td>Live QuickBooks money</td><td>—</td><td><span class="tag warn">Prod next</span></td></tr>
+                <tr><td>Wire live /book → this API + real email/SMS + DB import</td><td>—</td><td><span class="tag warn">Prod next</span></td></tr>
+              </tbody>
+            </table>
+            <div class="callout ok" style="margin-top:0.85rem">
+              <strong>Bottom line for David</strong>
+              Day-to-day ops requirements from the admin walkthrough + lease/COI message are covered in the demo.
+              Production = connect real data, QB, and messaging — not reinvent the screens.
             </div>
           `,
         },
         {
-          title: "Feature: Dashboard",
-          subtitle: "The rundown you see when you log in",
+          title: "All modules at a glance",
+          subtitle: "Sidebar order — say one sentence per screen",
           html: `
-            <p class="lead">
-              One screen that answers: “How is each yard doing on money, occupancy, and open inventory?”
+            <table>
+              <thead><tr><th>#</th><th>Module</th><th>One-liner for David</th><th>Route</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>Dashboard</td><td>Money + occupancy rundown the moment you log in</td><td class="path">/dashboard</td></tr>
+                <tr><td>2</td><td>Collections</td><td>Past-due command center — who to email / call / escalate</td><td class="path">/collections</td></tr>
+                <tr><td>3</td><td>Customers</td><td>Tenant file: lease, lots, money, docs, COI</td><td class="path">/customers</td></tr>
+                <tr><td>4</td><td>Lots</td><td>Inventory board — flip status, price, assignment</td><td class="path">/lots</td></tr>
+                <tr><td>5</td><td>Leases</td><td>Landlord + tenant terms, renewals, notice windows</td><td class="path">/leases</td></tr>
+                <tr><td>6</td><td>Notices</td><td>Generate &amp; send renewal / COI messages</td><td class="path">/notifications</td></tr>
+                <tr><td>7</td><td>Book Now inbox</td><td>Website bookings → convert to tenant + lot</td><td class="path">/bookings</td></tr>
+                <tr><td>8</td><td>Properties</td><td>Each yard + legal entity name for COI</td><td class="path">/properties</td></tr>
+                <tr><td>9</td><td>Invoices</td><td>Billing ledger (open / overdue / paid)</td><td class="path">/invoices</td></tr>
+                <tr><td>10</td><td>Profile</td><td>Staff name, email, password</td><td class="path">/profile</td></tr>
+              </tbody>
+            </table>
+            <p class="lead" style="margin-top:1rem">
+              Top-right yard filter scopes almost every screen to one property or all yards.
             </p>
+          `,
+        },
+        {
+          title: "1 · Dashboard",
+          subtitle: "What happens on this screen",
+          html: `
+            <div class="callout">
+              <strong><span class="tag mod">Say</span> to David</strong>
+              “This replaces logging into the old admin and hunting. You get the yard rundown immediately — money, open spots, and what needs action.”
+            </div>
             <div class="stats">
-              <div class="stat"><div class="v">30-day revenue</div><div class="l">Cash/collections style total for the last 30 days (demo mirrors QB-style numbers).</div></div>
-              <div class="stat"><div class="v">Projected monthly</div><div class="l">Expected monthly rent from occupied inventory / contracts.</div></div>
-              <div class="stat"><div class="v">Outstanding</div><div class="l">Open balances still owed — not necessarily late yet.</div></div>
-              <div class="stat"><div class="v danger">Overdue</div><div class="l">Past-due money that needs collections attention.</div></div>
+              <div class="stat"><div class="v">30-day revenue</div><div class="l">Cash collected last 30 days (demo mirrors QB-style totals).</div></div>
+              <div class="stat"><div class="v">Projected monthly</div><div class="l">Expected rent from occupied inventory / contracts.</div></div>
+              <div class="stat"><div class="v">Outstanding</div><div class="l">Open balances owed — not always late yet.</div></div>
+              <div class="stat"><div class="v danger">Overdue</div><div class="l">Past-due that should go to Collections.</div></div>
             </div>
             <div class="feature">
               <h4>Per-yard cards</h4>
-              <p class="what"><span class="label">What</span>Each property shows occupancy %, open spot numbers, tenant health, and a revenue trend.</p>
-              <p class="do"><span class="label">Do</span>Switch “All yards” in the top filter to focus one location.</p>
-              <p class="why"><span class="label">Why</span>David’s ask: log in and immediately see if a yard is full, empty, or bleeding overdue.</p>
+              <p class="what"><span class="label">On screen</span>Occupancy %, open spot numbers, tenant health, revenue trend sparkline.</p>
+              <p class="do"><span class="label">Do</span>Use yard switcher (All / 16 / 325 / 51 / 6060) to focus one location.</p>
+              <p class="why"><span class="label">Why</span>David’s ask: instantly see if a yard is full, empty, or bleeding overdue.</p>
             </div>
             <div class="feature">
-              <h4>Action chips</h4>
-              <p class="what"><span class="label">What</span>Shortcuts for lease renewals due, COI issues, and new Book Now bookings.</p>
-              <p class="why"><span class="label">Why</span>Turns the dashboard into a to-do list, not just charts.</p>
+              <h4>Action chips (top right)</h4>
+              <p class="what"><span class="label">On screen</span>Shortcuts: lease renewals due → Leases · COI issues → Customers · new bookings → Book Now · Open collections.</p>
+              <p class="why"><span class="label">Why</span>Dashboard is a to-do list, not just charts.</p>
             </div>
           `,
         },
         {
-          title: "Feature: Collections",
-          subtitle: "Aging CRM — who owes money and what to do next",
+          title: "2 · Collections",
+          subtitle: "Aging CRM — not revenue",
           html: `
-            <p class="lead">
-              Collections is <strong>not revenue</strong>. It’s past-due accounts organized by yard and by next action.
-            </p>
-            <div class="feature">
-              <h4>Yard balances</h4>
-              <p class="what"><span class="label">What</span>Top chips show how much is at risk per yard (Paddock 16, 325, etc.).</p>
-              <p class="why"><span class="label">Why</span>Ops can prioritize the yard with the biggest aging problem first.</p>
+            <div class="callout">
+              <strong><span class="tag mod">Say</span> to David</strong>
+              “Collections is the aging command center you walked through — past-due by yard, then work queues for email → text → call → notice → lockout.”
             </div>
             <div class="feature">
-              <h4>Work queues</h4>
-              <p class="what"><span class="label">What</span>Kanban-style columns: need email, need text, owner call, promised, dispute, notice, in cure, lockout.</p>
-              <p class="do"><span class="label">Do</span>Filter Outreach vs Approvals; open a card to see days overdue and next action.</p>
-              <p class="why"><span class="label">Why</span>Matches how David described managing aging — early past-due get a nudge; long past-due need escalation.</p>
+              <h4>Yard chips + totals</h4>
+              <p class="what"><span class="label">On screen</span>How much is at risk per yard; At risk / Accounts / Emails pending cards.</p>
+              <p class="why"><span class="label">Why</span>Prioritize the yard with the biggest aging problem first.</p>
+            </div>
+            <div class="feature">
+              <h4>Kanban queues</h4>
+              <p class="what"><span class="label">On screen</span>Need email · Need text · Owner call · Promised · Dispute · Notice · In cure · Lockout. Tabs: All / Outreach / Approvals.</p>
+              <p class="do"><span class="label">Do</span><strong>Move queue</strong> dropdown on each card · <strong>Log call</strong> bumps call count · <strong>Send emails due</strong> logs outreach and advances Need email → Need text · <strong>Refresh</strong>.</p>
+              <p class="why"><span class="label">Why</span>Early past-due get a nudge; long past-due escalate — same model as the current admin, cleaner UI.</p>
             </div>
           `,
         },
         {
-          title: "Feature: Customers",
-          subtitle: "The tenant record — money, lease, lots, docs, insurance",
+          title: "3 · Customers",
+          subtitle: "The tenant record",
           html: `
-            <p class="lead">
-              Every renter is a customer. This is the single place to see whether they’re current, insured, and assigned a spot.
-            </p>
+            <div class="callout">
+              <strong><span class="tag mod">Say</span> to David</strong>
+              “Same idea as opening a customer in the old admin — contact, lease, docs, insurance — but COI status and entity matching are first-class.”
+            </div>
             <div class="feature">
               <h4>Customer list</h4>
-              <p class="what"><span class="label">What</span>Searchable roster with yard, lots, balance, payment status, and COI status.</p>
-              <p class="do"><span class="label">Do</span>Click a row to open the full profile.</p>
+              <p class="what"><span class="label">On screen</span>Searchable roster: yard, lot numbers, balance, payment status, COI badge (valid / mismatch / missing…).</p>
+              <p class="do"><span class="label">Do</span>Click a row → full profile.</p>
             </div>
             <div class="feature">
               <h4>Customer detail</h4>
-              <p class="what"><span class="label">What</span>Lease dates & renewal notice, assigned lots, invoices, payments, documents, and editable COI.</p>
-              <p class="do"><span class="label">Do</span>Save COI fields, upload lease/COI PDF, jump to related lease work from Notices.</p>
-              <p class="why"><span class="label">Why</span>David showed opening a customer to see signed lease + insurance — that’s the model here.</p>
+              <p class="what"><span class="label">On screen</span>Contact · assigned lots · lease dates &amp; renewal notice window · invoices · payments · documents · editable COI panel.</p>
+              <p class="do"><span class="label">Do</span>Edit carrier / policy / dates / additional insured · “Use yard entity name” · Upload lease PDF or COI · Save.</p>
+              <p class="why"><span class="label">Why</span>David showed signed lease + insurance on the customer — that’s the model.</p>
+            </div>
+            <div class="callout warn">
+              <strong>Demo tip</strong>
+              Open ValleyWide (or any mismatch COI) so David sees wrong entity vs required “Paddock Parking 325 LLC”.
             </div>
           `,
         },
         {
-          title: "Feature: Lots",
-          subtitle: "Inventory control — spots and acres",
+          title: "4 · Lots",
+          subtitle: "Inventory you rent — spots & acres",
           html: `
-            <p class="lead">
-              Lots are the product you rent: truck/trailer stalls, general storage, bobtails, drop yard, or acre parcels.
-            </p>
+            <div class="callout">
+              <strong><span class="tag mod">Say</span> to David</strong>
+              “This is lot control from your walkthrough: flip occupied ↔ available, change price, see who’s on the spot — truck/trailer, general storage, acres.”
+            </div>
             <div class="feature">
               <h4>Lot board</h4>
-              <p class="what"><span class="label">What</span>Color-coded cards by status: available, occupied, reserved, maintenance.</p>
-              <p class="do"><span class="label">Do</span>Filter by status; click a lot to edit.</p>
+              <p class="what"><span class="label">On screen</span>Cards by status: available · occupied · reserved · maintenance. Types: truck/trailer, general storage, bobtail, drop yard, acre.</p>
+              <p class="do"><span class="label">Do</span>Filter by status · click a lot to edit.</p>
             </div>
             <div class="feature">
-              <h4>Manage a lot</h4>
-              <p class="what"><span class="label">What</span>Change status, monthly rate, and assigned customer (who occupies it).</p>
-              <p class="why"><span class="label">Why</span>David’s walkthrough: flip occupied ↔ available, change price, see who it’s assigned to — including half-acre / general storage examples.</p>
-            </div>
-            <div class="feature">
-              <h4>Yard filter</h4>
-              <p class="what"><span class="label">What</span>Top-right property switcher scopes lots (and other screens) to one yard or all yards.</p>
+              <h4>Edit drawer</h4>
+              <p class="what"><span class="label">On screen</span>Change status, monthly rate, assigned customer.</p>
+              <p class="why"><span class="label">Why</span>Matches paddockparking.com/admin lot management without the Jazzmin clutter.</p>
             </div>
           `,
         },
         {
-          title: "Feature: Leases",
+          title: "5 · Leases",
           subtitle: "David ask #1 — both sides of the lease",
           html: `
-            <p class="lead">
-              Paddock sits in the middle: you rent yards <strong>from landlords</strong>, and rent spots/acres
-              <strong>to customers</strong>. Both need term, renewal, and notice rules.
-            </p>
+            <div class="callout">
+              <strong><span class="tag mod">Say</span> to David</strong>
+              “Paddock sits in the middle: we rent yards FROM landlords and spots TO customers. Both need renewal dates and ‘notify X days before’.”
+            </div>
             <div class="feature">
               <h4>Landlord leases</h4>
-              <p class="what"><span class="label">What</span>Master/ground lease for a yard: landlord name, contact, email, monthly rent, start/end, renewal date.</p>
-              <p class="why"><span class="label">Why</span>You must know when to notify the landowner before renewal — contract lead time (e.g. 60–90 days).</p>
+              <p class="what"><span class="label">On screen</span>Ground lease: landlord name, contact, email, rent, start/end, renewal date, notification lead days (e.g. 60–90).</p>
             </div>
             <div class="feature">
               <h4>Tenant leases</h4>
-              <p class="what"><span class="label">What</span>Agreement with the customer for their lots: rent, renewal date, notice lead days, status.</p>
-              <p class="do"><span class="label">Do</span>Open <strong>Leases</strong> → Edit to change dates, lead days, rent, status, notes.</p>
-              <p class="why"><span class="label">Why</span>Without this, renewals sneak up and nobody knows who to contact when.</p>
+              <p class="what"><span class="label">On screen</span>Customer agreement: lots, rent, renewal, lead days, status (active / pending / expired).</p>
+              <p class="do"><span class="label">Do</span>Edit → change dates, lead days, rent, notes · save.</p>
             </div>
             <div class="feature">
               <h4>Renewals due tab</h4>
-              <p class="what"><span class="label">What</span>Shows only leases inside (or past) their required notice window: today ≥ renewal − lead days.</p>
-              <p class="why"><span class="label">Why</span>That’s the automation trigger for outreach — before the renewal date, not after.</p>
+              <p class="what"><span class="label">On screen</span>Only leases inside the notice window: today ≥ renewal − lead days.</p>
+              <p class="why"><span class="label">Why</span>That’s the trigger for Notices — contact before renewal, not after.</p>
             </div>
           `,
         },
         {
-          title: "Feature: Certificates of insurance (COI)",
-          subtitle: "David ask #2 — proof of insurance + correct entity",
+          title: "6 · COI (on Customers)",
+          subtitle: "David ask #2 — insurance + correct entity",
           html: `
-            <p class="lead">
-              Tenants must prove insurance with a COI. The certificate must list the
-              <strong>correct Paddock legal entity</strong> as additional insured for that yard.
-            </p>
-            <div class="feature">
-              <h4>Why entity names matter</h4>
-              <p class="what"><span class="label">What</span>Different yards are owned by different entities (e.g. Paddock Parking 16 LLC vs 325 LLC).</p>
-              <p class="why"><span class="label">Why</span>A COI that only says “Paddock Parking LLC” can be wrong for that property — and risky if something happens on site.</p>
+            <div class="callout">
+              <strong><span class="tag mod">Say</span> to David</strong>
+              “COI must list the right Paddock LLC for that yard — 16 vs 325 vs 51 — not a generic ‘Paddock Parking’.”
             </div>
             <table>
               <thead><tr><th>Yard</th><th>Must appear as additional insured</th></tr></thead>
@@ -603,120 +672,152 @@
               </tbody>
             </table>
             <div class="feature" style="margin-top:0.85rem">
-              <h4>Statuses the system tracks</h4>
-              <p class="what"><span class="label">What</span><strong>valid</strong> — on file, not expired, entity matches. <strong>expiring</strong> — ≤30 days left. <strong>expired</strong> / <strong>missing</strong> / <strong>mismatch</strong> — needs follow-up.</p>
-              <p class="do"><span class="label">Do</span>On customer detail: edit carrier, policy #, dates, additional insured; upload COI PDF; use “Use yard entity name”.</p>
+              <h4>Statuses</h4>
+              <p class="what"><span class="label">On screen</span><strong>valid</strong> · <strong>expiring</strong> (≤30 days) · <strong>expired</strong> · <strong>missing</strong> · <strong>mismatch</strong> (wrong entity).</p>
+              <p class="do"><span class="label">Do</span>Customer detail → edit COI → Use yard entity name → upload PDF → Save.</p>
             </div>
           `,
         },
         {
-          title: "Feature: Notices",
-          subtitle: "Automation queue for renewals + COI problems",
+          title: "7 · Notices",
+          subtitle: "Automation queue for renewals + COI",
           html: `
-            <p class="lead">
-              Notices turns lease/COI rules into outbound messages you can review and send.
-            </p>
+            <div class="callout">
+              <strong><span class="tag mod">Say</span> to David</strong>
+              “Instead of a spreadsheet reminder, the system drafts renewal and COI emails/SMS — you review and send.”
+            </div>
             <div class="feature">
               <h4>Generate due notices</h4>
-              <p class="what"><span class="label">What</span>Scans leases in the notice window and customers with bad/missing/expired/mismatched COIs, then drafts email (and SMS where we have a phone).</p>
-              <p class="do"><span class="label">Do</span>Open <strong>Notices</strong> → Generate due notices.</p>
+              <p class="what"><span class="label">On screen</span>Scans renewals in the notice window + bad/missing/expired/mismatched COIs → drafts messages.</p>
+              <p class="do"><span class="label">Do</span>Click Generate · yard filter scopes the list.</p>
             </div>
             <div class="feature">
               <h4>Send / Send all pending</h4>
-              <p class="what"><span class="label">What</span>Marks messages sent and logs them (demo mode). Templates are ready to plug into SendGrid / Twilio later.</p>
-              <p class="why"><span class="label">Why</span>David needs communication before renewal and when insurance is wrong — not a spreadsheet reminder.</p>
+              <p class="what"><span class="label">On screen</span>Pending / Sent / Failed counts · Send one or Send all.</p>
+              <p class="why"><span class="label">Why</span>Demo logs sends; production plugs SendGrid / Twilio into the same templates.</p>
             </div>
             <div class="feature">
               <h4>Message types</h4>
-              <p class="what"><span class="label">What</span><strong>Lease renewal</strong> to landlord or tenant. <strong>COI issue</strong> telling the customer exactly which entity must be listed.</p>
+              <p class="what"><span class="label">On screen</span>Lease renewal → landlord or tenant · COI issue → names the exact LLC that must be listed.</p>
             </div>
           `,
         },
         {
-          title: "Feature: Book Now inbox",
-          subtitle: "Public booking → tenant + lot",
+          title: "8 · Book Now inbox",
+          subtitle: "Public site → ops backend",
           html: `
-            <p class="lead">
-              The public Book Now flow is already good. This feature is the ops side:
-              reservations appear here so staff can convert them into real tenants.
-            </p>
+            <div class="callout">
+              <strong><span class="tag mod">Say</span> to David</strong>
+              “Your public Book Now on paddockparking.com/book is good — we keep it. This screen is the ops inbox where those reservations land and become tenants.”
+            </div>
             <div class="feature">
-              <h4>Inbox statuses</h4>
-              <p class="what"><span class="label">What</span><strong>new</strong> — just arrived. <strong>reserved</strong> — holding interest. <strong>converted</strong> — became a customer. <strong>cancelled</strong> — closed out.</p>
+              <h4>Inbox</h4>
+              <p class="what"><span class="label">On screen</span>Statuses: new · reserved · converted · cancelled. Filter chips + counts.</p>
+              <p class="do"><span class="label">Do</span><strong>Add booking</strong> simulates a website submission for the demo.</p>
             </div>
             <div class="feature">
               <h4>Convert to tenant</h4>
-              <p class="what"><span class="label">What</span>Pick an available lot of the matching type at that yard. System creates the customer, assigns the lot (occupied), and starts a tenant lease.</p>
-              <p class="why"><span class="label">Why</span>Closes the loop David described: website booking must land in a backend you can manage.</p>
-              <p class="do"><span class="label">Do</span>After convert, still collect a valid COI for that yard’s legal entity.</p>
+              <p class="what"><span class="label">On screen</span>Pick an available lot of the matching type → creates customer, occupies lot, starts pending tenant lease → opens customer for COI.</p>
+              <p class="why"><span class="label">Why</span>Closes the loop: website booking must land in a backend you manage.</p>
+            </div>
+            <div class="callout warn">
+              <strong>Production next</strong>
+              Point paddockparking.com/book at this API so real submissions appear here automatically.
             </div>
           `,
         },
         {
-          title: "Feature: Properties, Invoices, Profile",
-          subtitle: "Supporting screens",
+          title: "9 · Properties",
+          subtitle: "Portfolio + legal entity",
+          html: `
+            <div class="callout">
+              <strong><span class="tag mod">Say</span> to David</strong>
+              “Each yard as a card — occupancy, money, open spots — and the legal entity name staff must put on COIs.”
+            </div>
+            <div class="feature">
+              <h4>What’s on each card</h4>
+              <p class="what"><span class="label">On screen</span>Yard name &amp; address · occupancy · revenue / overdue · available spot list · <strong>COI legal entity</strong> (e.g. Paddock Parking 16 LLC).</p>
+              <p class="why"><span class="label">Why</span>Makes entity rules visible without digging into customer forms.</p>
+            </div>
+          `,
+        },
+        {
+          title: "10 · Invoices",
+          subtitle: "Billing ledger",
+          html: `
+            <div class="callout">
+              <strong><span class="tag mod">Say</span> to David</strong>
+              “Invoice list that backs Collections and customer balances — filter open, partial, overdue, paid.”
+            </div>
+            <div class="feature">
+              <h4>What’s on screen</h4>
+              <p class="what"><span class="label">On screen</span>Amount, balance, due date, status. Scoped by yard filter.</p>
+              <p class="why"><span class="label">Why</span>Supports aging work; live QuickBooks sync is the production upgrade for real numbers.</p>
+            </div>
+          `,
+        },
+        {
+          title: "11 · Profile",
+          subtitle: "Staff account (top-right avatar)",
           html: `
             <div class="feature">
-              <h4>Properties</h4>
-              <p class="what"><span class="label">What</span>Portfolio view of each yard: occupancy, money summary, open spots, and the <strong>COI legal entity</strong> name.</p>
-              <p class="why"><span class="label">Why</span>Makes entity rules visible so staff know what additional insured to demand.</p>
+              <h4>Profile menu</h4>
+              <p class="what"><span class="label">On screen</span>Next to yard filter: name / email · Edit profile · Sign out.</p>
+              <p class="do"><span class="label">Do</span>Update name, email, phone · change password on /profile.</p>
             </div>
-            <div class="feature">
-              <h4>Invoices</h4>
-              <p class="what"><span class="label">What</span>Billing ledger filterable by status: open, partial, overdue, paid.</p>
-              <p class="why"><span class="label">Why</span>Supports collections and customer money views (demo data; QB sync is the production upgrade).</p>
-            </div>
-            <div class="feature">
-              <h4>Profile (top right)</h4>
-              <p class="what"><span class="label">What</span>Avatar menu next to the yard filter: see name/email, Edit profile, Sign out.</p>
-              <p class="do"><span class="label">Do</span>Update name, email, phone; change password on /profile.</p>
+            <div class="callout">
+              <strong>Demo login</strong>
+              Username <strong>admin</strong> · Password <strong>paddockparking</strong>
             </div>
           `,
         },
         {
-          title: "How to demo live",
-          subtitle: "Walkthrough for David · ~7 minutes",
+          title: "Live demo script (~8 min)",
+          subtitle: "Click path while you talk",
           html: `
-            <table>
-              <thead><tr><th>#</th><th>Show</th><th>Explain</th><th>Where</th></tr></thead>
-              <tbody>
-                <tr><td>1</td><td>Dashboard</td><td>Money + open spots per yard at login</td><td>/dashboard</td></tr>
-                <tr><td>2</td><td>Collections</td><td>Aging queues — who needs email vs lockout</td><td>/collections</td></tr>
-                <tr><td>3</td><td>Lots</td><td>Change status / price / assignment</td><td>/lots</td></tr>
-                <tr><td>4</td><td>Customer COI</td><td>Mismatch when entity isn’t 325 LLC</td><td>ValleyWide on /customers</td></tr>
-                <tr><td>5</td><td>Leases</td><td>Landlord vs tenant + Edit renewal/lead days</td><td>/leases</td></tr>
-                <tr><td>6</td><td>Notices</td><td>Generate + send renewal/COI messages</td><td>/notifications</td></tr>
-                <tr><td>7</td><td>Book Now</td><td>Convert booking → tenant + lot</td><td>/bookings</td></tr>
-              </tbody>
-            </table>
-            <div class="callout" style="margin-top:0.85rem">
-              <strong>Credentials</strong>
-              admin / paddockparking · App http://localhost:3001 · API http://localhost:4001
+            <ol class="steps">
+              <li><strong>Login</strong> → Dashboard: point at 4 money tiles + one yard card + action chips.</li>
+              <li><strong>Collections</strong>: yard chip → move a card’s queue → Log call → Send emails due.</li>
+              <li><strong>Lots</strong>: open a lot → flip status or rate → show assignment.</li>
+              <li><strong>Customers</strong>: open mismatch COI → Use yard entity name → Save (optional upload).</li>
+              <li><strong>Leases</strong>: Landlord vs Tenant tabs → Edit lead days → Renewals due.</li>
+              <li><strong>Notices</strong>: Generate due notices → Send one.</li>
+              <li><strong>Book Now</strong>: Convert a new booking → lands on customer for COI.</li>
+              <li><strong>Properties / Invoices</strong>: 20-second glance — entity name + ledger.</li>
+            </ol>
+            <div class="callout ok" style="margin-top:0.85rem">
+              <strong>Repo</strong>
+              <a href="https://github.com/Davidmolo/Paddock_Parking" target="_blank" rel="noreferrer">github.com/Davidmolo/Paddock_Parking</a>
+              · App http://localhost:3001 · API http://localhost:4001
             </div>
           `,
         },
         {
-          title: "What's next",
-          subtitle: "Prototype vs production",
+          title: "Done vs next",
+          subtitle: "Honest close with David",
           html: `
             <div class="grid cols-2">
-              <div class="card"><h3>Already working in the demo</h3><div class="body">
-                <p>All priority ops screens</p>
-                <p>Landlord + tenant leases with notice windows</p>
-                <p>COI entity matching + uploads</p>
-                <p>Notice generation queue (demo send)</p>
-                <p>Book Now convert path</p>
+              <div class="card"><h3>Fulfilled in this demo</h3><div class="body">
+                <p>Clean ops UI vs Jazzmin clutter</p>
+                <p>Dashboard rundown + open spots</p>
+                <p>Collections aging queues</p>
+                <p>Customers / docs / COI entity match</p>
+                <p>Lots inventory control</p>
+                <p>Landlord + tenant leases + notice windows</p>
+                <p>Notices generate/send (demo log)</p>
+                <p>Book Now inbox + convert path</p>
+                <p>Properties + Invoices</p>
               </div></div>
               <div class="card"><h3>Production upgrades</h3><div class="body">
-                <p>Real database + import from current admin</p>
-                <p>SendGrid / Twilio for live email & SMS</p>
-                <p>QuickBooks sync for live money figures</p>
-                <p>Wire paddockparking.com Book Now → this API</p>
+                <p>Postgres + import from current admin</p>
+                <p>QuickBooks for live money</p>
+                <p>SendGrid / Twilio for real notices</p>
+                <p>Wire paddockparking.com/book → this API</p>
               </div></div>
             </div>
             <div class="callout ok" style="margin-top:0.85rem">
-              <strong>Ask for David</strong>
-              What should we productionize first: data migration, live notifications, or QuickBooks?
+              <strong>Ask David</strong>
+              Which production step first — data migration, live notifications, or QuickBooks?
             </div>
           `,
         },
@@ -736,7 +837,7 @@
         titleEl.textContent = s.title;
         subtitleEl.textContent = s.subtitle || "";
         subtitleEl.style.display = s.subtitle ? "block" : "none";
-        eyebrowEl.textContent = `Paddock Parking · Demo for David · Slide ${index + 1} / ${slides.length}`;
+        eyebrowEl.textContent = `Paddock Parking · David walkthrough · ${index + 1} / ${slides.length}`;
         deck.innerHTML = `<section class="slide active">${s.html}</section>`;
         prevBtn.disabled = index === 0;
         nextBtn.disabled = index === slides.length - 1;

@@ -1,5 +1,11 @@
 import { redirect } from "next/navigation";
 
-export default function HomePage() {
-  redirect("/dashboard");
+/**
+ * Three surfaces:
+ * - Customer website → /book
+ * - Customer portal → /portal
+ * - Admin portal → /login → /dashboard
+ */
+export default function RootPage() {
+  redirect("/login");
 }

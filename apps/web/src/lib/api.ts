@@ -68,6 +68,14 @@ export type CoiStatus =
   | "mismatch"
   | "missing";
 
+export type LeaseStage =
+  | "not_contacted"
+  | "outreach_sent"
+  | "negotiating"
+  | "notice_given"
+  | "renewed"
+  | "exiting";
+
 export type LeaseRecord = {
   id: string;
   direction: LeaseDirection;
@@ -88,6 +96,7 @@ export type LeaseRecord = {
   termMonths?: number;
   monthlyRent: number;
   status: "active" | "pending" | "expired" | "terminated";
+  stage?: LeaseStage;
   achEnabled: boolean;
   notes?: string;
   daysToRenewal: number | null;
@@ -128,7 +137,12 @@ export type LotType =
   | "drop_yard"
   | "acre";
 
-export type LotStatus = "available" | "occupied" | "reserved" | "maintenance";
+export type LotStatus =
+  | "available"
+  | "available_soon"
+  | "occupied"
+  | "reserved"
+  | "maintenance";
 
 export type Lot = {
   id: string;
@@ -143,6 +157,12 @@ export type Lot = {
   customerName?: string;
   qbItemName?: string;
   acres?: number;
+  /** available_soon — date space frees up */
+  availableOn?: string;
+  /** available — date it became vacant */
+  vacantSince?: string;
+  /** After vacate — who left (hover) */
+  lastTenantName?: string;
 };
 
 export type CustomerSummary = {
@@ -164,12 +184,17 @@ export type CustomerSummary = {
   isActive: boolean;
   lotNumbers: string[];
   hasAssignedLot: boolean;
+  leaseStart?: string;
+  /** When added to the system */
+  createdAt?: string;
+  lotIds?: string[];
 };
 
 export type CustomerDetail = CustomerSummary & {
   lotIds: string[];
   leaseStart: string;
   leaseEnd?: string;
+  createdAt: string;
   portalLastLogin?: string;
   documents: {
     id: string;
@@ -202,13 +227,18 @@ export type CustomerDetail = CustomerSummary & {
     endDate?: string;
     renewalDate?: string;
     notificationLeadDays: number;
+    termMonths?: number;
+    stage?: LeaseStage;
     daysToRenewal: number | null;
     noticeDue: boolean;
     urgency: "overdue" | "due" | "upcoming" | "ok";
+    notifyByDate?: string;
     notes?: string;
   };
   certificate: CertificateInfo;
 };
+
+export type InvoiceCollectionMethod = "ach_debit" | "send_invoice";
 
 export type Invoice = {
   id: string;
@@ -219,15 +249,34 @@ export type Invoice = {
   status: "paid" | "open" | "overdue" | "partial";
   dueDate: string;
   issuedAt: string;
+  customerName?: string;
+  achEnabled?: boolean;
+  collectionMethod?: InvoiceCollectionMethod;
+  collectionLabel?: string;
 };
+
+export type CollectionStage =
+  | "communicated"
+  | "waiting"
+  | "waiting_payment"
+  | "payment_made";
+
+export type AgingBucketKey =
+  | "current"
+  | "1_15"
+  | "16_30"
+  | "31_60"
+  | "60_plus";
 
 export type CollectionAccount = {
   id: string;
   customerId: string;
   customerName: string;
   propertyId: string;
+  propertyName?: string;
   balance: number;
   daysOverdue: number;
+  dueDate: string;
   invoiceCount: number;
   queue:
     | "need_email"
@@ -238,10 +287,21 @@ export type CollectionAccount = {
     | "notice"
     | "in_cure"
     | "lockout";
+  stage: CollectionStage;
+  stageLabel?: string;
+  agingBucket?: AgingBucketKey;
   nextAction: string;
   emails: number;
   texts: number;
   calls: number;
+};
+
+export type CollectionsAgingSection = {
+  key: AgingBucketKey;
+  label: string;
+  totalLabel: string;
+  balance: number;
+  accounts: CollectionAccount[];
 };
 
 export type CollectionsData = {
@@ -252,8 +312,17 @@ export type CollectionsData = {
     balance: number;
     invoiceCount: number;
   }[];
-  totals: { atRisk: number; accounts: number; emails: number };
+  totals: {
+    openBalance: number;
+    atRisk: number;
+    accounts: number;
+    emails: number;
+  };
+  sections: CollectionsAgingSection[];
   accounts: CollectionAccount[];
+  asOf: string;
+  intervalLabel: string;
+  throughLabel: string;
 };
 
 export type DashboardProperty = {
@@ -272,7 +341,8 @@ export type DashboardProperty = {
   money: {
     revenue30d: number;
     projectedMonthly: number;
-    outstandingDue: number;
+    monthlyMortgage: number;
+    projectedGrossMargin: number;
     overdue: number;
     overdueInvoices: number;
   };
@@ -289,7 +359,8 @@ export type DashboardData = {
   totals: {
     revenue30d: number;
     projectedMonthly: number;
-    outstandingDue: number;
+    monthlyMortgage: number;
+    projectedGrossMargin: number;
     overdue: number;
     occupied: number;
     available: number;
@@ -300,6 +371,14 @@ export type DashboardData = {
   newBookings: number;
   renewalsDue: number;
   coiIssues: number;
+};
+
+export type BookingVehicle = {
+  make: string;
+  color: string;
+  truckNumber: string;
+  licensePlate: string;
+  submitLater: boolean;
 };
 
 export type Booking = {
@@ -317,6 +396,30 @@ export type Booking = {
   notes?: string;
   lotId?: string;
   customerId?: string;
+  productType?: "parking_spot" | "storage_acre";
+  spotCount?: number;
+  acreSize?: number;
+  storageDescription?: string;
+  leaseStart?: string;
+  vehicles?: BookingVehicle[];
+  docsSubmitLater?: boolean;
+  wizardStep?: 1 | 2 | 3 | 4 | 5;
+  paymentMethod?: "card" | "ach" | "pending";
+  autoPullAgreed?: boolean;
+  autoPullWaived?: boolean;
+  missingPlates?: number;
+  compliancePending?: boolean;
+};
+
+export type ComplianceQueueItem = {
+  bookingId: string;
+  customerName: string;
+  email: string;
+  propertyId: string;
+  propertyName?: string;
+  kind: "vehicle_plate" | "documents";
+  detail: string;
+  wizardStep?: 1 | 2 | 3 | 4 | 5;
 };
 
 export const endpoints = {
@@ -353,6 +456,8 @@ export const endpoints = {
       monthlyRate?: number;
       customerId?: string | null;
       qbItemName?: string;
+      availableOn?: string | null;
+      vacantSince?: string | null;
     },
   ) =>
     api<Lot>(`/lots/${id}`, {
@@ -378,6 +483,7 @@ export const endpoints = {
     id: string,
     body: {
       queue?: CollectionAccount["queue"];
+      stage?: CollectionStage;
       nextAction?: string;
       logCall?: boolean;
       logEmail?: boolean;
@@ -392,10 +498,16 @@ export const endpoints = {
       `/collections/send-emails-due${propertyId ? `?propertyId=${propertyId}` : ""}`,
       { method: "POST" },
     ),
-  invoices: (params?: { propertyId?: string; status?: string }) => {
+  invoices: (params?: {
+    propertyId?: string;
+    status?: string;
+    collectionMethod?: InvoiceCollectionMethod;
+  }) => {
     const qs = new URLSearchParams();
     if (params?.propertyId) qs.set("propertyId", params.propertyId);
     if (params?.status) qs.set("status", params.status);
+    if (params?.collectionMethod)
+      qs.set("collectionMethod", params.collectionMethod);
     const q = qs.toString();
     return api<Invoice[]>(`/invoices${q ? `?${q}` : ""}`);
   },
@@ -411,9 +523,28 @@ export const endpoints = {
     phone: string;
     monthlyRate?: number;
     notes?: string;
+    productType?: "parking_spot" | "storage_acre";
+    spotCount?: number;
+    acreSize?: number;
+    storageDescription?: string;
+    leaseStart?: string;
+    vehicles?: BookingVehicle[];
+    docsSubmitLater?: boolean;
+    wizardStep?: 1 | 2 | 3 | 4 | 5;
+    paymentMethod?: "card" | "ach" | "pending";
+    autoPullAgreed?: boolean;
+    lotId?: string;
   }) =>
     api<Booking>("/bookings", {
       method: "POST",
+      body: JSON.stringify(body),
+    }),
+  patchBooking: (
+    id: string,
+    body: { autoPullWaived?: boolean },
+  ) =>
+    api<Booking>(`/bookings/${id}`, {
+      method: "PATCH",
       body: JSON.stringify(body),
     }),
   convertBooking: (id: string, lotId: string) =>
@@ -421,6 +552,8 @@ export const endpoints = {
       `/bookings/${id}/convert`,
       { method: "POST", body: JSON.stringify({ lotId }) },
     ),
+  complianceQueue: () =>
+    api<ComplianceQueueItem[]>("/bookings/compliance-queue"),
   leases: (params?: { propertyId?: string; direction?: LeaseDirection }) => {
     const qs = new URLSearchParams();
     if (params?.propertyId) qs.set("propertyId", params.propertyId);
@@ -446,6 +579,7 @@ export const endpoints = {
       termMonths?: number;
       monthlyRent?: number;
       status?: LeaseRecord["status"];
+      stage?: LeaseStage;
       landlordName?: string;
       landlordContact?: string;
       landlordEmail?: string;
@@ -519,7 +653,7 @@ export const endpoints = {
 export type OpsNotification = {
   id: string;
   dedupeKey: string;
-  kind: "lease_renewal" | "coi_issue";
+  kind: "lease_renewal" | "ops_renewal_alert" | "coi_issue";
   channel: "email" | "sms";
   status: "pending" | "sent" | "failed";
   propertyId: string;

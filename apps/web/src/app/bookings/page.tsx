@@ -106,6 +106,26 @@ export default function BookingsPage() {
     },
   });
 
+  const waive = useMutation({
+    mutationFn: (id: string) =>
+      endpoints.patchBooking(id, { autoPullWaived: true }),
+    onSuccess: () => {
+      invalidateRelated();
+      setFlash(
+        "Auto-pull waived for this applicant — they can finish without ACH requirement.",
+      );
+    },
+  });
+
+  const restore = useMutation({
+    mutationFn: (id: string) =>
+      endpoints.patchBooking(id, { autoPullWaived: false }),
+    onSuccess: () => {
+      invalidateRelated();
+      setFlash("Auto-pull requirement restored for this applicant.");
+    },
+  });
+
   const create = useMutation({
     mutationFn: () => {
       const pid = form.propertyId || (propertyId !== "all" ? propertyId : "");
@@ -159,21 +179,31 @@ export default function BookingsPage() {
   return (
     <PageTransition>
       <PageHeader
-        title="Book Now inbox"
-        subtitle="Public site bookings land here — reserve a lot and convert to a tenant."
+        title="Onboarding"
+        subtitle="FMS-style pipeline — track how far each public Book Now applicant got (page 1→4), then convert to a tenant."
         action={
-          <Button
-            size="sm"
-            onClick={() => {
-              setShowAdd(true);
-              setFormError("");
-              if (propertyId !== "all") {
-                setForm((f) => ({ ...f, propertyId }));
-              }
-            }}
-          >
-            Add booking
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="/book/spots"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm font-semibold text-[var(--ink)]"
+            >
+              Open public Book Now
+            </a>
+            <Button
+              size="sm"
+              onClick={() => {
+                setShowAdd(true);
+                setFormError("");
+                if (propertyId !== "all") {
+                  setForm((f) => ({ ...f, propertyId }));
+                }
+              }}
+            >
+              Add booking
+            </Button>
+          </div>
         }
       />
 
@@ -232,12 +262,25 @@ export default function BookingsPage() {
                       <Badge tone={statusTone[booking.status]}>
                         {booking.status}
                       </Badge>
+                      {booking.compliancePending && (
+                        <Badge tone="warning">Compliance pending</Badge>
+                      )}
+                      {booking.autoPullWaived ? (
+                        <Badge tone="warning">Auto-pull waived</Badge>
+                      ) : booking.autoPullAgreed ? (
+                        <Badge tone="success">Auto-pull</Badge>
+                      ) : null}
                     </div>
                     <p className="text-sm text-[var(--muted)]">
                       {booking.email} · {booking.phone}
                     </p>
                     <p className="text-sm">
-                      {booking.propertyName} · {booking.lotTypeLabel}
+                      {booking.propertyName} ·{" "}
+                      {booking.productType === "storage_acre"
+                        ? `${booking.acreSize ?? "?"} ac storage`
+                        : booking.productType === "parking_spot"
+                          ? `${booking.spotCount ?? 1} spot(s)`
+                          : booking.lotTypeLabel}
                       {booking.monthlyRate != null && (
                         <>
                           {" "}
@@ -246,22 +289,54 @@ export default function BookingsPage() {
                         </>
                       )}
                     </p>
+                    <WizardProgress step={booking.wizardStep ?? 1} />
                     <p className="text-xs text-[var(--muted)]">
                       Submitted {booking.createdAt}
+                      {booking.paymentMethod
+                        ? ` · pay ${booking.paymentMethod}`
+                        : ""}
                       {booking.notes ? ` · ${booking.notes}` : ""}
                     </p>
                   </div>
                   {(booking.status === "new" ||
                     booking.status === "reserved") && (
-                    <Button
-                      onClick={() => {
-                        setConvertingId(booking.id);
-                        setLotId("");
-                        setFlash("");
-                      }}
-                    >
-                      Convert to tenant
-                    </Button>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                      {!booking.autoPullWaived && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={waive.isPending}
+                          onClick={() => {
+                            setFlash("");
+                            waive.mutate(booking.id);
+                          }}
+                        >
+                          Waive auto-pull
+                        </Button>
+                      )}
+                      {booking.autoPullWaived && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={waive.isPending}
+                          onClick={() => {
+                            setFlash("");
+                            restore.mutate(booking.id);
+                          }}
+                        >
+                          Restore auto-pull req.
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => {
+                          setConvertingId(booking.id);
+                          setLotId("");
+                          setFlash("");
+                        }}
+                      >
+                        Convert to tenant
+                      </Button>
+                    </div>
                   )}
                   {booking.status === "converted" && booking.customerId && (
                     <Link href={`/customers/${booking.customerId}`}>
@@ -460,5 +535,52 @@ export default function BookingsPage() {
         </div>
       )}
     </PageTransition>
+  );
+}
+
+const WIZARD_LABELS = [
+  "Contact Info",
+  "Lease Details",
+  "Agreement",
+  "Review & Pay",
+] as const;
+
+function WizardProgress({ step }: { step: number }) {
+  const current = Math.min(4, Math.max(1, step));
+  const label = WIZARD_LABELS[current - 1] ?? WIZARD_LABELS[0];
+  return (
+    <div className="mt-2 max-w-xs space-y-1.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-xs text-[var(--muted)]">
+          Page {current} of 4
+          <span className="mx-1.5 text-[var(--border)]">·</span>
+          <span className="font-medium text-[var(--ink)]">{label}</span>
+        </p>
+      </div>
+      <div
+        className="flex gap-1"
+        role="progressbar"
+        aria-valuenow={current}
+        aria-valuemin={1}
+        aria-valuemax={4}
+        aria-label={`Onboarding page ${current} of 4`}
+      >
+        {WIZARD_LABELS.map((name, i) => {
+          const n = i + 1;
+          return (
+            <span
+              key={name}
+              title={`Page ${n}: ${name}`}
+              className={cn(
+                "h-1 flex-1 rounded-full",
+                n <= current
+                  ? "bg-[var(--accent)]"
+                  : "bg-[var(--surface-muted)]",
+              )}
+            />
+          );
+        })}
+      </div>
+    </div>
   );
 }

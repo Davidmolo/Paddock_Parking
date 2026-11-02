@@ -16,6 +16,10 @@ export class PatchCollectionDto {
   queue?: CollectionAccount['queue'];
 
   @IsOptional()
+  @IsIn(['communicated', 'waiting', 'waiting_payment', 'payment_made'])
+  stage?: CollectionAccount['stage'];
+
+  @IsOptional()
   @IsString()
   nextAction?: string;
 

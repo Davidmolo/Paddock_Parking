@@ -47,10 +47,19 @@ export async function prefetchScreenData(
       });
       break;
     case "/customers":
-      await client.prefetchQuery({
-        queryKey: queryKeys.customers(propertyId),
-        queryFn: () => endpoints.customers({ propertyId: pid }),
-      });
+    case "/customers/compliance":
+    case "/compliance/insurance":
+    case "/compliance/plates":
+      await Promise.all([
+        client.prefetchQuery({
+          queryKey: queryKeys.customers(propertyId),
+          queryFn: () => endpoints.customers({ propertyId: pid }),
+        }),
+        client.prefetchQuery({
+          queryKey: ["compliance-queue"],
+          queryFn: () => endpoints.complianceQueue(),
+        }),
+      ]);
       break;
     case "/lots":
       await client.prefetchQuery({
@@ -114,6 +123,7 @@ export async function prefetchAllScreens(
     "/dashboard",
     "/collections",
     "/customers",
+    "/customers/compliance",
     "/lots",
     "/leases",
     "/notifications",

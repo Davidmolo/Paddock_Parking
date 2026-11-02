@@ -22,7 +22,7 @@ export class DashboardService {
       const metrics = this.store.propertyMetrics[p.id] ?? {
         revenue30d: 0,
         projectedMonthly: 0,
-        outstandingDue: 0,
+        monthlyMortgage: 0,
         overdue: 0,
         overdueInvoices: 0,
         revenueTrend: [0, 0, 0, 0, 0, 0],
@@ -33,6 +33,10 @@ export class DashboardService {
       const goodStanding = tenants.filter(
         (c) => c.paymentStatus === 'current',
       ).length;
+      const projectedGrossMargin =
+        Math.round(
+          (metrics.projectedMonthly - metrics.monthlyMortgage) * 100,
+        ) / 100;
 
       return {
         id: p.id,
@@ -55,7 +59,8 @@ export class DashboardService {
         money: {
           revenue30d: metrics.revenue30d,
           projectedMonthly: metrics.projectedMonthly,
-          outstandingDue: metrics.outstandingDue,
+          monthlyMortgage: metrics.monthlyMortgage,
+          projectedGrossMargin,
           overdue: metrics.overdue,
           overdueInvoices: metrics.overdueInvoices,
         },
@@ -77,7 +82,8 @@ export class DashboardService {
       (acc, p) => {
         acc.revenue30d += p.money.revenue30d;
         acc.projectedMonthly += p.money.projectedMonthly;
-        acc.outstandingDue += p.money.outstandingDue;
+        acc.monthlyMortgage += p.money.monthlyMortgage;
+        acc.projectedGrossMargin += p.money.projectedGrossMargin;
         acc.overdue += p.money.overdue;
         acc.occupied += p.inventory.occupied;
         acc.available += p.inventory.available;
@@ -88,7 +94,8 @@ export class DashboardService {
       {
         revenue30d: 0,
         projectedMonthly: 0,
-        outstandingDue: 0,
+        monthlyMortgage: 0,
+        projectedGrossMargin: 0,
         overdue: 0,
         occupied: 0,
         available: 0,

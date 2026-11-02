@@ -69,10 +69,11 @@ export default function LoginPage() {
             PP
           </div>
           <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)]">
-            Paddock Parking
+            Admin Portal
           </h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Sign in to run occupancy, collections, and lease operations.
+            Staff sign-in for occupancy, collections, leases, and onboarding.
+            Customer website is at /book — tenant portal at /portal.
           </p>
         </div>
 
@@ -112,7 +113,18 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-xs text-[var(--muted)]">
           Demo access:{" "}
-          <span className="font-medium text-[var(--ink)]">admin / paddockparking</span>
+          <span className="font-medium text-[var(--ink)]">
+            admin / paddockparking
+          </span>
+        </p>
+        <p className="mt-3 text-center text-xs text-[var(--muted)]">
+          <a href="/book" className="underline underline-offset-2">
+            Customer website
+          </a>
+          {" · "}
+          <a href="/portal" className="underline underline-offset-2">
+            Customer portal
+          </a>
         </p>
       </motion.form>
     </div>

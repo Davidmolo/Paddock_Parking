@@ -8,6 +8,7 @@ import {
   evaluateCoi,
   isRenewalNoticeDue,
 } from '../leases/lease-helpers.js';
+import { syncLotsFromLeaseNoticeWindows } from '../leases/lot-availability-sync.js';
 
 @Injectable()
 export class NotificationsService {
@@ -40,6 +41,9 @@ export class NotificationsService {
 
   /** Build pending notices from renewals-due + COI issues (skips existing fingerprints) */
   generate(propertyId?: string) {
+    // Keep inventory in sync when ops runs auto-check
+    syncLotsFromLeaseNoticeWindows(this.store);
+
     const filterId =
       propertyId && propertyId !== 'all' ? propertyId : undefined;
     const created: OpsNotification[] = [];
@@ -57,6 +61,51 @@ export class NotificationsService {
       const property = this.store.properties.find(
         (p) => p.id === lease.propertyId,
       );
+
+      // Automation: ensure stage starts at not_contacted, never overwrite
+      // stages ops already advanced manually (outreach_sent → …).
+      if (!lease.stage) {
+        lease.stage = 'not_contacted';
+      }
+
+      // Automation: alert the ops team (“notify us”) once per lease window
+      {
+        const dedupeKey = `ops_renewal_alert:${lease.id}`;
+        if (!existing.has(dedupeKey)) {
+          const party =
+            lease.direction === 'landlord'
+              ? (lease.landlordName ?? 'Landlord')
+              : (this.store.customers.find((c) => c.id === lease.customerId)
+                  ?.name ?? 'Tenant');
+          const n = this.push({
+            dedupeKey,
+            kind: 'ops_renewal_alert',
+            channel: 'email',
+            propertyId: lease.propertyId,
+            leaseId: lease.id,
+            customerId: lease.customerId,
+            toName: 'Paddock ops',
+            toAddress: 'ops@paddockparking.example',
+            subject: `Action: renewal window — ${party} @ ${property?.name ?? 'yard'}`,
+            body: [
+              `Automated alert: notify-by window is open.`,
+              '',
+              `Party: ${party}`,
+              `Yard: ${property?.name ?? '—'}`,
+              `Renewal date: ${lease.renewalDate}`,
+              `Lead days: ${lease.notificationLeadDays}`,
+              `Current renewal status: ${lease.stage ?? 'not_contacted'}`,
+              '',
+              'Status stays manual after this — update it on the customer/lease screen.',
+              '— Paddock Parking automation',
+            ].join('\n'),
+            createdAt: now,
+          });
+          existing.add(dedupeKey);
+          created.push(n);
+        }
+      }
+
       if (lease.direction === 'landlord') {
         const dedupeKey = `lease_renewal:${lease.id}:email`;
         if (existing.has(dedupeKey)) continue;

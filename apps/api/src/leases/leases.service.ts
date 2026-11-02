@@ -7,12 +7,14 @@ import {
   isRenewalNoticeDue,
   renewalUrgency,
 } from './lease-helpers.js';
+import { syncLotsFromLeaseNoticeWindows } from './lot-availability-sync.js';
 
 @Injectable()
 export class LeasesService {
   constructor(private readonly store: DataStoreService) {}
 
   findAll(propertyId?: string, direction?: LeaseDirection) {
+    syncLotsFromLeaseNoticeWindows(this.store);
     const filterId =
       propertyId && propertyId !== 'all' ? propertyId : undefined;
     let list = this.store.leases;
@@ -46,12 +48,16 @@ export class LeasesService {
     if (dto.termMonths !== undefined) lease.termMonths = dto.termMonths;
     if (dto.monthlyRent !== undefined) lease.monthlyRent = dto.monthlyRent;
     if (dto.status !== undefined) lease.status = dto.status;
+    if (dto.stage !== undefined) lease.stage = dto.stage;
     if (dto.landlordName !== undefined) lease.landlordName = dto.landlordName;
     if (dto.landlordContact !== undefined) {
       lease.landlordContact = dto.landlordContact;
     }
     if (dto.landlordEmail !== undefined) lease.landlordEmail = dto.landlordEmail;
     if (dto.notes !== undefined) lease.notes = dto.notes;
+
+    // Re-apply occupied ↔ available soon from notice window / renewed stage
+    syncLotsFromLeaseNoticeWindows(this.store);
 
     return this.enrich(lease);
   }

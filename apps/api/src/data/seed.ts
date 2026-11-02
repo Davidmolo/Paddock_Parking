@@ -1,5 +1,7 @@
 /** Paddock Parking domain — aligned to David’s ops needs (not Jazzmin clutter). */
 
+import { sitePlanLots } from "./site-plan-lots.js";
+
 export type LotType =
   | "truck_trailer"
   | "general_storage"
@@ -7,7 +9,12 @@ export type LotType =
   | "drop_yard"
   | "acre";
 
-export type LotStatus = "available" | "occupied" | "reserved" | "maintenance";
+export type LotStatus =
+  | "available"
+  | "available_soon"
+  | "occupied"
+  | "reserved"
+  | "maintenance";
 
 export type Property = {
   id: string;
@@ -29,6 +36,12 @@ export type Lot = {
   customerId?: string;
   qbItemName?: string;
   acres?: number;
+  /** ISO date — when available_soon frees up */
+  availableOn?: string;
+  /** ISO date — when this available space became vacant */
+  vacantSince?: string;
+  /** Prior tenant name (for inventory hover) */
+  lastTenantName?: string;
 };
 
 export type CustomerDocument = {
@@ -60,10 +73,18 @@ export type Customer = {
   lotIds: string[];
   leaseStart: string;
   leaseEnd?: string;
+  /** ISO date — when the customer record was created (newest-first sorts) */
+  createdAt?: string;
   portalLastLogin?: string;
   documents: CustomerDocument[];
   notes?: string;
 };
+
+/**
+ * David (meeting): primary = monthly ACH debit (pull); send invoice only if
+ * tenant did not agree to ACH. Processor direction: Greta Authorize.net.
+ */
+export type InvoiceCollectionMethod = "ach_debit" | "send_invoice";
 
 export type Invoice = {
   id: string;
@@ -74,6 +95,11 @@ export type Invoice = {
   status: "paid" | "open" | "overdue" | "partial";
   dueDate: string;
   issuedAt: string;
+  /**
+   * How we collect this charge. If omitted, derived from customer.achEnabled
+   * at read time (ACH on → ach_debit, else send_invoice).
+   */
+  collectionMethod?: InvoiceCollectionMethod;
 };
 
 export type Payment = {
@@ -86,6 +112,13 @@ export type Payment = {
   reference?: string;
 };
 
+/** David / QB aging — outreach stage on each open balance */
+export type CollectionStage =
+  | "communicated"
+  | "waiting"
+  | "waiting_payment"
+  | "payment_made";
+
 export type CollectionAccount = {
   id: string;
   customerId: string;
@@ -93,7 +126,10 @@ export type CollectionAccount = {
   propertyId: string;
   balance: number;
   daysOverdue: number;
+  /** Open invoice due date (YYYY-MM-DD) */
+  dueDate: string;
   invoiceCount: number;
+  /** Legacy outreach queues — still used by send-emails-due */
   queue:
     | "need_email"
     | "need_text"
@@ -103,11 +139,31 @@ export type CollectionAccount = {
     | "notice"
     | "in_cure"
     | "lockout";
+  /** David: Communicated / Waiting / Waiting for payment / Payment made */
+  stage: CollectionStage;
   nextAction: string;
   emails: number;
   texts: number;
   calls: number;
 };
+
+/** David Book Now: parking by spot vs storage by acre */
+export type BookingProductType = "parking_spot" | "storage_acre";
+
+export type BookingVehicle = {
+  make: string;
+  color: string;
+  truckNumber: string;
+  licensePlate: string;
+  /** Applicant chose “fill out later” for this vehicle */
+  submitLater: boolean;
+};
+
+/**
+ * FMS-style onboarding progress (last step completed, 1–5).
+ * 1 Contact · 2 Lease details · 3 Docs · 4 Agreement · 5 Pay
+ */
+export type BookingWizardStep = 1 | 2 | 3 | 4 | 5;
 
 export type Booking = {
   id: string;
@@ -123,6 +179,18 @@ export type Booking = {
   lotId?: string;
   /** Set after convert to tenant */
   customerId?: string;
+  productType?: BookingProductType;
+  spotCount?: number;
+  acreSize?: number;
+  storageDescription?: string;
+  leaseStart?: string;
+  vehicles?: BookingVehicle[];
+  docsSubmitLater?: boolean;
+  /** Last wizard step completed (for Onboarding inbox) */
+  wizardStep?: BookingWizardStep;
+  paymentMethod?: "card" | "ach" | "pending";
+  autoPullAgreed?: boolean;
+  autoPullWaived?: boolean;
 };
 
 /**
@@ -152,6 +220,17 @@ export type Lease = {
   termMonths?: number;
   monthlyRent: number;
   status: "active" | "pending" | "expired" | "terminated";
+  /**
+   * Ops stage for renewal / landlord outreach (David).
+   * not_contacted → outreach_sent → negotiating → notice_given → renewed | exiting
+   */
+  stage?:
+    | "not_contacted"
+    | "outreach_sent"
+    | "negotiating"
+    | "notice_given"
+    | "renewed"
+    | "exiting";
   achEnabled: boolean;
   signedDocId?: string;
   notes?: string;
@@ -179,7 +258,10 @@ export type CertificateOfInsurance = {
   notes?: string;
 };
 
-export type NotificationKind = "lease_renewal" | "coi_issue";
+export type NotificationKind =
+  | "lease_renewal"
+  | "coi_issue"
+  | "ops_renewal_alert";
 export type NotificationChannel = "email" | "sms";
 export type NotificationStatus = "pending" | "sent" | "failed";
 
@@ -273,8 +355,9 @@ export const customers: Customer[] = [
     achEnabled: false,
     gateCode: "4821",
     isActive: true,
-    lotIds: ["l1", "l2"],
+    lotIds: ["elw-Lot1", "elw-Lot2"],
     leaseStart: "2024-03-15",
+    createdAt: "2024-03-10",
     documents: [
       {
         id: "d1",
@@ -301,8 +384,9 @@ export const customers: Customer[] = [
     achEnabled: false,
     gateCode: "1190",
     isActive: true,
-    lotIds: ["l4"],
+    lotIds: ["elw-P-02"],
     leaseStart: "2023-11-01",
+    createdAt: "2023-10-28",
     documents: [
       {
         id: "d2",
@@ -336,8 +420,9 @@ export const customers: Customer[] = [
     achEnabled: true,
     gateCode: "3302",
     isActive: true,
-    lotIds: ["l7", "l8"],
+    lotIds: ["p325-B1", "p325-B2"],
     leaseStart: "2025-06-01",
+    createdAt: "2025-05-28",
     documents: [],
   },
   {
@@ -356,8 +441,9 @@ export const customers: Customer[] = [
     achEnabled: false,
     gateCode: "7744",
     isActive: true,
-    lotIds: ["l9"],
+    lotIds: ["p325-Lot2"],
     leaseStart: "2024-01-01",
+    createdAt: "2023-12-20",
     leaseEnd: "2026-12-31",
     documents: [
       {
@@ -385,8 +471,9 @@ export const customers: Customer[] = [
     achEnabled: true,
     gateCode: "6060",
     isActive: true,
-    lotIds: ["l13", "l14"],
+    lotIds: ["p6060-1", "p6060-2"],
     leaseStart: "2025-11-01",
+    createdAt: "2025-10-22",
     portalLastLogin: "2026-10-01",
     documents: [
       {
@@ -414,8 +501,9 @@ export const customers: Customer[] = [
     achEnabled: false,
     gateCode: "9911",
     isActive: true,
-    lotIds: ["l6"],
+    lotIds: ["elw-UnitedRental"],
     leaseStart: "2024-08-01",
+    createdAt: "2024-07-25",
     documents: [],
   },
   {
@@ -434,8 +522,9 @@ export const customers: Customer[] = [
     achEnabled: false,
     gateCode: "2200",
     isActive: true,
-    lotIds: ["l16"],
+    lotIds: ["p6060-LotA"],
     leaseStart: "2023-05-01",
+    createdAt: "2023-04-18",
     documents: [],
   },
   {
@@ -454,8 +543,9 @@ export const customers: Customer[] = [
     achEnabled: false,
     gateCode: "6201",
     isActive: true,
-    lotIds: ["l17"],
+    lotIds: ["elw-P-01"],
     leaseStart: "2026-08-07",
+    createdAt: "2026-08-07",
     portalLastLogin: "2026-08-07",
     documents: [
       {
@@ -469,174 +559,39 @@ export const customers: Customer[] = [
   },
 ];
 
-export const lots: Lot[] = [
-  {
-    id: "l1",
-    propertyId: "prop-16",
-    number: "1",
-    size: "12' x 75'",
-    lotType: "truck_trailer",
-    monthlyRate: 225,
-    status: "occupied",
-    customerId: "c1",
-  },
-  {
-    id: "l2",
-    propertyId: "prop-16",
-    number: "2",
-    size: "12' x 75'",
-    lotType: "truck_trailer",
-    monthlyRate: 225,
-    status: "occupied",
-    customerId: "c1",
-  },
-  {
-    id: "l3",
-    propertyId: "prop-16",
-    number: "P37",
-    size: "12' x 75'",
-    lotType: "truck_trailer",
-    monthlyRate: 225,
-    status: "available",
-  },
-  {
-    id: "l4",
-    propertyId: "prop-16",
-    number: "S13",
-    size: "25' x 50'",
-    lotType: "general_storage",
-    monthlyRate: 450,
-    status: "occupied",
-    customerId: "c2",
-  },
-  {
-    id: "l5",
-    propertyId: "prop-16",
-    number: "S14",
-    size: "25' x 50'",
-    lotType: "general_storage",
-    monthlyRate: 450,
-    status: "available",
-  },
-  {
-    id: "l6",
-    propertyId: "prop-16",
-    number: "C1",
-    size: "50' x 25'",
-    lotType: "general_storage",
-    monthlyRate: 890,
-    status: "occupied",
-    customerId: "c6",
-  },
-  {
-    id: "l7",
-    propertyId: "prop-325",
-    number: "A1",
-    size: "35' x 12'",
-    lotType: "bobtail",
-    monthlyRate: 390,
-    status: "occupied",
-    customerId: "c3",
-  },
-  {
-    id: "l8",
-    propertyId: "prop-325",
-    number: "A2",
-    size: "35' x 12'",
-    lotType: "bobtail",
-    monthlyRate: 390,
-    status: "occupied",
-    customerId: "c3",
-  },
-  {
-    id: "l9",
-    propertyId: "prop-325",
-    number: "TT14",
-    size: "12' x 75'",
-    lotType: "truck_trailer",
-    monthlyRate: 520,
-    status: "occupied",
-    customerId: "c4",
-  },
-  {
-    id: "l10",
-    propertyId: "prop-325",
-    number: "GS1",
-    size: "25' x 50'",
-    lotType: "general_storage",
-    monthlyRate: 375,
-    status: "available",
-  },
-  {
-    id: "l11",
-    propertyId: "prop-51",
-    number: "Lot 1",
-    size: "0.25 acre",
-    lotType: "acre",
-    monthlyRate: 2000,
-    status: "available",
-    acres: 0.25,
-  },
-  {
-    id: "l12",
-    propertyId: "prop-51",
-    number: "Lot 2",
-    size: "0.5 acre",
-    lotType: "acre",
-    monthlyRate: 3000,
-    status: "available",
-    acres: 0.5,
-  },
-  {
-    id: "l13",
-    propertyId: "prop-6060",
-    number: "Lot 1",
-    size: "45' x 15'",
-    lotType: "truck_trailer",
-    monthlyRate: 560,
-    status: "occupied",
-    customerId: "c5",
-  },
-  {
-    id: "l14",
-    propertyId: "prop-6060",
-    number: "Lot 2",
-    size: "45' x 15'",
-    lotType: "truck_trailer",
-    monthlyRate: 560,
-    status: "occupied",
-    customerId: "c5",
-  },
-  {
-    id: "l15",
-    propertyId: "prop-6060",
-    number: "Lot 3",
-    size: "45' x 15'",
-    lotType: "truck_trailer",
-    monthlyRate: 560,
-    status: "available",
-  },
-  {
-    id: "l16",
-    propertyId: "prop-6060",
-    number: "Lot 4",
-    size: "45' x 15'",
-    lotType: "truck_trailer",
-    monthlyRate: 560,
-    status: "occupied",
-    customerId: "c7",
-  },
-  {
-    id: "l17",
-    propertyId: "prop-16",
-    number: "18",
-    size: "12' x 75'",
-    lotType: "truck_trailer",
-    monthlyRate: 225,
-    status: "occupied",
-    customerId: "c8",
-  },
-];
+export const lots: Lot[] = sitePlanLots.map((lot: (typeof sitePlanLots)[number]) => {
+  const occupied: Record<
+    string,
+    { status: LotStatus; customerId: string; monthlyRate?: number }
+  > = {
+    "elw-Lot1": { status: "occupied", customerId: "c1", monthlyRate: 2400 },
+    "elw-Lot2": { status: "occupied", customerId: "c1", monthlyRate: 4800 },
+    "elw-P-01": { status: "occupied", customerId: "c8", monthlyRate: 225 },
+    "elw-P-02": { status: "occupied", customerId: "c2", monthlyRate: 225 },
+    "elw-UnitedRental": { status: "occupied", customerId: "c6", monthlyRate: 1600 },
+    "p325-B1": { status: "occupied", customerId: "c3" },
+    "p325-B2": { status: "occupied", customerId: "c3" },
+    "p325-Lot2": { status: "occupied", customerId: "c4", monthlyRate: 2400 },
+    "p6060-1": { status: "occupied", customerId: "c5", monthlyRate: 180 },
+    "p6060-2": { status: "occupied", customerId: "c5", monthlyRate: 180 },
+    "p6060-LotA": { status: "occupied", customerId: "c7", monthlyRate: 3600 },
+  };
+  const patch = occupied[lot.id];
+  if (!patch) {
+    const base = lot as Lot;
+    // Demo vacant ages for hover (“Vacant N days”)
+    if (base.status === "available" && !base.vacantSince) {
+      return { ...base, vacantSince: "2026-06-01" };
+    }
+    return base;
+  }
+  return {
+    ...(lot as Lot),
+    status: patch.status,
+    customerId: patch.customerId,
+    monthlyRate: patch.monthlyRate ?? (lot as Lot).monthlyRate,
+  };
+});
 
 export const invoices: Invoice[] = [
   {
@@ -737,12 +692,14 @@ export const collections: CollectionAccount[] = [
     customerName: "Golden Horn Transport LLC",
     propertyId: "prop-16",
     balance: 4462.1,
-    daysOverdue: 89,
+    daysOverdue: 30,
+    dueDate: "2026-09-28",
     invoiceCount: 2,
-    queue: "owner_call",
-    nextAction: "Request default notice",
-    emails: 0,
-    texts: 0,
+    queue: "promised",
+    stage: "waiting_payment",
+    nextAction: "Promised Fri",
+    emails: 1,
+    texts: 1,
     calls: 2,
   },
   {
@@ -751,10 +708,12 @@ export const collections: CollectionAccount[] = [
     customerName: "Lucas AZ Home Services",
     propertyId: "prop-16",
     balance: 3070.98,
-    daysOverdue: 215,
+    daysOverdue: 105,
+    dueDate: "2026-07-15",
     invoiceCount: 6,
     queue: "owner_call",
-    nextAction: "Request default notice",
+    stage: "waiting_payment",
+    nextAction: "—",
     emails: 1,
     texts: 0,
     calls: 1,
@@ -764,14 +723,16 @@ export const collections: CollectionAccount[] = [
     customerId: "c3",
     customerName: "Fisk & Sons",
     propertyId: "prop-325",
-    balance: 2000.79,
-    daysOverdue: 87,
-    invoiceCount: 4,
+    balance: 200.79,
+    daysOverdue: 0,
+    dueDate: "2026-11-15",
+    invoiceCount: 1,
     queue: "need_email",
-    nextAction: "Send overdue email",
-    emails: 1,
+    stage: "waiting_payment",
+    nextAction: "Invoice open, not late",
+    emails: 0,
     texts: 0,
-    calls: 1,
+    calls: 0,
   },
   {
     id: "col4",
@@ -779,12 +740,14 @@ export const collections: CollectionAccount[] = [
     customerName: "ValleyWide Xpress Transport",
     propertyId: "prop-325",
     balance: 1870,
-    daysOverdue: 221,
+    daysOverdue: 57,
+    dueDate: "2026-09-01",
     invoiceCount: 8,
     queue: "need_text",
-    nextAction: "Send text",
-    emails: 0,
-    texts: 0,
+    stage: "communicated",
+    nextAction: "—",
+    emails: 2,
+    texts: 1,
     calls: 1,
   },
   {
@@ -793,11 +756,13 @@ export const collections: CollectionAccount[] = [
     customerName: "AA& D Transport LLC",
     propertyId: "prop-16",
     balance: 232.65,
-    daysOverdue: 1,
+    daysOverdue: 8,
+    dueDate: "2026-10-20",
     invoiceCount: 1,
     queue: "need_email",
-    nextAction: "Send 1-day past due email",
-    emails: 0,
+    stage: "communicated",
+    nextAction: "Email logged",
+    emails: 1,
     texts: 0,
     calls: 0,
   },
@@ -806,13 +771,15 @@ export const collections: CollectionAccount[] = [
     customerId: "c5",
     customerName: "Modern Home Textiles Inc.",
     propertyId: "prop-6060",
-    balance: 6724.4,
-    daysOverdue: 29,
-    invoiceCount: 2,
+    balance: 0,
+    daysOverdue: 0,
+    dueDate: "2026-11-01",
+    invoiceCount: 1,
     queue: "promised",
-    nextAction: "Follow up broken promise",
+    stage: "payment_made",
+    nextAction: "Cleared",
     emails: 0,
-    texts: 1,
+    texts: 0,
     calls: 0,
   },
   {
@@ -821,12 +788,14 @@ export const collections: CollectionAccount[] = [
     customerName: "ND Asset Recovery LLC",
     propertyId: "prop-16",
     balance: 6824.4,
-    daysOverdue: 12,
+    daysOverdue: 45,
+    dueDate: "2026-09-13",
     invoiceCount: 1,
     queue: "lockout",
-    nextAction: "Request lockout review",
-    emails: 0,
-    texts: 0,
+    stage: "waiting",
+    nextAction: "No reply",
+    emails: 2,
+    texts: 1,
     calls: 0,
   },
   {
@@ -835,13 +804,15 @@ export const collections: CollectionAccount[] = [
     customerName: "Truck Parking Source LLC",
     propertyId: "prop-6060",
     balance: 4342.8,
-    daysOverdue: 127,
+    daysOverdue: 149,
+    dueDate: "2026-06-01",
     invoiceCount: 4,
     queue: "lockout",
-    nextAction: "Request lockout review",
-    emails: 0,
+    stage: "waiting",
+    nextAction: "Lockout review",
+    emails: 1,
     texts: 0,
-    calls: 0,
+    calls: 2,
   },
 ];
 
@@ -924,7 +895,7 @@ export const leases: Lease[] = [
     direction: "tenant",
     customerId: "c5",
     propertyId: "prop-6060",
-    lotNumbers: ["Lot 1", "Lot 2"],
+    lotNumbers: ["1", "2"],
     startDate: "2025-11-01",
     renewalDate: "2026-11-01",
     notificationLeadDays: 30,
@@ -939,7 +910,7 @@ export const leases: Lease[] = [
     direction: "tenant",
     customerId: "c1",
     propertyId: "prop-16",
-    lotNumbers: ["1", "2"],
+    lotNumbers: ["Lot 1", "Lot 2"],
     startDate: "2024-03-15",
     renewalDate: "2026-11-15",
     notificationLeadDays: 30,
@@ -954,7 +925,7 @@ export const leases: Lease[] = [
     direction: "tenant",
     customerId: "c8",
     propertyId: "prop-16",
-    lotNumbers: ["18"],
+    lotNumbers: ["P-01"],
     startDate: "2026-08-07",
     renewalDate: "2027-08-07",
     notificationLeadDays: 30,
@@ -968,7 +939,7 @@ export const leases: Lease[] = [
     direction: "tenant",
     customerId: "c4",
     propertyId: "prop-325",
-    lotNumbers: ["12"],
+    lotNumbers: ["Lot 2"],
     startDate: "2024-01-01",
     endDate: "2026-12-31",
     renewalDate: "2026-12-31",
@@ -985,7 +956,7 @@ export const leases: Lease[] = [
     direction: "tenant",
     customerId: "c2",
     propertyId: "prop-16",
-    lotNumbers: ["4"],
+    lotNumbers: ["P-02"],
     startDate: "2023-11-01",
     renewalDate: "2026-10-01",
     notificationLeadDays: 30,
@@ -1000,7 +971,7 @@ export const leases: Lease[] = [
     direction: "tenant",
     customerId: "c3",
     propertyId: "prop-325",
-    lotNumbers: ["8", "9"],
+    lotNumbers: ["B1", "B2"],
     startDate: "2025-06-01",
     renewalDate: "2026-12-01",
     notificationLeadDays: 45,
@@ -1081,7 +1052,7 @@ export const bookings: Booking[] = [
     status: "reserved",
     monthlyRate: 375,
     createdAt: "2026-10-03",
-    lotId: "l10",
+    lotId: "p325-Lot5",
   },
 ];
 
@@ -1091,6 +1062,7 @@ export const propertyMetrics: Record<
   {
     revenue30d: number;
     projectedMonthly: number;
+    monthlyMortgage: number;
     outstandingDue: number;
     overdue: number;
     overdueInvoices: number;
@@ -1100,6 +1072,7 @@ export const propertyMetrics: Record<
   "prop-16": {
     revenue30d: 76486.51,
     projectedMonthly: 62983.33,
+    monthlyMortgage: 28500,
     outstandingDue: 57676.93,
     overdue: 42260.84,
     overdueInvoices: 46,
@@ -1108,6 +1081,7 @@ export const propertyMetrics: Record<
   "prop-325": {
     revenue30d: 62401.88,
     projectedMonthly: 62190.95,
+    monthlyMortgage: 31200,
     outstandingDue: 42011.27,
     overdue: 21533.93,
     overdueInvoices: 16,
@@ -1116,6 +1090,7 @@ export const propertyMetrics: Record<
   "prop-51": {
     revenue30d: 0,
     projectedMonthly: 0,
+    monthlyMortgage: 0,
     outstandingDue: 0,
     overdue: 0,
     overdueInvoices: 0,
@@ -1124,6 +1099,7 @@ export const propertyMetrics: Record<
   "prop-6060": {
     revenue30d: 84733,
     projectedMonthly: 82010,
+    monthlyMortgage: 41000,
     outstandingDue: 9800,
     overdue: 2150,
     overdueInvoices: 7,

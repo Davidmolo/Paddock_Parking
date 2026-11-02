@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Paddock Parking — Collections / Aging UI options for David</title>
+    <style>
+      :root {
+        --ink: #0b1524;
+        --muted: #5c6b7f;
+        --line: #e2e8f0;
+        --paper: #fff;
+        --canvas: #f3f5f8;
+        --brand: #0f766e;
+        --brand-dark: #0b3d3a;
+        --soft: #e7f6f4;
+        --warn: #b45309;
+        --danger: #b91c1c;
+        --ok: #15803d;
+        --shadow: 0 16px 40px rgba(11, 21, 36, 0.08);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--canvas);
+        color: var(--ink);
+        line-height: 1.45;
+      }
+      button,
+      select {
+        font: inherit;
+      }
+      .hero {
+        background: linear-gradient(135deg, #0b3d3a, #0f766e 55%, #115e59);
+        color: #ecfeff;
+        padding: 2rem 1.25rem 1.75rem;
+      }
+      .hero-inner {
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+      .hero .eye {
+        margin: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        opacity: 0.8;
+      }
+      .hero h1 {
+        margin: 0.4rem 0 0;
+        font-size: clamp(1.5rem, 3vw, 2.15rem);
+        letter-spacing: -0.03em;
+      }
+      .hero p {
+        margin: 0.7rem 0 0;
+        max-width: 68ch;
+        color: rgba(236, 254, 255, 0.9);
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 1.25rem;
+      }
+      .ctx {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 1.1rem 1.2rem;
+        margin-top: -1.25rem;
+        position: relative;
+        z-index: 1;
+      }
+      .ctx h2 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+      }
+      .ctx ul {
+        margin: 0.4rem 0 0;
+        padding-left: 1.15rem;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1.25rem 0 0.75rem;
+      }
+      .tabs button {
+        border: 1px solid var(--line);
+        background: var(--paper);
+        border-radius: 999px;
+        padding: 0.55rem 1rem;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      .tabs button.active {
+        background: var(--brand-dark);
+        border-color: var(--brand-dark);
+        color: #fff;
+      }
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+      .pick {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        margin-bottom: 1rem;
+      }
+      .pick article {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 0.9rem 1rem;
+      }
+      .pick .tag {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--brand);
+        background: var(--soft);
+        border-radius: 6px;
+        padding: 0.2rem 0.45rem;
+      }
+      .pick h3 {
+        margin: 0.45rem 0 0.25rem;
+        font-size: 1.05rem;
+      }
+      .pick p {
+        margin: 0;
+        font-size: 0.88rem;
+        color: var(--muted);
+      }
+      .mock {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .mock-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.9rem 1.1rem;
+        border-bottom: 1px solid var(--line);
+        background: #fafbfc;
+      }
+      .mock-bar h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+      .mock-bar .sub {
+        margin: 0.15rem 0 0;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .chip {
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #fff;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .chip.on {
+        background: var(--brand-dark);
+        border-color: var(--brand-dark);
+        color: #fff;
+      }
+      .kpi {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.65rem;
+        padding: 1rem;
+      }
+      @media (max-width: 800px) {
+        .kpi {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .kpi > div {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 0.75rem 0.85rem;
+        background: #fff;
+      }
+      .kpi .l {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+      .kpi .v {
+        margin-top: 0.25rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .kpi .h {
+        margin-top: 0.15rem;
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+      .aging {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+        padding: 0 1rem 1rem;
+      }
+      @media (max-width: 800px) {
+        .aging {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .aging > button {
+        text-align: left;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff;
+        padding: 0.7rem 0.8rem;
+        cursor: pointer;
+      }
+      .aging > button:hover,
+      .aging > button.sel {
+        border-color: var(--brand);
+        background: var(--soft);
+      }
+      .aging .b {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .aging .a {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-top: 0.2rem;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+      }
+      th,
+      td {
+        padding: 0.65rem 0.85rem;
+        border-top: 1px solid var(--line);
+        text-align: left;
+        vertical-align: middle;
+      }
+      th {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        background: #fafbfc;
+        border-top: none;
+      }
+      tr.row {
+        cursor: pointer;
+      }
+      tr.row:hover {
+        background: #f8fafc;
+      }
+      .badge {
+        display: inline-block;
+        border-radius: 6px;
+        padding: 0.15rem 0.45rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+      .b-red {
+        background: #fee2e2;
+        color: var(--danger);
+      }
+      .b-amber {
+        background: #ffedd5;
+        color: var(--warn);
+      }
+      .b-green {
+        background: #dcfce7;
+        color: var(--ok);
+      }
+      .b-slate {
+        background: #e2e8f0;
+        color: #334155;
+      }
+      .drawer {
+        display: none;
+        border-top: 1px solid var(--line);
+        background: #f8fafc;
+        padding: 1rem 1.1rem;
+      }
+      .drawer.open {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: 1.2fr 1fr;
+      }
+      @media (max-width: 800px) {
+        .drawer.open {
+          grid-template-columns: 1fr;
+        }
+      }
+      .drawer h4 {
+        margin: 0 0 0.4rem;
+        font-size: 0.95rem;
+      }
+      .drawer p,
+      .drawer li {
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.6rem;
+      }
+      .actions button {
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #fff;
+        padding: 0.4rem 0.7rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .actions button.pri {
+        background: var(--brand-dark);
+        border-color: var(--brand-dark);
+        color: #fff;
+      }
+      /* Option B pipeline */
+      .pipe {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(140px, 1fr));
+        gap: 0.55rem;
+        padding: 1rem;
+        overflow-x: auto;
+      }
+      .col {
+        background: #f8fafc;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        min-height: 280px;
+        padding: 0.55rem;
+      }
+      .col h4 {
+        margin: 0 0 0.5rem;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.65rem;
+        margin-bottom: 0.45rem;
+        font-size: 0.82rem;
+      }
+      .card strong {
+        display: block;
+        margin-bottom: 0.2rem;
+      }
+      .card .meta {
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+      /* Option C hybrid */
+      .split {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        min-height: 420px;
+      }
+      @media (max-width: 900px) {
+        .split {
+          grid-template-columns: 1fr;
+        }
+      }
+      .side {
+        border-right: 1px solid var(--line);
+        padding: 1rem;
+        background: #fafbfc;
+      }
+      .side h4 {
+        margin: 0 0 0.6rem;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+      .yard {
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 10px;
+        padding: 0.65rem 0.75rem;
+        margin-bottom: 0.4rem;
+        cursor: pointer;
+      }
+      .yard.on {
+        border-color: var(--brand);
+        background: var(--soft);
+      }
+      .yard .n {
+        font-weight: 700;
+        font-size: 0.9rem;
+      }
+      .yard .m {
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+      .main {
+        padding: 0;
+      }
+      .note {
+        margin-top: 1rem;
+        padding: 1rem 1.1rem;
+        background: var(--paper);
+        border: 1px dashed var(--line);
+        border-radius: 14px;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      .note strong {
+        color: var(--ink);
+      }
+      footer {
+        text-align: center;
+        padding: 1.5rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-inner">
+        <p class="eye">Paddock Parking Ops · Research for David</p>
+        <h1>Collections / Aging — 3 formal UI options</h1>
+        <p>
+          You asked us not to copy the messy Jazzmin-style board — find how the
+          industry manages aging, then propose a clean way. Below: three
+          industry-standard patterns. Pick one (or mix) and we’ll build it.
+        </p>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <div class="ctx">
+        <h2>What you said (meeting)</h2>
+        <ul>
+          <li>Don’t copy curls / messy boards — find a formal pattern first.</li>
+          <li>Need a real way to <strong>manage aging</strong> (overdue money).</li>
+          <li>Current Collections feels messy / not a good way.</li>
+          <li>We’ll research and return with <strong>2–3 mockups</strong>.</li>
+        </ul>
+        <p style="margin: 0.75rem 0 0; font-size: 0.9rem; color: var(--muted)">
+          Industry pattern (property + B2B AR): <em>aging buckets</em> (1–30 /
+          31–60 / 61–90 / 90+) + a <em>ranked worklist</em> + a
+          <em>case / promise-to-pay</em> record. Kanban only for a short
+          escalation ladder — not eight messy columns.
+        </p>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button type="button" class="active" data-tab="a">
+          A · Aging console + worklist
+        </button>
+        <button type="button" data-tab="b">B · Escalation pipeline</button>
+        <button type="button" data-tab="c">C · Yard + today’s queue</button>
+      </div>
+
+      <!-- ========== A ========== -->
+      <section class="panel active" id="panel-a">
+        <div class="pick">
+          <article>
+            <span class="tag">Recommended default</span>
+            <h3>Aging console + ranked worklist</h3>
+            <p>
+              How most AR / property collections products work: money first
+              (buckets), then a table you work top-down.
+            </p>
+          </article>
+          <article>
+            <span class="tag">Why</span>
+            <h3>Formal, auditable</h3>
+            <p>
+              Matches “overdue only” from the dashboard talk. Manager sees
+              exposure; operator sees next action.
+            </p>
+          </article>
+          <article>
+            <span class="tag">Refs</span>
+            <h3>Industry shape</h3>
+            <p>
+              Aging ladder + officer worklist + case drawer (promise / notice /
+              lockout) — same skeleton as modern arrears consoles.
+            </p>
+          </article>
+        </div>
+
+        <div class="mock" id="mock-a">
+          <div class="mock-bar">
+            <div>
+              <h3>Collections</h3>
+              <p class="sub">
+                Overdue only · ranked by $ exposure × days past due
+              </p>
+            </div>
+            <div class="chips">
+              <span class="chip on">All yards</span>
+              <span class="chip">Paddock 16</span>
+              <span class="chip">Paddock 325</span>
+              <span class="chip">Paddock 6060</span>
+            </div>
+          </div>
+          <div class="kpi">
+            <div>
+              <div class="l">Total overdue</div>
+              <div class="v">$18,420</div>
+              <div class="h">14 accounts</div>
+            </div>
+            <div>
+              <div class="l">Avg days past due</div>
+              <div class="v">37</div>
+              <div class="h">oldest 91d</div>
+            </div>
+            <div>
+              <div class="l">Promised this week</div>
+              <div class="v">$4,100</div>
+              <div class="h">3 promises</div>
+            </div>
+            <div>
+              <div class="l">Need action today</div>
+              <div class="v">6</div>
+              <div class="h">no contact ≥ 7d</div>
+            </div>
+          </div>
+          <div class="aging">
+            <button type="button" class="sel" data-bucket="1-30">
+              <div class="b">1–30 days</div>
+              <div class="a">$6,200</div>
+            </button>
+            <button type="button" data-bucket="31-60">
+              <div class="b">31–60 days</div>
+              <div class="a">$5,800</div>
+            </button>
+            <button type="button" data-bucket="61-90">
+              <div class="b">61–90 days</div>
+              <div class="a">$3,900</div>
+            </button>
+            <button type="button" data-bucket="90">
+              <div class="b">90+ days</div>
+              <div class="a">$2,520</div>
+            </button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Tenant</th>
+                <th>Yard / spot</th>
+                <th>Overdue</th>
+                <th>Days</th>
+                <th>Last touch</th>
+                <th>Next action</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row" data-case="1">
+                <td><strong>Desert Haul LLC</strong></td>
+                <td>16 · #S14</td>
+                <td>$2,250</td>
+                <td>47</td>
+                <td>5d ago · email</td>
+                <td>Owner call</td>
+                <td><span class="badge b-amber">Working</span></td>
+              </tr>
+              <tr class="row" data-case="2">
+                <td><strong>Valley Rigging</strong></td>
+                <td>325 · #T3</td>
+                <td>$1,560</td>
+                <td>62</td>
+                <td>12d ago · text</td>
+                <td>Notice approval</td>
+                <td><span class="badge b-red">Escalate</span></td>
+              </tr>
+              <tr class="row" data-case="3">
+                <td><strong>Sunbelt Storage Co</strong></td>
+                <td>6060 · #TT2</td>
+                <td>$890</td>
+                <td>18</td>
+                <td>Today · promise</td>
+                <td>Wait until Fri</td>
+                <td><span class="badge b-green">Promised</span></td>
+              </tr>
+              <tr class="row" data-case="4">
+                <td><strong>Mesa Fleet Partners</strong></td>
+                <td>16 · #A2</td>
+                <td>$3,400</td>
+                <td>91</td>
+                <td>3d ago · call</td>
+                <td>Lockout approval</td>
+                <td><span class="badge b-red">Critical</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="drawer" id="drawer-a">
+            <div>
+              <h4 id="drawer-title">Case</h4>
+              <p id="drawer-body">
+                Select a row to open the case: invoices, contact log, promise
+                date, and approval gates (notice / lockout).
+              </p>
+              <div class="actions">
+                <button type="button" class="pri">Log call</button>
+                <button type="button">Send reminder</button>
+                <button type="button">Record promise</button>
+                <button type="button">Request notice</button>
+              </div>
+            </div>
+            <div>
+              <h4>Aging breakdown</h4>
+              <ul>
+                <li>Invoice INV-1042 · $1,125 · 47d</li>
+                <li>Invoice INV-1088 · $1,125 · 19d</li>
+                <li>ACH failed · last attempt Oct 12</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== B ========== -->
+      <section class="panel" id="panel-b">
+        <div class="pick">
+          <article>
+            <span class="tag">Workflow focus</span>
+            <h3>Escalation pipeline (5 stages)</h3>
+            <p>
+              Same idea as a kanban — but a short, formal ladder: Contact →
+              Promise → Notice → Cure → Lockout. Not eight messy columns.
+            </p>
+          </article>
+          <article>
+            <span class="tag">When</span>
+            <h3>Best if ops live in stages</h3>
+            <p>
+              Good when David’s team thinks in “where is this account in the
+              process?” more than “how old is the debt?”
+            </p>
+          </article>
+          <article>
+            <span class="tag">Risk</span>
+            <h3>Can get messy again</h3>
+            <p>
+              If we add too many columns we recreate Jazzmin. Keep stages fixed
+              and put aging $ on each card.
+            </p>
+          </article>
+        </div>
+        <div class="mock">
+          <div class="mock-bar">
+            <div>
+              <h3>Collections pipeline</h3>
+              <p class="sub">
+                Formal escalation only · approvals sit in Notice / Lockout
+              </p>
+            </div>
+            <div class="chips">
+              <span class="chip on">All yards</span>
+              <span class="chip">Needs approval (2)</span>
+            </div>
+          </div>
+          <div class="pipe">
+            <div class="col">
+              <h4>1 · Contact</h4>
+              <div class="card">
+                <strong>Desert Haul</strong>
+                <div class="meta">$2,250 · 47d · Paddock 16</div>
+              </div>
+              <div class="card">
+                <strong>Iron Side LLC</strong>
+                <div class="meta">$640 · 22d · Paddock 51</div>
+              </div>
+            </div>
+            <div class="col">
+              <h4>2 · Promised</h4>
+              <div class="card">
+                <strong>Sunbelt Storage</strong>
+                <div class="meta">$890 · pay by Fri</div>
+              </div>
+            </div>
+            <div class="col">
+              <h4>3 · Notice</h4>
+              <div class="card">
+                <strong>Valley Rigging</strong>
+                <div class="meta">$1,560 · needs approval</div>
+              </div>
+            </div>
+            <div class="col">
+              <h4>4 · In cure</h4>
+              <div class="card">
+                <strong>Apache Yard Co</strong>
+                <div class="meta">$1,100 · day 4 of 10</div>
+              </div>
+            </div>
+            <div class="col">
+              <h4>5 · Lockout</h4>
+              <div class="card">
+                <strong>Mesa Fleet</strong>
+                <div class="meta">$3,400 · 91d · approve</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== C ========== -->
+      <section class="panel" id="panel-c">
+        <div class="pick">
+          <article>
+            <span class="tag">Yard-first</span>
+            <h3>Yard rollup + today’s queue</h3>
+            <p>
+              Left: overdue by location (aligns with dashboard). Right: only
+              accounts due for action today.
+            </p>
+          </article>
+          <article>
+            <span class="tag">Why</span>
+            <h3>Matches how you run yards</h3>
+            <p>
+              David already wants overdue per location on the dashboard — this
+              Collections view continues that mental model.
+            </p>
+          </article>
+          <article>
+            <span class="tag">Pair with</span>
+            <h3>Often combined with A</h3>
+            <p>
+              Yard chips + aging buckets + worklist is the hybrid most PM / AR
+              teams ship.
+            </p>
+          </article>
+        </div>
+        <div class="mock">
+          <div class="mock-bar">
+            <div>
+              <h3>Collections by yard</h3>
+              <p class="sub">Pick a yard → work today’s queue</p>
+            </div>
+          </div>
+          <div class="split">
+            <aside class="side">
+              <h4>Yards</h4>
+              <button type="button" class="yard on">
+                <div class="n">All yards</div>
+                <div class="m">$18,420 overdue · 14</div>
+              </button>
+              <button type="button" class="yard">
+                <div class="n">Paddock 16</div>
+                <div class="m">$7,100 · 5 accounts</div>
+              </button>
+              <button type="button" class="yard">
+                <div class="n">Paddock 325</div>
+                <div class="m">$4,200 · 4 accounts</div>
+              </button>
+              <button type="button" class="yard">
+                <div class="n">Paddock 6060</div>
+                <div class="m">$5,400 · 3 accounts</div>
+              </button>
+              <button type="button" class="yard">
+                <div class="n">Paddock 51</div>
+                <div class="m">$1,720 · 2 accounts</div>
+              </button>
+            </aside>
+            <div class="main">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Due today</th>
+                    <th>Overdue</th>
+                    <th>Why today</th>
+                    <th>Do</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Valley Rigging</strong></td>
+                    <td>$1,560</td>
+                    <td>Notice waiting approval</td>
+                    <td><span class="badge b-red">Approve</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Desert Haul</strong></td>
+                    <td>$2,250</td>
+                    <td>Follow-up call scheduled</td>
+                    <td><span class="badge b-amber">Call</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Sunbelt Storage</strong></td>
+                    <td>$890</td>
+                    <td>Promise date = today</td>
+                    <td><span class="badge b-slate">Check pay</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Mesa Fleet</strong></td>
+                    <td>$3,400</td>
+                    <td>Lockout gate</td>
+                    <td><span class="badge b-red">Approve</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="note">
+        <strong>Recommendation to David:</strong> Ship
+        <strong>Option A</strong> as the primary Collections page (aging buckets
+        + ranked worklist + case drawer). Keep a thin
+        <strong>Option B</strong> view toggle for Notice / Lockout approvals
+        only. Use <strong>Option C</strong> yard filter (already matches
+        dashboard overdue-by-location). Drop the current wide multi-column
+        kanban as the default — that’s the “messy” pattern you flagged.
+      </div>
+    </div>
+
+    <footer>
+      Paddock Parking · Collections research mockups · open this file in a
+      browser to walk David through options A / B / C
+    </footer>
+
+    <script>
+      const tabs = document.querySelectorAll(".tabs button");
+      const panels = {
+        a: document.getElementById("panel-a"),
+        b: document.getElementById("panel-b"),
+        c: document.getElementById("panel-c"),
+      };
+      tabs.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          tabs.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          Object.values(panels).forEach((p) => p.classList.remove("active"));
+          panels[btn.dataset.tab].classList.add("active");
+        });
+      });
+
+      const cases = {
+        1: {
+          title: "Desert Haul LLC · Paddock 16",
+          body: "Working · last email 5 days ago. Next: owner call. Promise not set.",
+        },
+        2: {
+          title: "Valley Rigging · Paddock 325",
+          body: "Escalate · 62 days. Notice draft ready for approval before send.",
+        },
+        3: {
+          title: "Sunbelt Storage Co · Paddock 6060",
+          body: "Promised $890 by Friday. Auto-return to worklist if unpaid.",
+        },
+        4: {
+          title: "Mesa Fleet Partners · Paddock 16",
+          body: "Critical · 91 days. Lockout approval required. ACH failed 3×.",
+        },
+      };
+      const drawer = document.getElementById("drawer-a");
+      const title = document.getElementById("drawer-title");
+      const body = document.getElementById("drawer-body");
+      document.querySelectorAll("#mock-a tr.row").forEach((row) => {
+        row.addEventListener("click", () => {
+          const c = cases[row.dataset.case];
+          title.textContent = c.title;
+          body.textContent = c.body;
+          drawer.classList.add("open");
+        });
+      });
+      document.querySelectorAll(".aging button").forEach((b) => {
+        b.addEventListener("click", () => {
+          document
+            .querySelectorAll(".aging button")
+            .forEach((x) => x.classList.remove("sel"));
+          b.classList.add("sel");
+        });
+      });
+    </script>
+  </body>
+</html>

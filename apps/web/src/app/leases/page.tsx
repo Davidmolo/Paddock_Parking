@@ -4,7 +4,12 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
-import { endpoints, type LeaseRecord } from "@/lib/api";
+import { endpoints, type LeaseRecord, type LeaseStage } from "@/lib/api";
+import {
+  LEASE_STAGES,
+  leaseDirectionLabel,
+  leaseStageLabel,
+} from "@/lib/lease-stages";
 import { propertyParam, queryKeys } from "@/lib/prefetch";
 import { useApp } from "@/components/app-provider";
 import { PageHeader } from "@/components/page-header";
@@ -91,7 +96,7 @@ export default function LeasesPage() {
           [
             ["renewals", "Renewals due"],
             ["tenant", "Tenant"],
-            ["landlord", "Landlord"],
+            ["landlord", "Admin"],
             ["all", "All leases"],
           ] as const
         ).map(([key, label]) => (
@@ -182,7 +187,7 @@ function LeaseCard({
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-semibold">{lease.partyName}</p>
               <Badge tone={lease.direction === "landlord" ? "accent" : "info"}>
-                {lease.direction}
+                {leaseDirectionLabel(lease.direction)}
               </Badge>
               <Badge tone={urgencyTone[lease.urgency]}>
                 {lease.urgency === "ok"
@@ -190,6 +195,7 @@ function LeaseCard({
                   : lease.urgency.replace("_", " ")}
               </Badge>
               <Badge tone="neutral">{lease.status}</Badge>
+              <Badge tone="accent">{leaseStageLabel(lease.stage)}</Badge>
             </div>
             <p className="mt-1 text-sm text-[var(--muted)]">
               {lease.propertyName}
@@ -235,7 +241,7 @@ function LeaseCard({
 
         {lease.direction === "landlord" && lease.landlordContact && (
           <p className="text-sm text-[var(--muted)]">
-            Landlord contact: {lease.landlordContact}
+            Admin / yard contact: {lease.landlordContact}
             {lease.landlordEmail ? ` · ${lease.landlordEmail}` : ""}
           </p>
         )}
@@ -272,6 +278,9 @@ function LeaseEditDrawer({
   const [leadDays, setLeadDays] = useState(String(lease.notificationLeadDays));
   const [rent, setRent] = useState(String(lease.monthlyRent));
   const [status, setStatus] = useState(lease.status);
+  const [stage, setStage] = useState<LeaseStage>(
+    lease.stage ?? "not_contacted",
+  );
   const [notes, setNotes] = useState(lease.notes ?? "");
   const [landlordName, setLandlordName] = useState(lease.landlordName ?? "");
   const [landlordContact, setLandlordContact] = useState(
@@ -290,6 +299,7 @@ function LeaseEditDrawer({
         notificationLeadDays: Number(leadDays),
         monthlyRent: Number(rent),
         status,
+        stage,
         notes,
         ...(lease.direction === "landlord"
           ? { landlordName, landlordContact, landlordEmail }
@@ -349,6 +359,19 @@ function LeaseEditDrawer({
               value={rent}
               onChange={(e) => setRent(e.target.value)}
             />
+          </Field>
+          <Field label="Renewal status">
+            <select
+              className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 text-sm"
+              value={stage}
+              onChange={(e) => setStage(e.target.value as LeaseStage)}
+            >
+              {LEASE_STAGES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="Status">
             <select

@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Paddock Parking — Compliance UI options for David</title>
+    <style>
+      :root {
+        --ink: #0b1524;
+        --muted: #5c6b7f;
+        --line: #e2e8f0;
+        --paper: #fff;
+        --canvas: #f3f5f8;
+        --brand: #0f766e;
+        --brand-dark: #0b3d3a;
+        --soft: #e7f6f4;
+        --warn: #b45309;
+        --danger: #b91c1c;
+        --ok: #15803d;
+        --shadow: 0 16px 40px rgba(11, 21, 36, 0.08);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background: var(--canvas);
+        color: var(--ink);
+        line-height: 1.45;
+      }
+      button,
+      select {
+        font: inherit;
+      }
+      .hero {
+        background: linear-gradient(135deg, #0b3d3a, #0f766e 55%, #115e59);
+        color: #ecfeff;
+        padding: 2rem 1.25rem 1.75rem;
+      }
+      .hero-inner {
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+      .hero .eye {
+        margin: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        opacity: 0.8;
+      }
+      .hero h1 {
+        margin: 0.4rem 0 0;
+        font-size: clamp(1.5rem, 3vw, 2.15rem);
+        letter-spacing: -0.03em;
+      }
+      .hero p {
+        margin: 0.7rem 0 0;
+        max-width: 70ch;
+        color: rgba(236, 254, 255, 0.9);
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 1.25rem;
+      }
+      .ctx {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 1.1rem 1.2rem;
+        margin-top: -1.25rem;
+        position: relative;
+        z-index: 1;
+      }
+      .ctx h2 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+      }
+      .ctx ul {
+        margin: 0.4rem 0 0;
+        padding-left: 1.15rem;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .grid-2 {
+        display: grid;
+        gap: 0.85rem;
+        grid-template-columns: 1.1fr 0.9fr;
+        margin-top: 1rem;
+      }
+      @media (max-width: 860px) {
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 1.05rem 1.15rem;
+      }
+      .card h2 {
+        margin: 0 0 0.55rem;
+        font-size: 1rem;
+      }
+      .card p,
+      .card li {
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      .card ul {
+        margin: 0.35rem 0 0;
+        padding-left: 1.15rem;
+      }
+      .actions {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .actions li {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.65rem;
+        padding: 0.7rem 0;
+        border-top: 1px solid var(--line);
+        color: var(--ink);
+        font-size: 0.9rem;
+      }
+      .actions li:first-child {
+        border-top: none;
+        padding-top: 0.15rem;
+      }
+      .actions .who {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--brand);
+        background: var(--soft);
+        border-radius: 6px;
+        padding: 0.25rem 0.45rem;
+        height: fit-content;
+        white-space: nowrap;
+      }
+      .fms {
+        border-left: 3px solid var(--brand);
+        padding-left: 0.85rem;
+        margin-top: 0.75rem;
+      }
+      .fms strong {
+        color: var(--ink);
+      }
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1.25rem 0 0.75rem;
+      }
+      .tabs button {
+        border: 1px solid var(--line);
+        background: var(--paper);
+        border-radius: 999px;
+        padding: 0.55rem 1rem;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      .tabs button.active {
+        background: var(--brand-dark);
+        border-color: var(--brand-dark);
+        color: #fff;
+      }
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+      .pick {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        margin-bottom: 1rem;
+      }
+      .pick article {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 0.9rem 1rem;
+      }
+      .pick .tag {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--brand);
+        background: var(--soft);
+        border-radius: 6px;
+        padding: 0.2rem 0.45rem;
+      }
+      .pick h3 {
+        margin: 0.45rem 0 0.25rem;
+        font-size: 1.05rem;
+      }
+      .pick p {
+        margin: 0;
+        font-size: 0.88rem;
+        color: var(--muted);
+      }
+      .mock {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .mock-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.9rem 1.1rem;
+        border-bottom: 1px solid var(--line);
+        background: #fafbfc;
+      }
+      .mock-bar h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+      .mock-bar .sub {
+        margin: 0.15rem 0 0;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .nav-mock {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        padding: 0.75rem 1.1rem;
+        border-bottom: 1px solid var(--line);
+        background: #fff;
+        font-size: 0.8rem;
+      }
+      .nav-mock span {
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        padding: 0.3rem 0.55rem;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .nav-mock .on {
+        background: var(--brand-dark);
+        border-color: var(--brand-dark);
+        color: #fff;
+      }
+      .nav-mock .group {
+        opacity: 0.55;
+        font-weight: 500;
+      }
+      .kpi {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.65rem;
+        padding: 1rem;
+      }
+      @media (max-width: 800px) {
+        .kpi {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .kpi > div {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 0.75rem 0.85rem;
+        background: #fff;
+      }
+      .kpi .l {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+      .kpi .v {
+        margin-top: 0.25rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .kpi .h {
+        margin-top: 0.15rem;
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        padding: 0 1rem 0.85rem;
+      }
+      .chip {
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #fff;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .chip.on {
+        background: var(--brand-dark);
+        border-color: var(--brand-dark);
+        color: #fff;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+      }
+      th,
+      td {
+        padding: 0.65rem 0.85rem;
+        border-top: 1px solid var(--line);
+        text-align: left;
+        vertical-align: middle;
+      }
+      th {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        background: #fafbfc;
+        border-top: none;
+      }
+      tr.row:hover {
+        background: #f8fafc;
+      }
+      .badge {
+        display: inline-block;
+        border-radius: 6px;
+        padding: 0.15rem 0.45rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        margin: 0.1rem 0.15rem 0.1rem 0;
+      }
+      .b-red {
+        background: #fee2e2;
+        color: var(--danger);
+      }
+      .b-amber {
+        background: #ffedd5;
+        color: var(--warn);
+      }
+      .b-green {
+        background: #dcfce7;
+        color: var(--ok);
+      }
+      .b-slate {
+        background: #e2e8f0;
+        color: #334155;
+      }
+      .b-blue {
+        background: #e0f2fe;
+        color: #0369a1;
+      }
+      .detail {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: 1fr 1fr;
+        padding: 1rem;
+      }
+      @media (max-width: 800px) {
+        .detail {
+          grid-template-columns: 1fr;
+        }
+      }
+      .box {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 0.85rem 0.95rem;
+        background: #fff;
+      }
+      .box h4 {
+        margin: 0 0 0.45rem;
+        font-size: 0.88rem;
+      }
+      .box .meta {
+        display: grid;
+        gap: 0.35rem;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+      .box .meta b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .veh {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.55rem;
+      }
+      .veh span {
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        padding: 0.35rem 0.55rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+      .veh .miss {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: var(--danger);
+      }
+      .note {
+        margin: 1rem 0 0;
+        padding: 0.85rem 1rem;
+        border-radius: 12px;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        color: #92400e;
+        font-size: 0.88rem;
+      }
+      .rec {
+        margin-top: 1.25rem;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 1.1rem 1.2rem;
+      }
+      .rec h2 {
+        margin: 0 0 0.4rem;
+        font-size: 1.05rem;
+      }
+      .footer {
+        margin: 1.5rem 0 2rem;
+        text-align: center;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-inner">
+        <p class="eye">Paddock Parking · Decision pack for David</p>
+        <h1>Compliance UI — how staff chase what’s missing</h1>
+        <p>
+          You flagged calling the same tenant twice (COI, then plates an hour
+          later). Below: what we heard, action items, how this maps to FMS, and
+          three layout options. Pick one and we implement.
+        </p>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <section class="ctx">
+        <h2>What you said (problem)</h2>
+        <ul>
+          <li>
+            Insurance and License plates are separate lists — same customer
+            (e.g. AA&amp;D Transport) can appear on both, so compliance staff
+            call twice about different gaps.
+          </li>
+          <li>
+            Customers already shows COI status; Compliance also shows expired
+            COIs — feels duplicated.
+          </li>
+          <li>
+            Preference: one compliance view that lists
+            <strong>everything missing per customer</strong> (COI, plates,
+            lease / renewal, etc.).
+          </li>
+          <li>
+            Nav: put Compliance under the Customers area (Customers +
+            Compliance), not three unrelated top-level queues.
+          </li>
+          <li>
+            Customer detail is good (lease, money, COI) — add
+            <strong>vehicles / access</strong> (gate code + plates; N vehicles
+            from Book Now, including “submit later”).
+          </li>
+          <li>
+            Longer term: automation (email / SMS) for missing COI, plates, lease
+            items — similar to how FMS reaches customers.
+          </li>
+        </ul>
+      </section>
+
+      <div class="grid-2" style="margin-top: 1rem">
+        <section class="card">
+          <h2>Action items from this talk</h2>
+          <ul class="actions">
+            <li>
+              <span class="who">Shahmeer</span>
+              <span
+                ><strong>Send 2–3 compliance layout mockups</strong> (this
+                file) → David picks → then build.</span
+              >
+            </li>
+            <li>
+              <span class="who">Build</span>
+              <span
+                ><strong>Consolidate</strong> Insurance + License plates (+
+                lease gaps) into one compliance worklist under Customers —
+                after David picks option A / B / C.</span
+              >
+            </li>
+            <li>
+              <span class="who">Build</span>
+              <span
+                ><strong>Customer detail → Access</strong> box: gate code +
+                vehicles / plates (variable count; mark missing / submit
+                later).</span
+              >
+            </li>
+            <li>
+              <span class="who">Build</span>
+              <span
+                ><strong>Customers list “Compliance” column</strong> (chips:
+                COI missing · plates missing · lease renewal) so the directory
+                and the worklist stay aligned — not two conflicting truths.</span
+              >
+            </li>
+            <li>
+              <span class="who">Later</span>
+              <span
+                ><strong>Automation</strong> — email / SMS when COI, plates, or
+                lease items are missing (FMS-style outreach). Not blocking the
+                UI consolidate.</span
+              >
+            </li>
+            <li>
+              <span class="who">Separate</span>
+              <span
+                >Follow up w/ Riki re: plate transfer pre-qual (noted in
+                meeting; not part of this UI pack).</span
+              >
+            </li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2>FMS parallel (why both list + worklist)</h2>
+          <p>
+            In FMS you open a <strong>customer</strong> for the full file
+            (contact, yard, inventory, phone, email, then drill into details).
+            Compliance people also need a
+            <strong>day-to-day work queue</strong> — not every tenant, only
+            people who still owe something.
+          </p>
+          <div class="fms">
+            <p style="margin: 0">
+              <strong>Customers</strong> = directory / full file (FMS customer
+              list + detail).<br /><br />
+              <strong>Compliance</strong> = “who do I call today?” — one row
+              per customer with
+              <em>all</em> gaps listed (COI + plates + lease), so one call
+              covers everything.
+            </p>
+          </div>
+          <p style="margin-top: 0.85rem">
+            That answers your question: keep
+            <strong>both</strong> — profile for “is this file complete?” and a
+            compliance worklist for the person whose job is chasing gaps. Same
+            data; different job.
+          </p>
+        </section>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Layout options">
+        <button type="button" class="active" data-tab="a">
+          Option A · Column on Customers
+        </button>
+        <button type="button" data-tab="b">
+          Option B · Customers + Compliance (recommended)
+        </button>
+        <button type="button" data-tab="c">
+          Option C · Compliance-only worklist
+        </button>
+      </div>
+
+      <!-- OPTION A -->
+      <section class="panel active" id="panel-a">
+        <div class="pick">
+          <article>
+            <span class="tag">Simplest</span>
+            <h3>One Customers list</h3>
+            <p>
+              Add a Compliance column with chips. Drop separate Insurance /
+              Plates pages. Filter: “Needs attention.”
+            </p>
+          </article>
+          <article>
+            <span class="tag">Best for</span>
+            <h3>Small ops team</h3>
+            <p>
+              Same screen for “who are our tenants?” and “what’s missing?” —
+              less navigation.
+            </p>
+          </article>
+          <article>
+            <span class="tag">Tradeoff</span>
+            <h3>Directory gets busy</h3>
+            <p>
+              Full roster includes clean tenants. Compliance-only staff scroll
+              past noise unless they filter hard.
+            </p>
+          </article>
+        </div>
+
+        <div class="mock">
+          <div class="mock-bar">
+            <div>
+              <h3>Customers</h3>
+              <p class="sub">
+                Directory + compliance chips in one place · mock
+              </p>
+            </div>
+          </div>
+          <div class="nav-mock">
+            <span class="on">Customers</span>
+            <span class="group">Properties ▾</span>
+            <span class="group">Onboarding</span>
+            <span class="group">Invoices</span>
+          </div>
+          <div class="chips">
+            <span class="chip on">Needs attention</span>
+            <span class="chip">All tenants</span>
+            <span class="chip">COI gaps</span>
+            <span class="chip">Plates gaps</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Yard</th>
+                <th>Balance</th>
+                <th>Compliance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row">
+                <td><strong>AA&amp;D Transport LLC</strong></td>
+                <td>Paddock 16 · P-01</td>
+                <td>$233</td>
+                <td>
+                  <span class="badge b-red">COI missing</span>
+                  <span class="badge b-amber">2 plates owed</span>
+                </td>
+              </tr>
+              <tr class="row">
+                <td><strong>Golden Horn Transport</strong></td>
+                <td>Paddock 16 · Lot 1–2</td>
+                <td>$4,462</td>
+                <td><span class="badge b-amber">Lease renewal</span></td>
+              </tr>
+              <tr class="row">
+                <td><strong>Modern Home Textiles</strong></td>
+                <td>Paddock 6060</td>
+                <td>$0</td>
+                <td><span class="badge b-green">Complete</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- OPTION B -->
+      <section class="panel" id="panel-b">
+        <div class="pick">
+          <article>
+            <span class="tag">Recommended</span>
+            <h3>Customers group</h3>
+            <p>
+              Sidebar: <strong>Customers</strong> (directory) +
+              <strong>Compliance</strong> (one consolidated worklist). Matches
+              what you sketched with Shahmeer.
+            </p>
+          </article>
+          <article>
+            <span class="tag">FMS-like</span>
+            <h3>Two jobs, one data</h3>
+            <p>
+              Directory for full file. Worklist for “call once, cover COI +
+              plates + lease.” No duplicate Insurance vs Plates pages.
+            </p>
+          </article>
+          <article>
+            <span class="tag">Detail</span>
+            <h3>Access on profile</h3>
+            <p>
+              Customer detail keeps Lease / Money / COI and adds Access (gate
+              code + vehicles). Click a worklist row → open that file.
+            </p>
+          </article>
+        </div>
+
+        <div class="mock">
+          <div class="mock-bar">
+            <div>
+              <h3>Compliance</h3>
+              <p class="sub">
+                Under Customers · one row per tenant with gaps · mock
+              </p>
+            </div>
+          </div>
+          <div class="nav-mock">
+            <span class="group">Customers ▾</span>
+            <span>All customers</span>
+            <span class="on">Compliance</span>
+            <span class="group">Properties ▾</span>
+            <span class="group">Onboarding</span>
+          </div>
+          <div class="kpi">
+            <div>
+              <div class="l">Open files</div>
+              <div class="v">11</div>
+              <div class="h">Tenants with ≥1 gap</div>
+            </div>
+            <div>
+              <div class="l">COI</div>
+              <div class="v">6</div>
+              <div class="h">Missing / expired / mismatch</div>
+            </div>
+            <div>
+              <div class="l">Plates</div>
+              <div class="v">4</div>
+              <div class="h">Submit-later still owed</div>
+            </div>
+            <div>
+              <div class="l">Lease</div>
+              <div class="v">3</div>
+              <div class="h">Renewal / notice window</div>
+            </div>
+          </div>
+          <div class="chips">
+            <span class="chip on">All gaps</span>
+            <span class="chip">COI</span>
+            <span class="chip">Plates</span>
+            <span class="chip">Lease</span>
+            <span class="chip">Paddock 16</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Yard</th>
+                <th>What’s missing</th>
+                <th>Last contact</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row">
+                <td>
+                  <strong>AA&amp;D Transport LLC</strong><br />
+                  <span style="font-size: 0.78rem; color: var(--muted)"
+                    >mjl1724@yahoo.com · (602) 349-3074</span
+                  >
+                </td>
+                <td>Paddock 16</td>
+                <td>
+                  <span class="badge b-red">COI missing</span>
+                  <span class="badge b-amber">2 of 3 plates</span>
+                </td>
+                <td style="color: var(--muted); font-size: 0.82rem">—</td>
+                <td>
+                  <span class="badge b-blue">Open file</span>
+                </td>
+              </tr>
+              <tr class="row">
+                <td><strong>ValleyWide Xpress</strong></td>
+                <td>Paddock 325</td>
+                <td>
+                  <span class="badge b-red">COI mismatch</span>
+                  <span class="badge b-slate">Plates OK</span>
+                </td>
+                <td style="color: var(--muted); font-size: 0.82rem">
+                  Email logged
+                </td>
+                <td><span class="badge b-blue">Open file</span></td>
+              </tr>
+              <tr class="row">
+                <td><strong>Golden Horn Transport</strong></td>
+                <td>Paddock 16</td>
+                <td>
+                  <span class="badge b-amber">Lease renewal due</span>
+                  <span class="badge b-green">COI valid</span>
+                </td>
+                <td style="color: var(--muted); font-size: 0.82rem">—</td>
+                <td><span class="badge b-blue">Open file</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mock" style="margin-top: 1rem">
+          <div class="mock-bar">
+            <div>
+              <h3>Customer detail · AA&amp;D Transport</h3>
+              <p class="sub">
+                Same file FMS-style · COI + new Access (gate + vehicles)
+              </p>
+            </div>
+          </div>
+          <div class="detail">
+            <div class="box">
+              <h4>Certificate of insurance</h4>
+              <div class="meta">
+                <div><span class="badge b-red">Missing</span></div>
+                <div>
+                  Must list <b>Paddock Parking 16 LLC</b> as additional insured
+                </div>
+              </div>
+            </div>
+            <div class="box">
+              <h4>Access</h4>
+              <div class="meta">
+                <div>Gate code · <b>6201</b></div>
+                <div>Vehicles booked · <b>3 spots</b> (1 plate on file)</div>
+              </div>
+              <div class="veh">
+                <span>AZ · MJL1724</span>
+                <span class="miss">Plate 2 — owed</span>
+                <span class="miss">Plate 3 — owed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- OPTION C -->
+      <section class="panel" id="panel-c">
+        <div class="pick">
+          <article>
+            <span class="tag">Worklist first</span>
+            <h3>Compliance hub only</h3>
+            <p>
+              Keep Customers clean (directory). Compliance is the only place
+              gaps appear as a queue — still one list, not Insurance vs Plates.
+            </p>
+          </article>
+          <article>
+            <span class="tag">Best for</span>
+            <h3>Dedicated compliance role</h3>
+            <p>
+              Person lives on Compliance all day; rarely needs the full
+              customer roster.
+            </p>
+          </article>
+          <article>
+            <span class="tag">Tradeoff</span>
+            <h3>Customers look “fine”</h3>
+            <p>
+              Without a Compliance column on Customers, gaps are easier to miss
+              when someone only opens the directory.
+            </p>
+          </article>
+        </div>
+
+        <div class="mock">
+          <div class="mock-bar">
+            <div>
+              <h3>Compliance worklist</h3>
+              <p class="sub">
+                Top-level Compliance · consolidated · Customers stay directory
+              </p>
+            </div>
+          </div>
+          <div class="nav-mock">
+            <span>Customers</span>
+            <span class="on">Compliance</span>
+            <span class="group">Properties ▾</span>
+            <span class="group">Onboarding</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Customer</th>
+                <th>Gaps</th>
+                <th>Next step</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row">
+                <td><span class="badge b-red">High</span></td>
+                <td>AA&amp;D Transport</td>
+                <td>COI + 2 plates</td>
+                <td>Call · request both</td>
+              </tr>
+              <tr class="row">
+                <td><span class="badge b-amber">Med</span></td>
+                <td>ValleyWide Xpress</td>
+                <td>COI entity mismatch</td>
+                <td>Email correct LLC</td>
+              </tr>
+              <tr class="row">
+                <td><span class="badge b-slate">Low</span></td>
+                <td>Golden Horn</td>
+                <td>Lease renewal window</td>
+                <td>Notice draft</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="rec">
+        <h2>Recommendation</h2>
+        <p style="margin: 0; color: var(--muted); font-size: 0.92rem">
+          <strong style="color: var(--ink)">Option B</strong> — Customers
+          group with <em>All customers</em> + <em>Compliance</em> (one
+          consolidated list). Remove separate Insurance and License plate nav
+          items. Keep customer detail strong; add Access (gate + vehicles).
+          Optionally still show a Compliance chip column on the Customers
+          directory so anyone opening the roster sees gaps without leaving.
+          Automation (email/SMS) ships after the list is unified.
+        </p>
+        <p class="note">
+          Reply with <strong>A</strong>, <strong>B</strong>, or
+          <strong>C</strong> (or a mix). We’ll implement that layout next —
+          same process as Collections options.
+        </p>
+      </section>
+
+      <p class="footer">
+        Paddock Parking · Compliance decision pack ·
+        docs/compliance-ui-options-for-david.html
+      </p>
+    </div>
+
+    <script>
+      const buttons = document.querySelectorAll(".tabs button");
+      const panels = {
+        a: document.getElementById("panel-a"),
+        b: document.getElementById("panel-b"),
+        c: document.getElementById("panel-c"),
+      };
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          buttons.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          Object.values(panels).forEach((p) => p.classList.remove("active"));
+          panels[btn.dataset.tab].classList.add("active");
+        });
+      });
+    </script>
+  </body>
+</html>

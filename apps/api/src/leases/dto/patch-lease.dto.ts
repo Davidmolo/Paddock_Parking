@@ -34,6 +34,17 @@ export class PatchLeaseDto {
   status?: Lease['status'];
 
   @IsOptional()
+  @IsIn([
+    'not_contacted',
+    'outreach_sent',
+    'negotiating',
+    'notice_given',
+    'renewed',
+    'exiting',
+  ])
+  stage?: Lease['stage'];
+
+  @IsOptional()
   @IsString()
   landlordName?: string;
 

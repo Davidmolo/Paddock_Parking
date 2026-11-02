@@ -56,7 +56,7 @@ export default function NotificationsPage() {
     <PageTransition>
       <PageHeader
         title="Notices"
-        subtitle="Renewal and COI outreach queue — generate from due leases / insurance issues, then send email or SMS (demo log)."
+        subtitle="Renewal and COI outreach queue — generate from due leases / insurance issues, then send email or SMS (demo). Kept for now per David; may remove later."
         action={
           <div className="flex flex-wrap gap-2">
             <Button

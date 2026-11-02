@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Paddock Parking — Collections A/R Aging (QuickBooks-style) for David</title>
+    <style>
+      :root {
+        --ink: #1a1a1a;
+        --muted: #555;
+        --line: #c8c8c8;
+        --paper: #fff;
+        --head: #f0f0f0;
+        --section: #e8eef5;
+        --total: #dfe6ee;
+        --brand: #0b3d3a;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: #d4d4d4;
+        color: var(--ink);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+      .top {
+        background: var(--brand);
+        color: #ecfeff;
+        padding: 1.25rem 1.5rem;
+      }
+      .top h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+      }
+      .top p {
+        margin: 0.45rem 0 0;
+        max-width: 70ch;
+        opacity: 0.92;
+        font-size: 0.9rem;
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 1rem auto 2rem;
+        padding: 0 1rem;
+      }
+      .note {
+        background: #fff8e6;
+        border: 1px solid #e6d39a;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.88rem;
+        color: #6b5200;
+      }
+      .report {
+        background: var(--paper);
+        border: 1px solid #999;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      }
+      .rpt-head {
+        padding: 0.85rem 1rem 0.65rem;
+        border-bottom: 1px solid var(--line);
+      }
+      .rpt-head .co {
+        font-size: 0.75rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .rpt-head h2 {
+        margin: 0.2rem 0 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+      }
+      .rpt-tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        padding: 0.55rem 1rem;
+        background: var(--head);
+        border-bottom: 1px solid var(--line);
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .rpt-tools strong { color: var(--ink); font-weight: 600; }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th {
+        text-align: left;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #333;
+        background: var(--head);
+        border-bottom: 1px solid var(--line);
+        padding: 0.45rem 0.65rem;
+        white-space: nowrap;
+      }
+      td {
+        padding: 0.4rem 0.65rem;
+        border-bottom: 1px solid #eaeaea;
+        vertical-align: top;
+      }
+      .num { text-align: right; font-variant-numeric: tabular-nums; }
+      .sec {
+        background: var(--section);
+        font-weight: 700;
+        border-top: 1px solid #9bb;
+        border-bottom: 1px solid #9bb;
+      }
+      .sec td { padding: 0.5rem 0.65rem; }
+      .subtotal {
+        background: var(--total);
+        font-weight: 700;
+      }
+      .grand {
+        background: #c5d0dc;
+        font-weight: 800;
+        border-top: 2px solid #667;
+      }
+      .stage {
+        display: inline-block;
+        font-size: 0.72rem;
+        padding: 0.1rem 0.4rem;
+        border: 1px solid #bbb;
+        background: #f7f7f7;
+        border-radius: 3px;
+        white-space: nowrap;
+      }
+      .ask {
+        margin-top: 1rem;
+        background: #fff;
+        border: 1px solid #999;
+        padding: 0.9rem 1rem;
+      }
+      .ask h3 { margin: 0 0 0.4rem; font-size: 0.95rem; }
+      .ask ol { margin: 0.3rem 0 0; padding-left: 1.2rem; }
+      .ask li { margin: 0.25rem 0; }
+      .footer {
+        margin-top: 0.75rem;
+        text-align: center;
+        color: #666;
+        font-size: 0.78rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <h1>Collections mock for David — QuickBooks A/R Aging Detail</h1>
+      <p>
+        Built to match the QuickBooks aging report you shared (grouped by aging
+        bucket, day count, due date, open balance, section totals). Buckets are
+        tighter: Current · 1–15 · 16–30 · 31–60 · 60+. Outreach stage + notes
+        added for Paddock ops. Live /collections now matches this report layout.
+      </p>
+    </div>
+
+    <div class="wrap">
+      <div class="note">
+        David: this is the format — not the old A/B/C boards, not KPI cards.
+        Same idea as QB “A/P Aging Detail” / A/R aging: section headers, rows,
+        Total per bucket, then TOTAL.
+      </div>
+
+      <div class="report">
+        <div class="rpt-head">
+          <div class="co">Paddock Parking</div>
+          <h2>A/R Aging Detail — Open balances</h2>
+        </div>
+        <div class="rpt-tools">
+          <span>Interval: <strong>15 / 30 days</strong> (tighter than QB 30/60/90)</span>
+          <span>Through: <strong>60+ days</strong></span>
+          <span>Sort: <strong>Name</strong></span>
+          <span>As of: <strong>Oct 28, 2026</strong></span>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Yard</th>
+              <th>Due Date</th>
+              <th class="num">Aging</th>
+              <th class="num">Open Balance</th>
+              <th>Stage</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- CURRENT -->
+            <tr class="sec">
+              <td colspan="7">Current</td>
+            </tr>
+            <tr>
+              <td>Fisk &amp; Sons</td>
+              <td>Paddock 325</td>
+              <td>Nov 15, 2026</td>
+              <td class="num">0</td>
+              <td class="num">$200.79</td>
+              <td><span class="stage">Waiting for payment</span></td>
+              <td>Invoice open, not late</td>
+            </tr>
+            <tr>
+              <td>Modern Home Textiles Inc.</td>
+              <td>Paddock 6060</td>
+              <td>Nov 1, 2026</td>
+              <td class="num">0</td>
+              <td class="num">$0.00</td>
+              <td><span class="stage">Payment made</span></td>
+              <td>Cleared</td>
+            </tr>
+            <tr class="subtotal">
+              <td colspan="4">Total Current</td>
+              <td class="num">$200.79</td>
+              <td colspan="2"></td>
+            </tr>
+
+            <!-- 1-15 -->
+            <tr class="sec">
+              <td colspan="7">1 - 15</td>
+            </tr>
+            <tr>
+              <td>AA&amp; D Transport LLC</td>
+              <td>Paddock 16</td>
+              <td>Oct 7, 2026</td>
+              <td class="num">21</td>
+              <td class="num">$232.65</td>
+              <td><span class="stage">Communicated</span></td>
+              <td>Email logged</td>
+            </tr>
+            <tr class="subtotal">
+              <td colspan="4">Total 1 - 15</td>
+              <td class="num">$232.65</td>
+              <td colspan="2"></td>
+            </tr>
+
+            <!-- 16-30 -->
+            <tr class="sec">
+              <td colspan="7">16 - 30</td>
+            </tr>
+            <tr>
+              <td>Golden Horn Transport LLC</td>
+              <td>Paddock 16</td>
+              <td>Sep 28, 2026</td>
+              <td class="num">30</td>
+              <td class="num">$4,462.10</td>
+              <td><span class="stage">Waiting for payment</span></td>
+              <td>Promised Fri</td>
+            </tr>
+            <tr class="subtotal">
+              <td colspan="4">Total 16 - 30</td>
+              <td class="num">$4,462.10</td>
+              <td colspan="2"></td>
+            </tr>
+
+            <!-- 31-60 -->
+            <tr class="sec">
+              <td colspan="7">31 - 60</td>
+            </tr>
+            <tr>
+              <td>ND Asset Recovery LLC</td>
+              <td>Paddock 16</td>
+              <td>Aug 20, 2026</td>
+              <td class="num">69</td>
+              <td class="num">$6,824.40</td>
+              <td><span class="stage">Waiting</span></td>
+              <td>No reply</td>
+            </tr>
+            <tr>
+              <td>ValleyWide Xpress Transport</td>
+              <td>Paddock 325</td>
+              <td>Sep 1, 2026</td>
+              <td class="num">57</td>
+              <td class="num">$1,870.00</td>
+              <td><span class="stage">Communicated</span></td>
+              <td>—</td>
+            </tr>
+            <tr class="subtotal">
+              <td colspan="4">Total 31 - 60</td>
+              <td class="num">$8,694.40</td>
+              <td colspan="2"></td>
+            </tr>
+
+            <!-- 60+ -->
+            <tr class="sec">
+              <td colspan="7">&gt; 60</td>
+            </tr>
+            <tr>
+              <td>Truck Parking Source LLC</td>
+              <td>Paddock 6060</td>
+              <td>Jun 1, 2026</td>
+              <td class="num">149</td>
+              <td class="num">$4,342.80</td>
+              <td><span class="stage">Waiting</span></td>
+              <td>Lockout review</td>
+            </tr>
+            <tr>
+              <td>Lucas AZ Home Services</td>
+              <td>Paddock 16</td>
+              <td>Jul 15, 2026</td>
+              <td class="num">105</td>
+              <td class="num">$3,070.98</td>
+              <td><span class="stage">Waiting for payment</span></td>
+              <td>—</td>
+            </tr>
+            <tr class="subtotal">
+              <td colspan="4">Total &gt; 60</td>
+              <td class="num">$7,413.78</td>
+              <td colspan="2"></td>
+            </tr>
+
+            <tr class="grand">
+              <td colspan="4">TOTAL</td>
+              <td class="num">$21,003.72</td>
+              <td colspan="2"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ask">
+        <h3>Please confirm</h3>
+        <ol>
+          <li>Is this report layout what you meant (QB aging detail with section totals)?</li>
+          <li>Buckets OK? Current · 1–15 · 16–30 · 31–60 · &gt;60 (or change to 1–7 / 8–14)?</li>
+          <li>
+            Outreach stages OK?
+            Communicated · Waiting · Waiting for payment · Payment made
+            (or different names)?
+          </li>
+        </ol>
+        <p style="margin: 0.75rem 0 0">
+          Live <strong>/collections</strong> now uses this A/R aging detail layout.
+          Reply if you want different buckets or stage names and we adjust.
+        </p>
+      </div>
+
+      <p class="footer">docs/collections-qb-aging-for-david.html</p>
+    </div>
+  </body>
+</html>

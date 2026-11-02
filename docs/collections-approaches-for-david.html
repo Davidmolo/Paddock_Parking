@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Paddock Parking — Collections approaches for David (industry + aging)</title>
+    <style>
+      :root {
+        --ink: #0b1220;
+        --muted: #5b6b7c;
+        --line: #d7e0ea;
+        --paper: #fff;
+        --canvas: #eef2f6;
+        --brand: #0d9488;
+        --brand-ink: #0f766e;
+        --brand-soft: rgba(13, 148, 136, 0.14);
+        --danger: #e11d48;
+        --warn: #b45309;
+        --ok: #047857;
+        --shadow: 0 10px 28px rgba(11, 18, 32, 0.06);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background:
+          radial-gradient(1000px 520px at 8% -8%, rgba(13, 148, 136, 0.12), transparent 55%),
+          radial-gradient(900px 480px at 100% 0%, rgba(14, 165, 233, 0.08), transparent 50%),
+          var(--canvas);
+        color: var(--ink);
+        line-height: 1.45;
+        font-size: 14px;
+      }
+      .top {
+        background: linear-gradient(135deg, #0b3d3a, #0f766e 60%);
+        color: #ecfeff;
+        padding: 1.75rem 1.25rem 1.5rem;
+      }
+      .top-inner, .wrap { max-width: 1100px; margin: 0 auto; }
+      .wrap { padding: 1.25rem 1.25rem 2.5rem; }
+      .eye {
+        margin: 0;
+        font-size: 0.7rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.85;
+      }
+      .top h1 {
+        margin: 0.35rem 0 0;
+        font-size: clamp(1.45rem, 3vw, 2rem);
+        letter-spacing: -0.03em;
+      }
+      .top p {
+        margin: 0.65rem 0 0;
+        max-width: 70ch;
+        opacity: 0.92;
+        font-size: 0.95rem;
+      }
+      .card {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 1.15rem 1.25rem;
+        margin-bottom: 1rem;
+      }
+      .card h2 {
+        margin: 0 0 0.45rem;
+        font-size: 1.05rem;
+        letter-spacing: -0.02em;
+      }
+      .card h3 {
+        margin: 1rem 0 0.35rem;
+        font-size: 0.95rem;
+      }
+      .muted { color: var(--muted); }
+      table.glossary {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.75rem;
+      }
+      table.glossary th,
+      table.glossary td {
+        text-align: left;
+        padding: 0.55rem 0.65rem;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      table.glossary th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        background: #f4f7fb;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.15rem 0.45rem;
+        border-radius: 6px;
+        background: var(--brand-soft);
+        color: var(--brand-ink);
+      }
+      .sources {
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+      .sources a { color: var(--brand-ink); }
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1rem 0 0.75rem;
+      }
+      .tabs button {
+        border: 1px solid var(--line);
+        background: var(--paper);
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 0.45rem 0.9rem;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+      .tabs button.active {
+        border-color: var(--brand);
+        background: var(--brand-soft);
+        color: var(--brand-ink);
+        font-weight: 600;
+      }
+      .panel { display: none; }
+      .panel.active { display: block; }
+      .mock {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--paper);
+      }
+      .mock-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.25rem;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--line);
+        background: #f4f7fb;
+      }
+      .mock-bar h4 {
+        margin: 0;
+        font-size: 0.95rem;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.65rem;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--line);
+      }
+      @media (max-width: 700px) {
+        .stats { grid-template-columns: 1fr; }
+      }
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 0.65rem 0.75rem;
+        background: #fff;
+      }
+      .stat .l {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .stat .v {
+        margin-top: 0.25rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .stat .v.danger { color: var(--danger); }
+      .bars {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0.5rem;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--line);
+      }
+      @media (max-width: 800px) {
+        .bars { grid-template-columns: repeat(2, 1fr); }
+      }
+      .bar {
+        border-radius: 10px;
+        padding: 0.55rem 0.6rem;
+        background: #f8fafc;
+        border: 1px solid var(--line);
+      }
+      .bar .l { font-size: 0.72rem; color: var(--muted); font-weight: 600; }
+      .bar .v { font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 0.15rem; }
+      .bar.hot { border-color: #fecdd3; background: #fff1f2; }
+      .bar.hot .v { color: var(--danger); }
+      table.work {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+      }
+      table.work th {
+        text-align: left;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        background: #f4f7fb;
+        padding: 0.55rem 0.7rem;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      table.work td {
+        padding: 0.55rem 0.7rem;
+        border-bottom: 1px solid #eef2f6;
+        vertical-align: top;
+      }
+      table.work .num { text-align: right; font-variant-numeric: tabular-nums; }
+      table.work .sec td {
+        background: var(--brand-soft);
+        color: var(--brand-ink);
+        font-weight: 700;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+      table.work .sub td {
+        background: #f4f7fb;
+        font-weight: 700;
+      }
+      table.work .grand td {
+        background: #e2e8f0;
+        font-weight: 800;
+        border-top: 2px solid #94a3b8;
+      }
+      .dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        margin-right: 0.35rem;
+        vertical-align: middle;
+      }
+      .dot.ok { background: var(--ok); }
+      .dot.warn { background: #d97706; }
+      .dot.bad { background: var(--danger); }
+      .stage {
+        display: inline-block;
+        font-size: 0.72rem;
+        padding: 0.12rem 0.4rem;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        background: #f8fafc;
+        white-space: nowrap;
+      }
+      .ask {
+        border-left: 4px solid var(--brand);
+        padding-left: 0.85rem;
+        margin-top: 0.75rem;
+      }
+      .ask ol { margin: 0.35rem 0 0; padding-left: 1.15rem; }
+      .ask li { margin: 0.3rem 0; }
+      .footer {
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.78rem;
+        margin-top: 0.5rem;
+      }
+      .why {
+        margin: 0.65rem 0 0;
+        font-size: 0.86rem;
+        color: var(--muted);
+      }
+      .pill-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+      .pill {
+        font-size: 0.72rem;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        padding: 0.2rem 0.55rem;
+        color: var(--muted);
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <div class="top-inner">
+        <p class="eye">Paddock Parking · for David</p>
+        <h1>Collections — what aging means + how other businesses do it</h1>
+        <p>
+          QuickBooks gave us the <strong>shape</strong> (group by days overdue).
+          This pack explains every bucket in Paddock English, then shows
+          <strong>three real-world approaches</strong> property / A/R teams use —
+          so we can pick what fits yards, COI, ACH, and ops — not a grey QB clone.
+        </p>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="card">
+        <h2>1. Aging buckets — plain English (Paddock)</h2>
+        <p class="muted" style="margin:0">
+          Aging = how many days past the <strong>invoice due date</strong> the open
+          balance still sits unpaid. Same idea as QB A/R Aging Detail; buckets are
+          tighter (15 / 30) because truck-yard rent moves faster than 30/60/90 corporate terms.
+        </p>
+        <table class="glossary">
+          <thead>
+            <tr>
+              <th>Bucket</th>
+              <th>Meaning</th>
+              <th>Typical ops move</th>
+              <th>Paddock example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tag">Current</span></td>
+              <td>Not late. Due today or still in the future (aging = 0).</td>
+              <td>Watch list / soft reminder if ACH failed or invoice just sent.</td>
+              <td>Fisk &amp; Sons — due Nov 15, $200.79 open, not overdue yet.</td>
+            </tr>
+            <tr>
+              <td><span class="tag">1 – 15</span></td>
+              <td>1 to 15 days past due. Early delinquency.</td>
+              <td>First email / text. Most oversights clear here.</td>
+              <td>AA&amp; D — 8 days late, $232.65, email already logged.</td>
+            </tr>
+            <tr>
+              <td><span class="tag">16 – 30</span></td>
+              <td>16 to 30 days past due. Still recoverable with a call.</td>
+              <td>Direct call; confirm intent; note promise date.</td>
+              <td>Golden Horn — 30 days, $4,462, “Promised Fri”.</td>
+            </tr>
+            <tr>
+              <td><span class="tag">31 – 60</span></td>
+              <td>31 to 60 days past due. Survived first reminder cycle.</td>
+              <td>Escalate tone; owner awareness; plan or notice path.</td>
+              <td>ND Asset / ValleyWide — mid bucket, larger balances.</td>
+            </tr>
+            <tr>
+              <td><span class="tag">&gt; 60</span></td>
+              <td>More than 60 days past due. Highest cash / lockout risk.</td>
+              <td>Formal path: notice, cure, lockout review per lease.</td>
+              <td>Truck Parking Source / Lucas — 100+ days, review lockout.</td>
+            </tr>
+          </tbody>
+        </table>
+        <h3>Other columns on the live page</h3>
+        <ul style="margin:0.4rem 0 0; padding-left:1.15rem">
+          <li><strong>Due date</strong> — when that open charge was due.</li>
+          <li><strong>Aging</strong> — day count past due (drives the bucket).</li>
+          <li><strong>Open balance</strong> — $ still owed (not original invoice if partial).</li>
+          <li><strong>Stage</strong> — ops outreach: Communicated · Waiting · Waiting for payment · Payment made (David’s language, not the old A/B/C board).</li>
+          <li><strong>Follow-up note</strong> — free text next step (“Promised Fri”).</li>
+          <li><strong>Log call</strong> — records that ops called; does <em>not</em> dial the phone.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>2. How other businesses structure collections</h2>
+        <p class="sources" style="margin:0">
+          Patterns from property ops + A/R tools:
+          <a href="https://tenantledger.com/help/best-practices/managing-delinquencies" target="_blank" rel="noreferrer">Tenant Ledger</a>,
+          <a href="https://www.scaalr.com/articles/ar-aging-report-property-management" target="_blank" rel="noreferrer">Scaalr (PM aging)</a>,
+          <a href="https://manetrax.com/docs/reports-collections" target="_blank" rel="noreferrer">Manetrax</a>,
+          <a href="https://clearreceivables.com/features" target="_blank" rel="noreferrer">ClearReceivables</a>,
+          <a href="https://upflow.io" target="_blank" rel="noreferrer">Upflow</a>.
+          Common thread: <strong>aging for money truth</strong> + <strong>dated next action</strong> for work — not kanban for its own sake.
+        </p>
+        <div class="pill-row">
+          <span class="pill">Act early (day 5 beats day 60)</span>
+          <span class="pill">Start oldest / largest first</span>
+          <span class="pill">Bucket totals week-over-week</span>
+          <span class="pill">Promise-to-pay with a date</span>
+          <span class="pill">Shared activity log</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>3. Three mockups — pick a direction</h2>
+        <p class="muted" style="margin:0">
+          All three use <strong>our yards + sample balances</strong> and Paddock theme.
+          David: reply with A, B, or C (or mix: “B summary + A table”).
+        </p>
+
+        <div class="tabs" role="tablist">
+          <button type="button" class="active" data-tab="a">A · Aging detail (QB shape)</button>
+          <button type="button" data-tab="b">B · Worklist + cadence</button>
+          <button type="button" data-tab="c">C · Portfolio + top overdue</button>
+        </div>
+
+        <!-- A -->
+        <div class="panel active" id="panel-a">
+          <p class="why">
+            <strong>Who uses this:</strong> QuickBooks shops, accountants, owner reports.
+            <strong>Why it fits David:</strong> same mental model as the SS he shared —
+            sections by age, row, section total, grand total. Live /collections is closest to this.
+          </p>
+          <div class="mock">
+            <div class="mock-bar">
+              <h4>A/R aging detail · All yards</h4>
+              <span class="muted">As of Oct 28, 2026 · buckets 15 / 30</span>
+            </div>
+            <div class="stats">
+              <div class="stat"><div class="l">Open balance</div><div class="v">$21,003.72</div></div>
+              <div class="stat"><div class="l">Accounts</div><div class="v">8</div></div>
+              <div class="stat"><div class="l">Past 60 days</div><div class="v danger">$7,413.78</div></div>
+            </div>
+            <table class="work">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Yard</th>
+                  <th>Due</th>
+                  <th class="num">Aging</th>
+                  <th class="num">Open</th>
+                  <th>Stage</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="sec"><td colspan="7">Current · not late yet</td></tr>
+                <tr>
+                  <td>Fisk &amp; Sons</td><td>Paddock 325</td><td>Nov 15</td>
+                  <td class="num">0</td><td class="num">$200.79</td>
+                  <td><span class="stage">Waiting for payment</span></td><td>Invoice open</td>
+                </tr>
+                <tr class="sub"><td colspan="4">Total Current</td><td class="num">$200.79</td><td colspan="2"></td></tr>
+                <tr class="sec"><td colspan="7">1 – 15 · early past due</td></tr>
+                <tr>
+                  <td>AA&amp; D Transport</td><td>Paddock 16</td><td>Oct 20</td>
+                  <td class="num">8</td><td class="num">$232.65</td>
+                  <td><span class="stage">Communicated</span></td><td>Email logged</td>
+                </tr>
+                <tr class="sub"><td colspan="4">Total 1 – 15</td><td class="num">$232.65</td><td colspan="2"></td></tr>
+                <tr class="sec"><td colspan="7">16 – 30</td></tr>
+                <tr>
+                  <td>Golden Horn Transport</td><td>Paddock 16</td><td>Sep 28</td>
+                  <td class="num">30</td><td class="num">$4,462.10</td>
+                  <td><span class="stage">Waiting for payment</span></td><td>Promised Fri</td>
+                </tr>
+                <tr class="sub"><td colspan="4">Total 16 – 30</td><td class="num">$4,462.10</td><td colspan="2"></td></tr>
+                <tr class="sec"><td colspan="7">31 – 60</td></tr>
+                <tr>
+                  <td>ND Asset Recovery</td><td>Paddock 16</td><td>Sep 13</td>
+                  <td class="num">45</td><td class="num">$6,824.40</td>
+                  <td><span class="stage">Waiting</span></td><td>No reply</td>
+                </tr>
+                <tr class="sub"><td colspan="4">Total 31 – 60</td><td class="num">$6,824.40</td><td colspan="2"></td></tr>
+                <tr class="sec"><td colspan="7">&gt; 60 · escalate</td></tr>
+                <tr>
+                  <td>Truck Parking Source</td><td>Paddock 6060</td><td>Jun 1</td>
+                  <td class="num">149</td><td class="num">$4,342.80</td>
+                  <td><span class="stage">Waiting</span></td><td>Lockout review</td>
+                </tr>
+                <tr class="sub"><td colspan="4">Total &gt; 60</td><td class="num">$4,342.80</td><td colspan="2"></td></tr>
+                <tr class="grand"><td colspan="4">TOTAL</td><td class="num">$16,062.74*</td><td colspan="2"></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted" style="font-size:0.78rem;margin:0.4rem 0 0">*Demo rows shortened in mock; live page shows full book (~$21k).</p>
+        </div>
+
+        <!-- B -->
+        <div class="panel" id="panel-b">
+          <p class="why">
+            <strong>Who uses this:</strong> Property managers (Tenant Ledger / Scaalr cadence) —
+            daily worklist sorted by urgency, with a <em>dated next action</em>.
+            <strong>Why it fits Paddock:</strong> ops needs “what do I do today?” more than a printable report.
+            Aging still drives priority; stage + next-by date drive the work.
+          </p>
+          <div class="mock">
+            <div class="mock-bar">
+              <h4>Today’s collections worklist</h4>
+              <span class="muted">Sorted: oldest first · then largest balance</span>
+            </div>
+            <div class="bars">
+              <div class="bar"><div class="l">Current</div><div class="v">$201</div></div>
+              <div class="bar"><div class="l">1–15</div><div class="v">$233</div></div>
+              <div class="bar"><div class="l">16–30</div><div class="v">$4.5k</div></div>
+              <div class="bar"><div class="l">31–60</div><div class="v">$8.7k</div></div>
+              <div class="bar hot"><div class="l">&gt;60</div><div class="v">$7.4k</div></div>
+            </div>
+            <table class="work">
+              <thead>
+                <tr>
+                  <th>Priority</th>
+                  <th>Tenant</th>
+                  <th>Yard</th>
+                  <th class="num">Balance</th>
+                  <th>Days</th>
+                  <th>Suggested action</th>
+                  <th>Next by</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="dot bad"></span>Escalate</td>
+                  <td>Truck Parking Source</td><td>6060</td>
+                  <td class="num">$4,342.80</td><td>149</td>
+                  <td>Lockout review / notice path</td><td>Oct 30</td>
+                </tr>
+                <tr>
+                  <td><span class="dot bad"></span>Escalate</td>
+                  <td>Lucas AZ Home Services</td><td>16</td>
+                  <td class="num">$3,070.98</td><td>105</td>
+                  <td>Owner call + written notice</td><td>Oct 29</td>
+                </tr>
+                <tr>
+                  <td><span class="dot warn"></span>Pressure</td>
+                  <td>ND Asset Recovery</td><td>16</td>
+                  <td class="num">$6,824.40</td><td>45</td>
+                  <td>Call — no reply since email</td><td>Oct 28</td>
+                </tr>
+                <tr>
+                  <td><span class="dot warn"></span>Promise</td>
+                  <td>Golden Horn Transport</td><td>16</td>
+                  <td class="num">$4,462.10</td><td>30</td>
+                  <td>Confirm Fri payment landed</td><td>Oct 31</td>
+                </tr>
+                <tr>
+                  <td><span class="dot ok"></span>Remind</td>
+                  <td>AA&amp; D Transport</td><td>16</td>
+                  <td class="num">$232.65</td><td>8</td>
+                  <td>Second reminder + late fee note</td><td>Oct 29</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="why">
+            Cadence many PMs use: day 1–5 friendly → 6–15 second reminder → 16–30 call →
+            31–60 formal → 60+ proceedings. We map that onto yards / ACH / lockout language.
+          </p>
+        </div>
+
+        <!-- C -->
+        <div class="panel" id="panel-c">
+          <p class="why">
+            <strong>Who uses this:</strong> Multi-site portfolios (Manetrax-style) —
+            yard health first, then a short “top overdue” list.
+            <strong>Why it fits Paddock:</strong> David thinks in yards (16 / 325 / 6060).
+            See which yard is bleeding, then drill into people.
+          </p>
+          <div class="mock">
+            <div class="mock-bar">
+              <h4>Portfolio collections</h4>
+              <span class="muted">Property first · then people</span>
+            </div>
+            <div class="stats">
+              <div class="stat"><div class="l">Company open</div><div class="v">$21,003.72</div></div>
+              <div class="stat"><div class="l">Collection focus</div><div class="v">Paddock 16</div></div>
+              <div class="stat"><div class="l">&gt;60 company</div><div class="v danger">$7,413.78</div></div>
+            </div>
+            <table class="work">
+              <thead>
+                <tr>
+                  <th>Yard</th>
+                  <th class="num">Open</th>
+                  <th class="num">Current</th>
+                  <th class="num">1–30</th>
+                  <th class="num">31–60</th>
+                  <th class="num">&gt;60</th>
+                  <th class="num"># accts</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Paddock 16</strong></td>
+                  <td class="num">$14,590</td><td class="num">$0</td>
+                  <td class="num">$4,695</td><td class="num">$6,824</td>
+                  <td class="num" style="color:var(--danger)">$3,071</td><td class="num">4</td>
+                </tr>
+                <tr>
+                  <td><strong>Paddock 325</strong></td>
+                  <td class="num">$2,071</td><td class="num">$201</td>
+                  <td class="num">$0</td><td class="num">$1,870</td>
+                  <td class="num">$0</td><td class="num">2</td>
+                </tr>
+                <tr>
+                  <td><strong>Paddock 6060</strong></td>
+                  <td class="num">$4,343</td><td class="num">$0</td>
+                  <td class="num">$0</td><td class="num">$0</td>
+                  <td class="num" style="color:var(--danger)">$4,343</td><td class="num">2</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="mock-bar" style="border-top:1px solid var(--line); border-bottom:none">
+              <h4 style="font-size:0.88rem">Top overdue tenants</h4>
+              <span class="muted">Click through → customer / invoices</span>
+            </div>
+            <table class="work">
+              <thead>
+                <tr>
+                  <th>Tenant</th>
+                  <th>Yard</th>
+                  <th class="num">Balance</th>
+                  <th>Oldest due</th>
+                  <th>Stage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>ND Asset Recovery</td><td>16</td>
+                  <td class="num">$6,824.40</td><td>Sep 13</td>
+                  <td><span class="stage">Waiting</span></td>
+                </tr>
+                <tr>
+                  <td>Golden Horn Transport</td><td>16</td>
+                  <td class="num">$4,462.10</td><td>Sep 28</td>
+                  <td><span class="stage">Waiting for payment</span></td>
+                </tr>
+                <tr>
+                  <td>Truck Parking Source</td><td>6060</td>
+                  <td class="num">$4,342.80</td><td>Jun 1</td>
+                  <td><span class="stage">Waiting</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="ask">
+          <strong>David — please choose</strong>
+          <ol>
+            <li><strong>A</strong> Aging detail report (QB shape, Paddock theme) — closest to live today.</li>
+            <li><strong>B</strong> Daily worklist + suggested action / next-by date (PM cadence).</li>
+            <li><strong>C</strong> Yard portfolio summary + top overdue list.</li>
+            <li>Or hybrid: e.g. <em>“C yard strip on top + A aging table below”</em>.</li>
+          </ol>
+          <p class="muted" style="margin:0.65rem 0 0">
+            We will not go back to the old messy queue board. Stages stay:
+            Communicated · Waiting · Waiting for payment · Payment made.
+          </p>
+        </div>
+      </div>
+
+      <p class="footer">docs/collections-approaches-for-david.html · open in browser to flip A / B / C</p>
+    </div>
+
+    <script>
+      const buttons = document.querySelectorAll(".tabs button");
+      const panels = {
+        a: document.getElementById("panel-a"),
+        b: document.getElementById("panel-b"),
+        c: document.getElementById("panel-c"),
+      };
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          buttons.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          Object.values(panels).forEach((p) => p.classList.remove("active"));
+          panels[btn.dataset.tab].classList.add("active");
+        });
+      });
+    </script>
+  </body>
+</html>
