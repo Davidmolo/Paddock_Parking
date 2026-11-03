@@ -181,8 +181,16 @@ export default function BookingsPage() {
     mutationFn: (id: string) => endpoints.inviteBookingPortal(id),
     onSuccess: () => {
       invalidateRelated();
+      setFormError("");
       setFlash(
-        "Portal invitation sent (demo). Customer can set or reset password at /portal.",
+        "Portal invitation emailed. The customer opens that link to set a password.",
+      );
+    },
+    onError: (err) => {
+      setFormError(
+        err instanceof ApiError
+          ? err.message
+          : "Could not send the portal invitation.",
       );
     },
   });
@@ -791,14 +799,6 @@ function ProfileDetail({
               >
                 Open customer record →
               </Link>
-            )}
-            {booking.portalInviteToken && (
-              <p className="text-xs text-[var(--muted)]">
-                Invite token:{" "}
-                <span className="font-mono text-[var(--ink)]">
-                  {booking.portalInviteToken}
-                </span>
-              </p>
             )}
             {approved && booking.portalStatus !== "active" && (
               <Button

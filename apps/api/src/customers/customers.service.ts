@@ -81,11 +81,20 @@ export class CustomersService {
     ) {
       throw new BadRequestException('Invite link is invalid or expired.');
     }
+    if (
+      customer.portalInviteExpiresAt &&
+      Date.parse(customer.portalInviteExpiresAt) < Date.now()
+    ) {
+      throw new BadRequestException(
+        'Invite link is expired. Ask staff to send a new one.',
+      );
+    }
     if (!body.password || body.password.length < 6) {
       throw new BadRequestException('Password must be at least 6 characters.');
     }
     customer.portalPassword = body.password;
     customer.portalInviteToken = undefined;
+    customer.portalInviteExpiresAt = undefined;
     const booking = this.store.bookings.find((b) => b.customerId === customer.id);
     if (booking) booking.portalStatus = 'active';
     return {

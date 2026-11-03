@@ -79,6 +79,8 @@ export type Customer = {
   /** Demo portal auth (set after invite) */
   portalPassword?: string;
   portalInviteToken?: string;
+  /** ISO time — invite link stops working after this */
+  portalInviteExpiresAt?: string;
   documents: CustomerDocument[];
   notes?: string;
 };

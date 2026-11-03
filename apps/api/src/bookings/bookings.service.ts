@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import {
   BadRequestException,
   Injectable,
@@ -14,6 +15,7 @@ import type {
   LotType,
 } from '../data/seed.js';
 import { LOT_TYPE_LABELS } from '../data/seed.js';
+import { sendPortalInviteEmail } from '../mail/send-portal-invite.js';
 
 @Injectable()
 export class BookingsService {
@@ -240,8 +242,8 @@ export class BookingsService {
     };
   }
 
-  /** FMS: portal invitation is separate from approval */
-  invitePortal(id: string) {
+  /** Email a set-password link, same idea as the Phoenix portal invite. */
+  async invitePortal(id: string) {
     const booking = this.store.bookings.find((b) => b.id === id);
     if (!booking) throw new NotFoundException(`Booking ${id} not found`);
     if (!booking.customerId) {
@@ -252,19 +254,49 @@ export class BookingsService {
     if (booking.portalStatus === 'active') {
       return this.enrich(booking);
     }
-    const resent = booking.portalStatus === 'invited';
-    booking.portalStatus = 'invited';
     const customer = this.store.customers.find(
       (c) => c.id === booking.customerId,
     );
-    if (customer) {
-      customer.portalInviteToken = `inv-${Date.now().toString(36)}`;
+    if (!customer?.email?.includes('@')) {
+      throw new BadRequestException(
+        'This customer needs an email address before a portal invite can be sent.',
+      );
     }
+
+    const resent = booking.portalStatus === 'invited';
+    const token = randomBytes(24).toString('hex');
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const previousToken = customer.portalInviteToken;
+    const previousExpires = customer.portalInviteExpiresAt;
+    customer.portalInviteToken = token;
+    customer.portalInviteExpiresAt = expires.toISOString();
+
+    const appUrl = (
+      process.env.APP_URL || 'https://pms.paddockparking.com'
+    ).replace(/\/$/, '');
+    const inviteUrl = `${appUrl}/portal?token=${encodeURIComponent(token)}&email=${encodeURIComponent(customer.email)}`;
+
+    try {
+      await sendPortalInviteEmail({
+        to: customer.email,
+        name: customer.contactName || customer.name,
+        inviteUrl,
+        expiresAt: expires,
+      });
+    } catch (err) {
+      customer.portalInviteToken = previousToken;
+      customer.portalInviteExpiresAt = previousExpires;
+      throw new BadRequestException(
+        err instanceof Error ? err.message : 'Could not send the invite email.',
+      );
+    }
+
+    booking.portalStatus = 'invited';
     booking.decisionNotes = [
       booking.decisionNotes,
       resent
-        ? 'Portal invitation re-sent (demo email) — customer can set / reset password.'
-        : 'Portal invitation sent (demo email).',
+        ? `Portal invitation re-sent to ${customer.email}.`
+        : `Portal invitation emailed to ${customer.email}.`,
     ]
       .filter(Boolean)
       .join(' · ');
@@ -371,7 +403,6 @@ export class BookingsService {
       decision,
       portalStatus: b.portalStatus ?? 'not_invited',
       gateCode: customer?.gateCode,
-      portalInviteToken: customer?.portalInviteToken,
       lotTypeLabel: LOT_TYPE_LABELS[b.lotType],
       propertyName: property?.name,
       missingPlates,

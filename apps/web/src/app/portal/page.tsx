@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookChrome, BOOK_SHELL } from "@/components/book/book-chrome";
 import { ApiError, endpoints } from "@/lib/api";
@@ -23,6 +23,20 @@ export default function CustomerPortalPage() {
     gateCode: string;
     email: string;
   } | null>(null);
+  const [emailLocked, setEmailLocked] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const invitedEmail = params.get("email");
+    if (!token) return;
+    setInviteToken(token);
+    setMode("set");
+    if (invitedEmail) {
+      setEmail(invitedEmail);
+      setEmailLocked(true);
+    }
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -160,6 +174,7 @@ export default function CustomerPortalPage() {
                     name="portal-email"
                     required
                     value={email}
+                    readOnly={emailLocked}
                     autoComplete="off"
                     onChange={(e) => setEmail(e.target.value)}
                     className="mt-1.5 h-11 w-full rounded-md border border-[#cbd5e1] px-3 text-sm"
