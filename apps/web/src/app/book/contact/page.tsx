@@ -12,7 +12,7 @@ export default function ContactPage() {
     <BookChrome>
       <section className="bg-[#0a1628] py-16 text-white">
         <div className={BOOK_SHELL}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#f5b301]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
             Contact
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-sora)] text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -50,7 +50,7 @@ export default function ContactPage() {
             </p>
             <Link
               href="/book/spots"
-              className="inline-flex rounded-xl bg-[#f5b301] px-5 py-3 text-sm font-bold text-[#0a1628]"
+              className="inline-flex rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
             >
               Book Now
             </Link>

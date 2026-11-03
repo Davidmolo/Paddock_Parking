@@ -7,7 +7,7 @@ export default function PartnerPage() {
     <BookChrome>
       <section className="bg-[#0a1628] py-16 text-white">
         <div className={BOOK_SHELL}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#f5b301]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
             Partner With Us
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-sora)] text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -26,7 +26,7 @@ export default function PartnerPage() {
           </p>
           <a
             href={`mailto:${SITE_EMAIL}?subject=Partner%20With%20Us`}
-            className="mt-6 inline-flex rounded-xl bg-[#f5b301] px-5 py-3 text-sm font-bold text-[#0a1628]"
+            className="mt-6 inline-flex rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
           >
             Email {SITE_EMAIL}
           </a>

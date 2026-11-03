@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Phone, RefreshCw } from "lucide-react";
 import {
@@ -64,13 +65,51 @@ export default function CollectionsPage() {
   const cacheProperty =
     selectedYard !== "all" ? selectedYard : propertyId;
 
-  const { data, isPending, refetch, isFetching } = useQuery({
+  const { data, isPending, isError, error, refetch, isFetching } = useQuery({
     queryKey: queryKeys.collections(cacheProperty),
     queryFn: () =>
       endpoints.collections({
         propertyId: propertyParam(cacheProperty),
       }),
   });
+
+  /** David: Invoices parent → Collections child (FMS). On-time stays on Invoices. */
+  const view = useMemo(() => {
+    if (!data) return null;
+    const pastDue = data.accounts.filter((a) => a.daysOverdue > 0);
+    const sections = data.sections
+      .filter((s) => s.key !== "current")
+      .map((s) => {
+        const accounts = s.accounts.filter((a) => a.daysOverdue > 0);
+        return {
+          ...s,
+          accounts,
+          balance: accounts.reduce((sum, a) => sum + a.balance, 0),
+        };
+      });
+    const openBalance = pastDue.reduce((s, a) => s + a.balance, 0);
+    return {
+      ...data,
+      sections,
+      accounts: pastDue,
+      totals: {
+        ...data.totals,
+        openBalance,
+        accounts: pastDue.length,
+        atRisk: pastDue
+          .filter((a) => a.daysOverdue > 60)
+          .reduce((s, a) => s + a.balance, 0),
+      },
+      yards: data.yards.map((y) => {
+        const yardPast = pastDue.filter((a) => a.propertyId === y.propertyId);
+        return {
+          ...y,
+          balance: yardPast.reduce((s, a) => s + a.balance, 0),
+          invoiceCount: yardPast.reduce((s, a) => s + a.invoiceCount, 0),
+        };
+      }),
+    };
+  }, [data]);
 
   function invalidate() {
     void queryClient.invalidateQueries({ queryKey: ["collections"] });
@@ -103,30 +142,35 @@ export default function CollectionsPage() {
   });
 
   const yardOptions = useMemo(() => {
-    if (!data) return [];
+    if (!view) return [];
     return [
       {
         id: "all" as const,
         name: "All yards",
-        balance: data.yards.reduce((s, y) => s + y.balance, 0),
-        count: data.totals.accounts,
+        balance: view.yards.reduce((s, y) => s + y.balance, 0),
+        count: view.totals.accounts,
       },
-      ...data.yards.map((y) => ({
+      ...view.yards.map((y) => ({
         id: y.propertyId,
         name: y.name,
         balance: y.balance,
         count: y.invoiceCount,
       })),
     ];
-  }, [data]);
+  }, [view]);
 
   return (
     <PageTransition>
       <PageHeader
         title="Collections"
-        subtitle="Open balances grouped by how late they are — same idea as QuickBooks aging, tuned for Paddock yards and outreach."
+        subtitle="Past due — QuickBooks-style aging (1–15 / 16–30 / 31–60 / 60+). On-time billing stays under Invoices."
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Link href="/invoices">
+              <Button variant="secondary" size="sm">
+                Billing
+              </Button>
+            </Link>
             <Button
               variant="secondary"
               size="sm"
@@ -161,12 +205,32 @@ export default function CollectionsPage() {
         </p>
       )}
 
-      {isPending && !data ? (
+      {isPending && !view ? (
         <div className="space-y-3">
           <Skeleton className="h-11 w-full max-w-2xl" />
           <Skeleton className="h-[420px] w-full" />
         </div>
-      ) : data ? (
+      ) : isError ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-8 text-center">
+          <p className="font-semibold text-rose-900">Could not load collections</p>
+          <p className="mt-1 text-sm text-rose-800">
+            {error instanceof Error ? error.message : "API error"}
+          </p>
+          <Button className="mt-4" size="sm" onClick={() => void refetch()}>
+            Retry
+          </Button>
+        </div>
+      ) : view && view.totals.accounts === 0 ? (
+        <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-16 text-center">
+          <p className="font-display text-lg font-semibold text-[var(--ink)]">
+            No past-due accounts
+          </p>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Everyone is current. Open balances that are not late show under
+            Invoices.
+          </p>
+        </div>
+      ) : view ? (
         <>
           <div className="mb-4 flex flex-wrap gap-2">
             {yardOptions.map((yard) => (
@@ -177,12 +241,17 @@ export default function CollectionsPage() {
                 className={cn(
                   "rounded-xl border px-3.5 py-2 text-left text-sm transition",
                   selectedYard === yard.id
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
-                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--accent)]/40 hover:text-[var(--ink)]",
+                    ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--ink)]",
                 )}
               >
                 <span className="font-medium">{yard.name}</span>
-                <span className="ml-2 tabular-nums text-[var(--ink)]">
+                <span
+                  className={cn(
+                    "ml-2 tabular-nums",
+                    selectedYard === yard.id ? "text-white/80" : "text-[var(--ink)]",
+                  )}
+                >
                   {formatCurrency(yard.balance)}
                 </span>
               </button>
@@ -191,33 +260,33 @@ export default function CollectionsPage() {
 
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
             <SummaryStat
-              label="Open balance"
-              value={formatCurrency(data.totals.openBalance)}
+              label="Past-due balance"
+              value={formatCurrency(view.totals.openBalance)}
             />
             <SummaryStat
               label="Accounts"
-              value={String(data.totals.accounts)}
+              value={String(view.totals.accounts)}
             />
             <SummaryStat
               label="Past 60 days"
-              value={formatCurrency(data.totals.atRisk)}
-              danger={data.totals.atRisk > 0}
+              value={formatCurrency(view.totals.atRisk)}
+              danger={view.totals.atRisk > 0}
             />
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]">
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--border)] px-4 py-4 sm:px-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-ink)]">
-                  A/R aging
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  A/R aging · collections
                 </p>
                 <h2 className="mt-1 font-display text-xl font-semibold tracking-tight text-[var(--ink)]">
-                  Open balances by days overdue
+                  Past due by days overdue
                 </h2>
               </div>
               <p className="text-xs text-[var(--muted)]">
-                As of {formatAsOf(data.asOf)} · Buckets {data.intervalLabel} ·
-                Through {data.throughLabel}
+                As of {formatAsOf(view.asOf)} · {view.intervalLabel} · Through{" "}
+                {view.throughLabel}
               </p>
             </div>
 
@@ -238,7 +307,7 @@ export default function CollectionsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.sections.map((section) => (
+                  {view.sections.map((section) => (
                     <AgingSection
                       key={section.key}
                       bucketKey={section.key}
@@ -266,7 +335,7 @@ export default function CollectionsPage() {
                       TOTAL
                     </td>
                     <td className="px-3 py-3.5 text-right tabular-nums">
-                      {formatCurrency(data.totals.openBalance)}
+                      {formatCurrency(view.totals.openBalance)}
                     </td>
                     <td colSpan={3} />
                   </tr>
@@ -276,9 +345,9 @@ export default function CollectionsPage() {
           </div>
 
           <p className="mt-3 max-w-3xl text-xs leading-relaxed text-[var(--muted)]">
-            Aging = days past the invoice due date. Stage is ops outreach status
-            (Communicated, Waiting, Waiting for payment, Payment made) — not the
-            old email/text/lockout board.
+            David / FMS: scheduled &amp; current stay in Invoices; once past due
+            they land here. Aging buckets match QuickBooks. Stage = outreach
+            (Communicated → Waiting → Waiting for payment → Payment made).
           </p>
         </>
       ) : null}
@@ -339,10 +408,10 @@ function AgingSection({
 }) {
   return (
     <>
-      <tr className="border-y border-[var(--border)] bg-[var(--accent-soft)]/50">
+      <tr className="border-y border-[var(--border)] bg-[var(--accent-soft)]">
         <td colSpan={8} className="px-4 py-2.5 sm:px-5">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-            <span className="font-semibold text-[var(--accent-ink)]">
+            <span className="font-semibold text-[var(--ink)]">
               {label}
             </span>
             <span className="text-xs text-[var(--muted)]">

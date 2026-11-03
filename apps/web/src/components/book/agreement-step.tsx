@@ -7,6 +7,7 @@ import {
   PERSONAL_GUARANTY_FULL,
 } from "@/lib/book-lease-copy";
 import {
+  evaluateIdOcr,
   type IdVerifyStatus,
   verifyPhotoId,
 } from "@/lib/id-verify";
@@ -114,13 +115,15 @@ function IdVerifyBanner({
       ? "Photo ID verified"
       : status === "checking"
         ? "Checking Photo ID…"
-        : status === "not_id"
-          ? "Not a government ID"
-          : status === "name_mismatch"
-            ? "Name doesn’t match"
-            : status === "unreadable"
-              ? "Couldn’t read ID"
-              : "Upload issue";
+        : status === "missing_signer"
+          ? "Signer name needed"
+          : status === "not_id"
+            ? "Not a government ID"
+            : status === "name_mismatch"
+              ? "Name doesn’t match"
+              : status === "unreadable"
+                ? "Couldn’t read ID"
+                : "Upload issue";
   return (
     <div className={cn("rounded-md border px-3 py-2.5 text-sm", tone)}>
       <p className="font-semibold">{title}</p>
@@ -142,9 +145,22 @@ export function AgreementStep({ value, idFile, onIdFile, onChange }: Props) {
     lessee: value.lesseeName,
     guarantor: value.guarantorName,
   };
+  /** Cache OCR so fixing the signer name doesn’t re-scan the image */
+  const ocrTextRef = useRef("");
+
+  function applyResult(result: {
+    status: IdVerifyStatus;
+    message: string;
+    ocrText?: string;
+  }) {
+    if (result.ocrText) ocrTextRef.current = result.ocrText;
+    onChange("idVerifyStatus", result.status);
+    onChange("idVerifyMessage", result.message);
+  }
 
   async function runVerify(file: File, skipTest = value.idVerifySkipTest) {
     if (skipTest) {
+      ocrTextRef.current = "";
       onChange("idVerifyStatus", "matched");
       onChange(
         "idVerifyMessage",
@@ -160,13 +176,13 @@ export function AgreementStep({ value, idFile, onIdFile, onChange }: Props) {
       lesseeName: lessee,
       guarantorName: guarantor,
     });
-    onChange("idVerifyStatus", result.status);
-    onChange("idVerifyMessage", result.message);
+    applyResult(result);
   }
 
   async function onIdPick(file: File | null) {
     if (!file) {
       onIdFile(null);
+      ocrTextRef.current = "";
       onChange("idFileName", "");
       onChange("idVerifyStatus", "idle");
       onChange("idVerifyMessage", "");
@@ -181,6 +197,7 @@ export function AgreementStep({ value, idFile, onIdFile, onChange }: Props) {
     onChange("idVerifySkipTest", checked);
     if (checked) {
       if (idFile) {
+        ocrTextRef.current = "";
         onChange("idVerifyStatus", "matched");
         onChange(
           "idVerifyMessage",
@@ -189,27 +206,29 @@ export function AgreementStep({ value, idFile, onIdFile, onChange }: Props) {
       }
       return;
     }
-    // Re-run real OCR when turning skip off
     if (idFile) void runVerify(idFile, false);
   }
 
-  // Re-check when signer names change after an ID was uploaded
+  // Re-score name match from cached OCR when signer names change (no re-OCR)
   useEffect(() => {
     if (!idFile || value.idVerifySkipTest) return;
+    if (!ocrTextRef.current) return;
     if (!value.lesseeName.trim() && !value.guarantorName.trim()) return;
-    if (
-      value.idVerifyStatus === "idle" ||
-      value.idVerifyStatus === "bad_type" ||
-      value.idVerifyStatus === "not_id"
-    ) {
+    if (value.idVerifyStatus === "idle" || value.idVerifyStatus === "bad_type") {
       return;
     }
+    if (value.idVerifyStatus === "checking") return;
     const t = window.setTimeout(() => {
-      void runVerify(idFile);
-    }, 600);
+      const result = evaluateIdOcr({
+        ocrText: ocrTextRef.current,
+        lesseeName: value.lesseeName,
+        guarantorName: value.guarantorName,
+      });
+      applyResult(result);
+    }, 400);
     return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- names / file
-  }, [value.lesseeName, value.guarantorName, idFile, value.idVerifySkipTest]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- names only
+  }, [value.lesseeName, value.guarantorName]);
 
   return (
     <div className="space-y-8">
@@ -325,7 +344,7 @@ export function AgreementStep({ value, idFile, onIdFile, onChange }: Props) {
         <div className="space-y-3">
           <FileUpload
             label="Upload Photo ID"
-            hint="Upload a clear photo of your government-issued ID (driver’s license, state ID, or passport). We’ll check that the name matches your signer name above — random photos won’t pass."
+            hint="US driver’s license, state ID, or passport preferred (international passport / national ID also OK). Enter the same name as on the ID — screenshots won’t pass."
             fileName={value.idFileName}
             accept="image/*,.heic,.jpg,.jpeg,.png,.webp"
             onPick={onIdPick}
@@ -351,7 +370,7 @@ export function AgreementStep({ value, idFile, onIdFile, onChange }: Props) {
           required={!value.docsSubmitLater}
           onPick={(file) => onChange("coiFileName", file?.name ?? "")}
         />
-        <label className="flex items-start gap-2.5 rounded-md border border-[#f5b301]/40 bg-[#fffbeb] px-3 py-3 text-sm text-[#0f172a]">
+        <label className="flex items-start gap-2.5 rounded-md border border-[#E8C547]/40 bg-[#E8C547]/10 px-3 py-3 text-sm text-[#0f172a]">
           <input
             type="checkbox"
             className="mt-0.5 h-4 w-4 rounded border-[#cbd5e1]"

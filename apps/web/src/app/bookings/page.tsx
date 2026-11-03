@@ -1,32 +1,34 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ApiError,
   endpoints,
   type Booking,
+  type BookingCondition,
+  type BookingDecision,
   type LotType,
 } from "@/lib/api";
 import { propertyParam, queryKeys } from "@/lib/prefetch";
 import { useApp } from "@/components/app-provider";
 import { PageHeader } from "@/components/page-header";
-import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { PageTransition } from "@/components/ui/motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, cn } from "@/lib/utils";
 
-const statusTone = {
-  new: "accent",
-  reserved: "warning",
-  converted: "success",
-  cancelled: "neutral",
-} as const;
+type Filter = BookingDecision | "all";
+
+const CONDITIONS: { key: BookingCondition; label: string }[] = [
+  { key: "prepaid", label: "Prepaid" },
+  { key: "deposit_hold", label: "Deposit hold" },
+  { key: "coi_pending", label: "COI pending" },
+  { key: "escrow", label: "Escrow" },
+  { key: "bond", label: "Bond" },
+];
 
 const LOT_TYPES: { value: LotType; label: string }[] = [
   { value: "truck_trailer", label: "Truck / trailer" },
@@ -36,18 +38,26 @@ const LOT_TYPES: { value: LotType; label: string }[] = [
   { value: "acre", label: "Acre" },
 ];
 
+const STEP_NAMES = [
+  "Get started",
+  "Business / lease",
+  "Verify & pay",
+  "Review & sign",
+] as const;
+
+/** FMS-style Onboarding Profiles — table + detail panel (Paddock theme). */
 export default function BookingsPage() {
   const { propertyId, properties } = useApp();
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<Booking["status"] | "all">("new");
-  const [convertingId, setConvertingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>("pending");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [lotId, setLotId] = useState("");
-  const [showAdd, setShowAdd] = useState(false);
+  const [conditions, setConditions] = useState<BookingCondition[]>([]);
+  const [decisionNotes, setDecisionNotes] = useState("");
   const [flash, setFlash] = useState("");
   const [formError, setFormError] = useState("");
-
-  const [form, setForm] = useState({
+  const [showAssist, setShowAssist] = useState(false);
+  const [assistForm, setAssistForm] = useState({
     propertyId: "",
     lotType: "truck_trailer" as LotType,
     customerName: "",
@@ -55,6 +65,7 @@ export default function BookingsPage() {
     phone: "",
     monthlyRate: "",
     notes: "",
+    referredBy: "",
   });
 
   const { data, isPending } = useQuery({
@@ -62,25 +73,50 @@ export default function BookingsPage() {
     queryFn: () => endpoints.bookings(propertyParam(propertyId)),
   });
 
-  const converting = data?.find((b) => b.id === convertingId);
+  const selected = data?.find((b) => b.id === selectedId) ?? null;
 
   const { data: lots } = useQuery({
-    queryKey: queryKeys.lots(converting?.propertyId ?? propertyId),
+    queryKey: queryKeys.lots(selected?.propertyId ?? propertyId),
     queryFn: () =>
-      endpoints.lots(propertyParam(converting?.propertyId ?? propertyId)),
-    enabled: !!converting,
+      endpoints.lots(propertyParam(selected?.propertyId ?? propertyId)),
+    enabled: !!selected && (selected.decision ?? "pending") === "pending",
   });
 
   const availableLots = useMemo(
     () =>
       (lots ?? []).filter(
         (l) =>
-          l.status === "available" &&
-          (!converting || l.propertyId === converting.propertyId) &&
-          (!converting || l.lotType === converting.lotType),
+          (l.status === "available" || l.status === "available_soon") &&
+          (!selected || l.propertyId === selected.propertyId),
       ),
-    [lots, converting],
+    [lots, selected],
   );
+
+  useEffect(() => {
+    if (!selected) return;
+    const preferred = selected.lotId;
+    if (preferred && availableLots.some((l) => l.id === preferred) && !lotId) {
+      setLotId(preferred);
+    }
+  }, [selected, availableLots, lotId]);
+
+  const counts = useMemo(() => {
+    const rows = data ?? [];
+    return {
+      pending: rows.filter((b) => (b.decision ?? "pending") === "pending")
+        .length,
+      approved: rows.filter((b) => b.decision === "approved").length,
+      conditional: rows.filter((b) => b.decision === "conditional").length,
+      denied: rows.filter((b) => b.decision === "denied").length,
+      all: rows.length,
+    };
+  }, [data]);
+
+  const visible = useMemo(() => {
+    const rows = data ?? [];
+    if (filter === "all") return rows;
+    return rows.filter((b) => (b.decision ?? "pending") === filter);
+  }, [data, filter]);
 
   function invalidateRelated() {
     void queryClient.invalidateQueries({ queryKey: ["bookings"] });
@@ -89,20 +125,65 @@ export default function BookingsPage() {
     void queryClient.invalidateQueries({ queryKey: ["leases"] });
     void queryClient.invalidateQueries({ queryKey: ["lease-summary"] });
     void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    void queryClient.invalidateQueries({ queryKey: ["notifications"] });
   }
 
-  const convert = useMutation({
-    mutationFn: () => {
-      if (!convertingId || !lotId) throw new Error("Pick a lot");
-      return endpoints.convertBooking(convertingId, lotId);
-    },
-    onSuccess: (res) => {
+  function selectProfile(b: Booking) {
+    setSelectedId(b.id);
+    setLotId("");
+    setConditions(b.conditions ?? []);
+    setDecisionNotes("");
+    setFormError("");
+    setFlash("");
+  }
+
+  const decide = useMutation({
+    mutationFn: (args: {
+      id: string;
+      decision: "approve" | "conditional" | "deny";
+    }) =>
+      endpoints.decideBooking(args.id, {
+        decision: args.decision,
+        lotId: args.decision === "deny" ? undefined : lotId || undefined,
+        conditions:
+          args.decision === "conditional" ? conditions : undefined,
+        notes: decisionNotes || undefined,
+      }),
+    onSuccess: (res, vars) => {
       invalidateRelated();
-      setConvertingId(null);
+      setFormError("");
       setLotId("");
-      setFlash("Converted — opening customer to collect COI.");
-      router.push(`/customers/${res.customerId}`);
+      setConditions([]);
+      setDecisionNotes("");
+      if (vars.decision === "deny") {
+        setFlash("Application denied. Customer notified (demo).");
+        setSelectedId(null);
+      } else if (res.customerId) {
+        setFlash(
+          vars.decision === "conditional"
+            ? "Conditionally approved — customer created. Portal still Not invited."
+            : "Approved — customer created. Portal still Not invited.",
+        );
+        setSelectedId(res.booking.id);
+      }
+    },
+    onError: (err) => {
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Could not save decision.";
+      setFormError(msg || "Could not save decision.");
+    },
+  });
+
+  const invite = useMutation({
+    mutationFn: (id: string) => endpoints.inviteBookingPortal(id),
+    onSuccess: () => {
+      invalidateRelated();
+      setFlash(
+        "Portal invitation sent (demo). Customer can set or reset password at /portal.",
+      );
     },
   });
 
@@ -111,9 +192,7 @@ export default function BookingsPage() {
       endpoints.patchBooking(id, { autoPullWaived: true }),
     onSuccess: () => {
       invalidateRelated();
-      setFlash(
-        "Auto-pull waived for this applicant — they can finish without ACH requirement.",
-      );
+      setFlash("Auto-pull waived for this applicant.");
     },
   });
 
@@ -122,34 +201,33 @@ export default function BookingsPage() {
       endpoints.patchBooking(id, { autoPullWaived: false }),
     onSuccess: () => {
       invalidateRelated();
-      setFlash("Auto-pull requirement restored for this applicant.");
+      setFlash("Auto-pull requirement restored.");
     },
   });
 
-  const create = useMutation({
-    mutationFn: () => {
-      const pid = form.propertyId || (propertyId !== "all" ? propertyId : "");
-      if (!pid) throw new Error("Pick a yard");
-      if (!form.customerName.trim() || !form.email.trim() || !form.phone.trim()) {
-        throw new Error("Name, email, and phone are required");
-      }
-      return endpoints.createBooking({
-        propertyId: pid,
-        lotType: form.lotType,
-        customerName: form.customerName.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
-        monthlyRate: form.monthlyRate
-          ? Number(form.monthlyRate)
+  const assistCreate = useMutation({
+    mutationFn: () =>
+      endpoints.createBooking({
+        propertyId: assistForm.propertyId || properties[0]?.id,
+        lotType: assistForm.lotType,
+        customerName: assistForm.customerName,
+        email: assistForm.email,
+        phone: assistForm.phone,
+        monthlyRate: assistForm.monthlyRate
+          ? Number(assistForm.monthlyRate)
           : undefined,
-        notes: form.notes.trim() || undefined,
-      });
-    },
+        notes: assistForm.notes || "Onboarding Assist — staff started Steps 1–2",
+        referredBy: assistForm.referredBy || undefined,
+        wizardStep: 2,
+        paymentMethod: "pending",
+      }),
     onSuccess: () => {
-      setFormError("");
-      setShowAdd(false);
-      setFlash("Booking added to inbox.");
-      setForm({
+      invalidateRelated();
+      setShowAssist(false);
+      setFlash(
+        "Assist profile created as Pending. Customer finishes verify, docs, and signature.",
+      );
+      setAssistForm({
         propertyId: "",
         lotType: "truck_trailer",
         customerName: "",
@@ -157,430 +235,682 @@ export default function BookingsPage() {
         phone: "",
         monthlyRate: "",
         notes: "",
+        referredBy: "",
       });
-      void queryClient.invalidateQueries({ queryKey: ["bookings"] });
-      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: (err) => {
       setFormError(
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Could not create booking",
+        err instanceof ApiError ? err.message : "Could not create assist profile.",
       );
     },
   });
 
-  const visible = (data ?? []).filter(
-    (b) => filter === "all" || b.status === filter,
-  );
+  function toggleCondition(key: BookingCondition) {
+    setConditions((prev) =>
+      prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key],
+    );
+  }
 
   return (
     <PageTransition>
       <PageHeader
-        title="Onboarding"
-        subtitle="FMS-style pipeline — track how far each public Book Now applicant got (page 1→4), then convert to a tenant."
+        title="Onboarding Profiles"
+        subtitle="FMS-style queue: Pending → Approve / Conditionally approve / Deny (once). Then portal invite."
         action={
-          <div className="flex flex-wrap items-center gap-2">
-            <a
-              href="/book/spots"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm font-semibold text-[var(--ink)]"
-            >
-              Open public Book Now
-            </a>
-            <Button
-              size="sm"
-              onClick={() => {
-                setShowAdd(true);
-                setFormError("");
-                if (propertyId !== "all") {
-                  setForm((f) => ({ ...f, propertyId }));
-                }
-              }}
-            >
-              Add booking
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              setShowAssist((v) => !v);
+              setFormError("");
+            }}
+          >
+            {showAssist ? "Close assist" : "Onboarding Assist"}
+          </Button>
         }
       />
 
       {flash && (
-        <p className="mb-4 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          {flash}
-        </p>
+        <div className="mb-4 flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-950">
+          <p>{flash}</p>
+          <button
+            type="button"
+            className="shrink-0 text-emerald-800/70"
+            onClick={() => setFlash("")}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
       )}
 
-      <div className="mb-5 flex flex-wrap gap-2">
+      {showAssist && (
+        <div className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+          <h2 className="font-display text-base font-semibold">
+            Onboarding Assist
+          </h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Staff start Steps 1–2. Customer finishes ID, payment, docs, signature.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block space-y-1 text-sm">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+                Yard
+              </span>
+              <select
+                className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-3"
+                value={assistForm.propertyId}
+                onChange={(e) =>
+                  setAssistForm((f) => ({ ...f, propertyId: e.target.value }))
+                }
+              >
+                <option value="">Select yard</option>
+                {properties.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block space-y-1 text-sm">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+                Lot type
+              </span>
+              <select
+                className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-3"
+                value={assistForm.lotType}
+                onChange={(e) =>
+                  setAssistForm((f) => ({
+                    ...f,
+                    lotType: e.target.value as LotType,
+                  }))
+                }
+              >
+                {LOT_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Field
+              label="Company / customer"
+              value={assistForm.customerName}
+              onChange={(v) =>
+                setAssistForm((f) => ({ ...f, customerName: v }))
+              }
+            />
+            <Field
+              label="Email"
+              value={assistForm.email}
+              onChange={(v) => setAssistForm((f) => ({ ...f, email: v }))}
+            />
+            <Field
+              label="Phone"
+              value={assistForm.phone}
+              onChange={(v) => setAssistForm((f) => ({ ...f, phone: v }))}
+            />
+            <Field
+              label="Referred by"
+              value={assistForm.referredBy}
+              onChange={(v) =>
+                setAssistForm((f) => ({ ...f, referredBy: v }))
+              }
+            />
+            <Field
+              label="Monthly rate"
+              value={assistForm.monthlyRate}
+              onChange={(v) =>
+                setAssistForm((f) => ({ ...f, monthlyRate: v }))
+              }
+            />
+            <Field
+              label="Notes"
+              value={assistForm.notes}
+              onChange={(v) => setAssistForm((f) => ({ ...f, notes: v }))}
+            />
+          </div>
+          {formError && !selected && (
+            <p className="mt-2 text-sm text-rose-600">{formError}</p>
+          )}
+          <Button
+            className="mt-3"
+            disabled={
+              assistCreate.isPending ||
+              !assistForm.customerName ||
+              !assistForm.email ||
+              !assistForm.phone
+            }
+            onClick={() => {
+              setFormError("");
+              assistCreate.mutate();
+            }}
+          >
+            {assistCreate.isPending ? "Saving…" : "Create Pending profile"}
+          </Button>
+        </div>
+      )}
+
+      {/* FMS status tabs */}
+      <div className="mb-3 flex flex-wrap gap-1 border-b border-[var(--border)]">
         {(
-          ["new", "reserved", "converted", "cancelled", "all"] as const
-        ).map((s) => (
+          [
+            ["pending", "Pending", counts.pending],
+            ["approved", "Approved", counts.approved],
+            ["conditional", "Conditional", counts.conditional],
+            ["denied", "Denied", counts.denied],
+            ["all", "All", counts.all],
+          ] as const
+        ).map(([key, label, n]) => (
           <button
-            key={s}
+            key={key}
             type="button"
-            onClick={() => setFilter(s)}
+            onClick={() => setFilter(key)}
             className={cn(
-              "rounded-xl border px-3.5 py-2 text-sm font-medium capitalize transition",
-              filter === s
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
-                : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--ink)]",
+              "-mb-px border-b-2 px-3 py-2.5 text-sm transition",
+              filter === key
+                ? "border-[var(--ink)] font-semibold text-[var(--ink)]"
+                : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]",
             )}
           >
-            {s === "all" ? "All" : s}
-            {data && (
-              <span className="ml-2 text-xs opacity-70">
-                {s === "all"
-                  ? data.length
-                  : data.filter((b) => b.status === s).length}
-              </span>
-            )}
+            {label}
+            <span className="ml-1.5 tabular-nums text-[var(--muted)]">{n}</span>
           </button>
         ))}
       </div>
 
       {isPending && !data ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28" />
-          ))}
-        </div>
-      ) : visible.length === 0 ? (
-        <Card interactive={false} className="p-10 text-center">
-          <p className="text-[var(--muted)]">No bookings in this filter.</p>
-        </Card>
+        <Skeleton className="h-72 w-full rounded-xl" />
       ) : (
-        <Stagger className="grid gap-3">
-          {visible.map((booking) => (
-            <StaggerItem key={booking.id}>
-              <Card>
-                <CardBody className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold">{booking.customerName}</p>
-                      <Badge tone={statusTone[booking.status]}>
-                        {booking.status}
-                      </Badge>
-                      {booking.compliancePending && (
-                        <Badge tone="warning">Compliance pending</Badge>
-                      )}
-                      {booking.autoPullWaived ? (
-                        <Badge tone="warning">Auto-pull waived</Badge>
-                      ) : booking.autoPullAgreed ? (
-                        <Badge tone="success">Auto-pull</Badge>
-                      ) : null}
-                    </div>
-                    <p className="text-sm text-[var(--muted)]">
-                      {booking.email} · {booking.phone}
-                    </p>
-                    <p className="text-sm">
-                      {booking.propertyName} ·{" "}
-                      {booking.productType === "storage_acre"
-                        ? `${booking.acreSize ?? "?"} ac storage`
-                        : booking.productType === "parking_spot"
-                          ? `${booking.spotCount ?? 1} spot(s)`
-                          : booking.lotTypeLabel}
-                      {booking.monthlyRate != null && (
-                        <>
-                          {" "}
-                          · {formatCurrency(booking.monthlyRate)}
-                          /mo
-                        </>
-                      )}
-                    </p>
-                    <WizardProgress step={booking.wizardStep ?? 1} />
-                    <p className="text-xs text-[var(--muted)]">
-                      Submitted {booking.createdAt}
-                      {booking.paymentMethod
-                        ? ` · pay ${booking.paymentMethod}`
-                        : ""}
-                      {booking.notes ? ` · ${booking.notes}` : ""}
-                    </p>
-                  </div>
-                  {(booking.status === "new" ||
-                    booking.status === "reserved") && (
-                    <div className="flex flex-col gap-2 sm:items-end">
-                      {!booking.autoPullWaived && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          disabled={waive.isPending}
-                          onClick={() => {
-                            setFlash("");
-                            waive.mutate(booking.id);
-                          }}
-                        >
-                          Waive auto-pull
-                        </Button>
-                      )}
-                      {booking.autoPullWaived && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          disabled={waive.isPending}
-                          onClick={() => {
-                            setFlash("");
-                            restore.mutate(booking.id);
-                          }}
-                        >
-                          Restore auto-pull req.
-                        </Button>
-                      )}
-                      <Button
-                        onClick={() => {
-                          setConvertingId(booking.id);
-                          setLotId("");
-                          setFlash("");
-                        }}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
+          {/* FMS list */}
+          <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--border)] bg-[var(--surface-muted)] text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+                    <th className="px-4 py-3">Applicant</th>
+                    <th className="px-3 py-3">Yard</th>
+                    <th className="px-3 py-3">Stage</th>
+                    <th className="px-3 py-3">Decision</th>
+                    <th className="px-3 py-3">Portal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-4 py-12 text-center text-[var(--muted)]"
                       >
-                        Convert to tenant
-                      </Button>
-                    </div>
+                        No profiles in this filter.
+                      </td>
+                    </tr>
                   )}
-                  {booking.status === "converted" && booking.customerId && (
-                    <Link href={`/customers/${booking.customerId}`}>
-                      <Button variant="secondary">View customer</Button>
-                    </Link>
-                  )}
-                  {booking.status === "converted" && !booking.customerId && (
-                    <Link href="/customers">
-                      <Button variant="secondary">View customers</Button>
-                    </Link>
-                  )}
-                </CardBody>
-              </Card>
-            </StaggerItem>
-          ))}
-        </Stagger>
-      )}
+                  {visible.map((b) => (
+                    <tr
+                      key={b.id}
+                      className={cn(
+                        "cursor-pointer border-b border-[var(--border)] last:border-b-0 transition",
+                        selectedId === b.id
+                          ? "bg-[var(--accent-soft)]"
+                          : "hover:bg-[var(--surface-muted)]",
+                      )}
+                      onClick={() => selectProfile(b)}
+                    >
+                      <td className="px-4 py-3">
+                        <p className="font-semibold text-[var(--ink)]">
+                          {b.customerName}
+                        </p>
+                        <p className="text-xs text-[var(--muted)]">
+                          {b.email}
+                        </p>
+                      </td>
+                      <td className="px-3 py-3 text-[var(--muted)]">
+                        {b.propertyName ?? "—"}
+                      </td>
+                      <td className="px-3 py-3">
+                        <StageBar
+                          complete={b.stepsComplete ?? b.wizardStep ?? 1}
+                        />
+                        <p className="mt-1 text-xs text-[var(--muted)]">
+                          {b.stepLabel ?? `Step ${b.wizardStep ?? 1}`}
+                        </p>
+                      </td>
+                      <td className="px-3 py-3">
+                        <DecisionPill decision={b.decision ?? "pending"} />
+                      </td>
+                      <td className="px-3 py-3 text-xs capitalize text-[var(--muted)]">
+                        {(b.portalStatus ?? "not_invited").replace("_", " ")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-      {converting && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4">
-          <Card interactive={false} className="w-full max-w-md !shadow-2xl">
-            <CardHeader>
-              <div>
-                <h2 className="text-lg font-semibold">Assign a lot</h2>
-                <p className="text-sm text-[var(--muted)]">
-                  {converting.customerName} · {converting.lotTypeLabel}
-                </p>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-4">
-              <label className="block space-y-1.5">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  Available {converting.lotTypeLabel} spots
-                </span>
-                <select
-                  className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-sm"
-                  value={lotId}
-                  onChange={(e) => setLotId(e.target.value)}
-                >
-                  <option value="">Select lot…</option>
-                  {availableLots.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      #{l.number} · {l.size} · {formatCurrency(l.monthlyRate)}
-                      /mo
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {availableLots.length === 0 && (
-                <p className="text-sm text-amber-700">
-                  No available lots of this type at that yard. Free a spot on
-                  Lots first.
-                </p>
-              )}
-              {convert.isError && (
-                <p className="text-sm text-rose-700">
-                  {convert.error instanceof Error
-                    ? convert.error.message
-                    : "Convert failed"}
-                </p>
-              )}
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setConvertingId(null);
-                    setLotId("");
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  disabled={!lotId || convert.isPending}
-                  onClick={() => convert.mutate()}
-                >
-                  {convert.isPending ? "Converting…" : "Convert"}
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-      )}
-
-      {showAdd && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4">
-          <Card interactive={false} className="w-full max-w-lg !shadow-2xl">
-            <CardHeader>
-              <div>
-                <h2 className="text-lg font-semibold">Add booking</h2>
-                <p className="text-sm text-[var(--muted)]">
-                  Simulate a public Book Now submission for the demo.
-                </p>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-3">
-              <label className="block space-y-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  Yard
-                </span>
-                <select
-                  className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-sm"
-                  value={form.propertyId}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, propertyId: e.target.value }))
-                  }
-                >
-                  <option value="">Select yard…</option>
-                  {properties.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block space-y-1">
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  Lot type
-                </span>
-                <select
-                  className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-sm"
-                  value={form.lotType}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      lotType: e.target.value as LotType,
-                    }))
-                  }
-                >
-                  {LOT_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Input
-                placeholder="Customer / company name"
-                value={form.customerName}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, customerName: e.target.value }))
-                }
+          {/* FMS detail / decide panel */}
+          <aside className="rounded-xl border border-[var(--border)] bg-[var(--surface)] lg:sticky lg:top-4 lg:self-start">
+            {!selected ? (
+              <p className="px-5 py-16 text-center text-sm text-[var(--muted)]">
+                Select a profile to review and decide.
+              </p>
+            ) : (
+              <ProfileDetail
+                booking={selected}
+                availableLots={availableLots}
+                lotId={lotId}
+                setLotId={setLotId}
+                conditions={conditions}
+                toggleCondition={toggleCondition}
+                decisionNotes={decisionNotes}
+                setDecisionNotes={setDecisionNotes}
+                formError={formError}
+                deciding={decide.isPending}
+                onDecide={(decision) => {
+                  setFormError("");
+                  decide.mutate({ id: selected.id, decision });
+                }}
+                onWaive={() => waive.mutate(selected.id)}
+                onRestore={() => restore.mutate(selected.id)}
+                onInvite={() => invite.mutate(selected.id)}
+                inviting={invite.isPending}
+                onClose={() => setSelectedId(null)}
               />
-              <Input
-                type="email"
-                placeholder="Email"
-                value={form.email}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, email: e.target.value }))
-                }
-              />
-              <Input
-                placeholder="Phone"
-                value={form.phone}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, phone: e.target.value }))
-                }
-              />
-              <Input
-                type="number"
-                min={0}
-                placeholder="Monthly rate (optional)"
-                value={form.monthlyRate}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, monthlyRate: e.target.value }))
-                }
-              />
-              <Input
-                placeholder="Notes (optional)"
-                value={form.notes}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, notes: e.target.value }))
-                }
-              />
-              {formError && (
-                <p className="text-sm text-rose-700">{formError}</p>
-              )}
-              <div className="flex justify-end gap-2 pt-1">
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setShowAdd(false);
-                    setFormError("");
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  disabled={create.isPending}
-                  onClick={() => create.mutate()}
-                >
-                  {create.isPending ? "Saving…" : "Add to inbox"}
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
+            )}
+          </aside>
         </div>
       )}
     </PageTransition>
   );
 }
 
-const WIZARD_LABELS = [
-  "Contact Info",
-  "Lease Details",
-  "Agreement",
-  "Review & Pay",
-] as const;
+function ProfileDetail({
+  booking,
+  availableLots,
+  lotId,
+  setLotId,
+  conditions,
+  toggleCondition,
+  decisionNotes,
+  setDecisionNotes,
+  formError,
+  deciding,
+  onDecide,
+  onWaive,
+  onRestore,
+  onInvite,
+  inviting,
+  onClose,
+}: {
+  booking: Booking;
+  availableLots: {
+    id: string;
+    number: string;
+    monthlyRate: number;
+    status: string;
+  }[];
+  lotId: string;
+  setLotId: (v: string) => void;
+  conditions: BookingCondition[];
+  toggleCondition: (c: BookingCondition) => void;
+  decisionNotes: string;
+  setDecisionNotes: (v: string) => void;
+  formError: string;
+  deciding: boolean;
+  onDecide: (d: "approve" | "conditional" | "deny") => void;
+  onWaive: () => void;
+  onRestore: () => void;
+  onInvite: () => void;
+  inviting: boolean;
+  onClose: () => void;
+}) {
+  const pending = (booking.decision ?? "pending") === "pending";
+  const approved =
+    booking.decision === "approved" || booking.decision === "conditional";
 
-function WizardProgress({ step }: { step: number }) {
-  const current = Math.min(4, Math.max(1, step));
-  const label = WIZARD_LABELS[current - 1] ?? WIZARD_LABELS[0];
   return (
-    <div className="mt-2 max-w-xs space-y-1.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs text-[var(--muted)]">
-          Page {current} of 4
-          <span className="mx-1.5 text-[var(--border)]">·</span>
-          <span className="font-medium text-[var(--ink)]">{label}</span>
-        </p>
+    <div className="flex max-h-[calc(100vh-8rem)] flex-col">
+      <div className="flex items-start justify-between gap-2 border-b border-[var(--border)] px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+            Profile summary
+          </p>
+          <h2 className="mt-0.5 truncate font-display text-lg font-semibold text-[var(--ink)]">
+            {booking.customerName}
+          </h2>
+          <p className="text-sm text-[var(--muted)]">
+            {booking.propertyName} · {booking.lotTypeLabel}
+            {booking.monthlyRate != null
+              ? ` · ${formatCurrency(booking.monthlyRate)}/mo`
+              : ""}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-xs font-medium text-[var(--muted)] hover:text-[var(--ink)]"
+        >
+          Close
+        </button>
       </div>
-      <div
-        className="flex gap-1"
-        role="progressbar"
-        aria-valuenow={current}
-        aria-valuemin={1}
-        aria-valuemax={4}
-        aria-label={`Onboarding page ${current} of 4`}
-      >
-        {WIZARD_LABELS.map((name, i) => {
-          const n = i + 1;
-          return (
-            <span
-              key={name}
-              title={`Page ${n}: ${name}`}
-              className={cn(
-                "h-1 flex-1 rounded-full",
-                n <= current
-                  ? "bg-[var(--accent)]"
-                  : "bg-[var(--surface-muted)]",
+
+      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <DecisionPill decision={booking.decision ?? "pending"} />
+          <span className="rounded bg-[var(--surface-muted)] px-2 py-0.5 text-xs capitalize text-[var(--muted)]">
+            Portal {(booking.portalStatus ?? "not_invited").replace("_", " ")}
+          </span>
+        </div>
+
+        <StageBar
+          complete={booking.stepsComplete ?? booking.wizardStep ?? 1}
+          labels
+        />
+
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+          <Meta label="Email" value={booking.email} />
+          <Meta label="Phone" value={booking.phone} />
+          <Meta label="Submitted" value={booking.createdAt} />
+          <Meta label="Referred by" value={booking.referredBy || "—"} />
+          <Meta
+            label="Payment"
+            value={[
+              booking.paymentMethod ?? "—",
+              booking.autoPullAgreed ? "auto-pull" : null,
+              booking.autoPullWaived ? "waived" : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          />
+          <Meta
+            label="Gaps"
+            value={
+              booking.compliancePending
+                ? `${booking.missingPlates ?? 0} plate(s)${
+                    booking.docsSubmitLater ? " · docs later" : ""
+                  }`
+                : "Clear"
+            }
+          />
+        </dl>
+
+        {(booking.vehicles?.length ?? 0) > 0 && (
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+              Vehicles
+            </p>
+            <ul className="mt-1 space-y-1 text-sm">
+              {booking.vehicles!.map((v, i) => (
+                <li key={`${v.truckNumber}-${i}`}>
+                  {v.make || "Vehicle"} {v.truckNumber} ·{" "}
+                  {v.submitLater || !v.licensePlate
+                    ? "plate later"
+                    : v.licensePlate}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {booking.decisionNotes && (
+          <p className="rounded-lg bg-[var(--surface-muted)] px-3 py-2 text-xs text-[var(--muted)]">
+            {booking.decisionNotes}
+          </p>
+        )}
+
+        {pending ? (
+          <div className="space-y-3 border-t border-[var(--border)] pt-3">
+            <label className="block space-y-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+                Assign space (required)
+              </span>
+              <select
+                className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-sm"
+                value={lotId}
+                onChange={(e) => setLotId(e.target.value)}
+              >
+                <option value="">Select lot…</option>
+                {availableLots.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    #{l.number} · {formatCurrency(l.monthlyRate)}/mo ·{" "}
+                    {l.status.replace("_", " ")}
+                  </option>
+                ))}
+              </select>
+              {availableLots.length === 0 && (
+                <p className="text-xs text-amber-800">
+                  No available spaces — free a lot in Inventory first.
+                </p>
               )}
-            />
-          );
-        })}
+            </label>
+
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+                Conditions (conditional)
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {CONDITIONS.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => toggleCondition(c.key)}
+                    className={cn(
+                      "rounded border px-2 py-1 text-xs font-medium",
+                      conditions.includes(c.key)
+                        ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+                        : "border-[var(--border)] text-[var(--muted)]",
+                    )}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <label className="block space-y-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+                Decision notes
+              </span>
+              <Input
+                value={decisionNotes}
+                onChange={(e) => setDecisionNotes(e.target.value)}
+                placeholder="Optional"
+              />
+            </label>
+
+            {formError && (
+              <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                {formError}
+              </p>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <Button
+                disabled={deciding || !lotId}
+                onClick={() => onDecide("approve")}
+              >
+                Approve
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={deciding || !lotId}
+                onClick={() => onDecide("conditional")}
+              >
+                Conditionally approve
+              </Button>
+              <Button
+                variant="danger"
+                disabled={deciding}
+                onClick={() => onDecide("deny")}
+              >
+                Deny
+              </Button>
+            </div>
+
+            <div className="border-t border-[var(--border)] pt-3">
+              <p className="mb-1.5 text-xs text-[var(--muted)]">
+                Admin — auto-pull exception
+              </p>
+              {booking.autoPullWaived ? (
+                <Button size="sm" variant="secondary" onClick={onRestore}>
+                  Restore auto-pull
+                </Button>
+              ) : (
+                <Button size="sm" variant="secondary" onClick={onWaive}>
+                  Waive auto-pull
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3 border-t border-[var(--border)] pt-3">
+            {booking.conditions && booking.conditions.length > 0 && (
+              <p className="text-sm">
+                Conditions:{" "}
+                <span className="font-medium">
+                  {booking.conditions.join(", ")}
+                </span>
+              </p>
+            )}
+            {booking.gateCode && (
+              <div className="rounded-lg bg-[var(--ink)] px-3 py-3 text-center text-white">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--accent)]">
+                  Gate code
+                </p>
+                <p className="mt-1 font-mono text-xl font-bold tracking-widest">
+                  {booking.gateCode}
+                </p>
+              </div>
+            )}
+            {booking.customerId && (
+              <Link
+                href={`/customers/${booking.customerId}`}
+                className="inline-flex text-sm font-semibold text-[var(--ink)] underline-offset-2 hover:underline"
+              >
+                Open customer record →
+              </Link>
+            )}
+            {booking.portalInviteToken && (
+              <p className="text-xs text-[var(--muted)]">
+                Invite token:{" "}
+                <span className="font-mono text-[var(--ink)]">
+                  {booking.portalInviteToken}
+                </span>
+              </p>
+            )}
+            {approved && booking.portalStatus !== "active" && (
+              <Button
+                className="w-full"
+                disabled={inviting}
+                onClick={onInvite}
+              >
+                {inviting
+                  ? "Sending…"
+                  : booking.portalStatus === "invited"
+                    ? "Resend portal invitation"
+                    : "Send portal invitation"}
+              </Button>
+            )}
+            {booking.portalStatus === "active" && (
+              <p className="text-sm text-emerald-800">
+                Portal active — customer set their password.
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-[11px] text-[var(--muted)]">{label}</dt>
+      <dd className="truncate font-medium text-[var(--ink)]">{value}</dd>
+    </div>
+  );
+}
+
+function StageBar({
+  complete,
+  labels = false,
+}: {
+  complete: number;
+  labels?: boolean;
+}) {
+  const n = Math.min(4, Math.max(0, complete));
+  return (
+    <div>
+      <div className="flex gap-1">
+        {STEP_NAMES.map((name, i) => (
+          <div key={name} className="min-w-0 flex-1">
+            <div
+              className={cn(
+                "h-1.5 rounded-sm",
+                i < n ? "bg-[var(--accent)]" : "bg-[var(--border)]",
+              )}
+              title={name}
+            />
+            {labels && (
+              <p
+                className={cn(
+                  "mt-1 truncate text-[9px]",
+                  i < n ? "font-medium text-[var(--ink)]" : "text-[var(--muted)]",
+                )}
+              >
+                {name}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DecisionPill({ decision }: { decision: BookingDecision }) {
+  const map = {
+    pending: "bg-amber-500/15 text-amber-950",
+    approved: "bg-emerald-500/15 text-emerald-900",
+    conditional: "bg-sky-500/15 text-sky-950",
+    denied: "bg-rose-500/15 text-rose-900",
+  } as const;
+  const label = {
+    pending: "Pending",
+    approved: "Approved",
+    conditional: "Conditional",
+    denied: "Denied",
+  } as const;
+  return (
+    <span
+      className={cn(
+        "inline-flex rounded px-2 py-0.5 text-xs font-semibold",
+        map[decision],
+      )}
+    >
+      {label[decision]}
+    </span>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="block space-y-1 text-sm">
+      <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+        {label}
+      </span>
+      <Input value={value} onChange={(e) => onChange(e.target.value)} />
+    </label>
   );
 }

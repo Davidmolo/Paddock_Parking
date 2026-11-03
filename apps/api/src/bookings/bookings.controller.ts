@@ -21,7 +21,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import type { LotType } from '../data/seed.js';
+import type { BookingCondition, LotType } from '../data/seed.js';
 import { BookingsService } from './bookings.service.js';
 
 class BookingVehicleDto {
@@ -115,6 +115,10 @@ class CreateBookingDto {
   @IsOptional()
   @IsString()
   lotId?: string;
+
+  @IsOptional()
+  @IsString()
+  referredBy?: string;
 }
 
 class ConvertBookingDto {
@@ -126,6 +130,26 @@ class PatchBookingDto {
   @IsOptional()
   @IsBoolean()
   autoPullWaived?: boolean;
+}
+
+class DecideBookingDto {
+  @IsIn(['approve', 'conditional', 'deny'])
+  decision!: 'approve' | 'conditional' | 'deny';
+
+  @IsOptional()
+  @IsString()
+  lotId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsIn(['escrow', 'bond', 'prepaid', 'coi_pending', 'deposit_hold'], {
+    each: true,
+  })
+  conditions?: BookingCondition[];
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }
 
 @Controller('bookings')
@@ -151,6 +175,18 @@ export class BookingsController {
   @Patch(':id')
   patch(@Param('id') id: string, @Body() dto: PatchBookingDto) {
     return this.bookingsService.patch(id, dto);
+  }
+
+  /** FMS: Approve / Conditionally approve / Deny (once) */
+  @Post(':id/decide')
+  decide(@Param('id') id: string, @Body() dto: DecideBookingDto) {
+    return this.bookingsService.decide(id, dto);
+  }
+
+  /** FMS: portal invite after approval */
+  @Post(':id/invite-portal')
+  invitePortal(@Param('id') id: string) {
+    return this.bookingsService.invitePortal(id);
   }
 
   @Post(':id/convert')

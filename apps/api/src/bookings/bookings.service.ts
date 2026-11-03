@@ -1,7 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataStoreService } from '../data/data-store.service.js';
 import type {
   Booking,
+  BookingCondition,
+  BookingDecision,
   BookingProductType,
   BookingVehicle,
   BookingWizardStep,
@@ -86,6 +92,7 @@ export class BookingsService {
     paymentMethod?: 'card' | 'ach' | 'pending';
     autoPullAgreed?: boolean;
     lotId?: string;
+    referredBy?: string;
   }) {
     const booking: Booking = {
       id: `bk${Date.now()}`,
@@ -96,9 +103,10 @@ export class BookingsService {
       phone: input.phone,
       monthlyRate: input.monthlyRate,
       notes: input.notes ?? 'From Book Now',
-      status: input.paymentMethod && input.paymentMethod !== 'pending'
-        ? 'reserved'
-        : 'new',
+      status:
+        input.paymentMethod && input.paymentMethod !== 'pending'
+          ? 'reserved'
+          : 'new',
       createdAt: new Date().toISOString().slice(0, 10),
       productType: input.productType,
       spotCount: input.spotCount,
@@ -112,6 +120,10 @@ export class BookingsService {
       autoPullAgreed: input.autoPullAgreed ?? false,
       autoPullWaived: false,
       lotId: input.lotId,
+      referredBy: input.referredBy,
+      /** FMS: lands as Pending for staff review */
+      decision: 'pending',
+      portalStatus: 'not_invited',
     };
     this.store.bookings.unshift(booking);
     return this.enrich(booking);
@@ -126,6 +138,136 @@ export class BookingsService {
     if (body.autoPullWaived != null) {
       booking.autoPullWaived = body.autoPullWaived;
     }
+    return this.enrich(booking);
+  }
+
+  /**
+   * FMS Onboarding Profiles: staff decide once —
+   * approve | conditional | deny.
+   */
+  decide(
+    id: string,
+    body: {
+      decision: 'approve' | 'conditional' | 'deny';
+      lotId?: string;
+      conditions?: BookingCondition[];
+      notes?: string;
+    },
+  ) {
+    const booking = this.store.bookings.find((b) => b.id === id);
+    if (!booking) throw new NotFoundException(`Booking ${id} not found`);
+
+    const current = booking.decision ?? this.inferDecision(booking);
+    if (current !== 'pending') {
+      throw new BadRequestException(
+        'A decision was already made on this application.',
+      );
+    }
+
+    if (body.decision === 'deny') {
+      booking.decision = 'denied';
+      booking.status = 'cancelled';
+      booking.decidedAt = new Date().toISOString().slice(0, 10);
+      booking.decisionNotes =
+        body.notes ?? 'Denied by staff — customer emailed (demo).';
+      booking.portalStatus = 'not_invited';
+      return {
+        booking: this.enrich(booking),
+        customerId: undefined as string | undefined,
+        lotId: undefined as string | undefined,
+      };
+    }
+
+    if (!body.lotId) {
+      throw new BadRequestException(
+        'Pick a yard space (lot) before approving.',
+      );
+    }
+
+    const lot = this.store.lots.find((l) => l.id === body.lotId);
+    if (!lot) {
+      throw new BadRequestException(`Lot ${body.lotId} not found.`);
+    }
+    if (lot.propertyId !== booking.propertyId) {
+      throw new BadRequestException(
+        'That space is on a different yard than this application.',
+      );
+    }
+    if (lot.status !== 'available' && lot.status !== 'available_soon') {
+      throw new BadRequestException(
+        `Space #${lot.number} is ${lot.status.replace('_', ' ')} — pick an available lot.`,
+      );
+    }
+
+    let conditions = body.conditions ?? [];
+    if (body.decision === 'conditional' && conditions.length === 0) {
+      // FMS: if none picked, record all three — we use parking-relevant defaults
+      conditions = ['prepaid', 'coi_pending', 'deposit_hold'];
+    }
+
+    const converted = this.convert(id, body.lotId);
+    const updated = this.store.bookings.find((b) => b.id === id)!;
+    updated.decision =
+      body.decision === 'conditional' ? 'conditional' : 'approved';
+    updated.conditions = conditions;
+    updated.decidedAt = new Date().toISOString().slice(0, 10);
+    updated.decisionNotes =
+      body.notes ??
+      (body.decision === 'conditional'
+        ? `Conditionally approved: ${conditions.join(', ')}`
+        : 'Approved — customer created. Portal invite still Not invited.');
+    updated.portalStatus = 'not_invited';
+
+    const customer = this.store.customers.find(
+      (c) => c.id === converted.customerId,
+    );
+    if (customer && conditions.length) {
+      customer.notes = [
+        customer.notes,
+        `Onboarding conditions: ${conditions.join(', ')}`,
+      ]
+        .filter(Boolean)
+        .join(' · ');
+      if (conditions.includes('coi_pending')) {
+        customer.insuranceOk = false;
+      }
+    }
+
+    return {
+      booking: this.enrich(updated),
+      customerId: converted.customerId,
+      lotId: converted.lotId,
+    };
+  }
+
+  /** FMS: portal invitation is separate from approval */
+  invitePortal(id: string) {
+    const booking = this.store.bookings.find((b) => b.id === id);
+    if (!booking) throw new NotFoundException(`Booking ${id} not found`);
+    if (!booking.customerId) {
+      throw new BadRequestException(
+        'Approve the application before sending a portal invite.',
+      );
+    }
+    if (booking.portalStatus === 'active') {
+      return this.enrich(booking);
+    }
+    const resent = booking.portalStatus === 'invited';
+    booking.portalStatus = 'invited';
+    const customer = this.store.customers.find(
+      (c) => c.id === booking.customerId,
+    );
+    if (customer) {
+      customer.portalInviteToken = `inv-${Date.now().toString(36)}`;
+    }
+    booking.decisionNotes = [
+      booking.decisionNotes,
+      resent
+        ? 'Portal invitation re-sent (demo email) — customer can set / reset password.'
+        : 'Portal invitation sent (demo email).',
+    ]
+      .filter(Boolean)
+      .join(' · ');
     return this.enrich(booking);
   }
 
@@ -161,8 +303,8 @@ export class BookingsService {
       createdAt: new Date().toISOString().slice(0, 10),
       documents: [],
       notes: booking.autoPullWaived
-        ? 'Converted from Book Now — auto-pull waived by staff'
-        : 'Converted from Book Now reservation',
+        ? 'Approved from onboarding — auto-pull waived by staff'
+        : 'Approved from onboarding application',
     });
 
     lot.status = 'occupied';
@@ -190,28 +332,78 @@ export class BookingsService {
           ? false
           : Boolean(booking.autoPullAgreed) ||
             booking.paymentMethod === 'ach',
-      notes: 'Created from Book Now — awaiting COI with correct additional insured',
+      notes:
+        'Created from onboarding — awaiting COI with correct additional insured',
     });
 
     booking.status = 'converted';
     booking.lotId = lot.id;
     booking.customerId = customerId;
-    booking.wizardStep = 4;
+    booking.wizardStep = booking.wizardStep ?? 5;
+    if (!booking.decision || booking.decision === 'pending') {
+      booking.decision = 'approved';
+      booking.decidedAt = new Date().toISOString().slice(0, 10);
+    }
+    if (!booking.portalStatus) booking.portalStatus = 'not_invited';
 
     return { booking: this.enrich(booking), customerId, lotId: lot.id };
   }
 
+  private inferDecision(b: Booking): BookingDecision {
+    if (b.decision) return b.decision;
+    if (b.status === 'converted') return 'approved';
+    if (b.status === 'cancelled') return 'denied';
+    return 'pending';
+  }
+
   private enrich(b: Booking) {
     const property = this.store.properties.find((p) => p.id === b.propertyId);
+    const customer = b.customerId
+      ? this.store.customers.find((c) => c.id === b.customerId)
+      : undefined;
     const missingPlates = (b.vehicles ?? []).filter(
       (v) => v.submitLater || !v.licensePlate.trim(),
     ).length;
+    const decision = this.inferDecision(b);
+    const step = b.wizardStep ?? 1;
     return {
       ...b,
+      decision,
+      portalStatus: b.portalStatus ?? 'not_invited',
+      gateCode: customer?.gateCode,
+      portalInviteToken: customer?.portalInviteToken,
       lotTypeLabel: LOT_TYPE_LABELS[b.lotType],
       propertyName: property?.name,
       missingPlates,
       compliancePending: missingPlates > 0 || !!b.docsSubmitLater,
+      /** FMS-style labels for UI */
+      decisionLabel:
+        decision === 'pending'
+          ? 'Pending'
+          : decision === 'approved'
+            ? 'Approved'
+            : decision === 'conditional'
+              ? 'Conditionally approved'
+              : 'Denied',
+      stepLabel: stepLabel(step),
+      stepsComplete: Math.min(step, 4),
     };
+  }
+}
+
+function stepLabel(step: BookingWizardStep): string {
+  switch (step) {
+    case 1:
+      return '1 · Get started';
+    case 2:
+      return '2 · Business / lease';
+    case 3:
+      return '3 · Verify & pay';
+    case 4:
+      return '4 · Review & sign';
+    case 5:
+      return 'Submitted';
+    default:
+      return `Step ${step}`;
   }
 }

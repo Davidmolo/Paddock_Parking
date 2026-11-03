@@ -14,6 +14,7 @@ import {
   formatExpInput,
 } from "@/components/book/payment-card-preview";
 import { endpoints, type LotType } from "@/lib/api";
+import { isValidAbaRouting } from "@/lib/aba-routing";
 import { formatCurrency, cn } from "@/lib/utils";
 import { isLivePropertyId } from "@/lib/yards";
 
@@ -68,6 +69,7 @@ type FormState = {
     | "idle"
     | "checking"
     | "matched"
+    | "missing_signer"
     | "name_mismatch"
     | "not_id"
     | "unreadable"
@@ -169,7 +171,7 @@ function Field({
 }
 
 const inputClass =
-  "box-border h-11 w-full max-w-full rounded-xl border border-[#0b1524]/15 bg-white px-3 text-sm outline-none ring-[#f5b301] focus:ring-2";
+  "box-border h-11 w-full max-w-full rounded-xl border border-[#0b1524]/15 bg-white px-3 text-sm outline-none ring-[#E8C547] focus:ring-2";
 
 export default function BookWizardPage() {
   const params = useParams<{ propertyId: string }>();
@@ -380,7 +382,7 @@ export default function BookWizardPage() {
         return false;
       }
       if (!form.idFileName || !idFile) {
-        setError("Upload Photo ID is required.");
+        setError("Please upload a photo of your government ID to continue.");
         return false;
       }
       if (!form.idVerifySkipTest) {
@@ -388,10 +390,23 @@ export default function BookWizardPage() {
           setError("Still verifying your Photo ID — wait a moment.");
           return false;
         }
+        if (form.idVerifyStatus === "missing_signer") {
+          setError(
+            "Enter your signer name above, then re-upload your Photo ID.",
+          );
+          return false;
+        }
+        if (form.idVerifyStatus === "name_mismatch") {
+          setError(
+            form.idVerifyMessage ||
+              "Name on the Photo ID must match your signer name.",
+          );
+          return false;
+        }
         if (form.idVerifyStatus !== "matched") {
           setError(
             form.idVerifyMessage ||
-              "Photo ID must be a government ID and the name must match your signer name.",
+              "Please upload a clear government Photo ID to continue.",
           );
           return false;
         }
@@ -406,7 +421,7 @@ export default function BookWizardPage() {
     if (step === 3) {
       if (!form.agreeAutoPull) {
         setError(
-          "Please agree to stress-free automatic payments every 28 days.",
+          "Please accept the automatic payment authorization to continue.",
         );
         return false;
       }
@@ -421,11 +436,11 @@ export default function BookWizardPage() {
           setError("Complete card details (Authorize.net).");
           return false;
         }
-      } else if (
-        form.routingNumber.trim().length < 9 ||
-        form.accountNumber.trim().length < 4
-      ) {
-        setError("Complete ACH bank details (Authorize.net).");
+      } else if (!isValidAbaRouting(form.routingNumber)) {
+        setError("Enter a valid 9-digit bank routing number.");
+        return false;
+      } else if (form.accountNumber.trim().length < 4) {
+        setError("Enter a valid bank account number.");
         return false;
       }
     }
@@ -574,15 +589,16 @@ export default function BookWizardPage() {
             </motion.div>
 
             <h1 className="mt-6 font-[family-name:var(--font-sora)] text-3xl font-semibold tracking-tight text-[#0a1628] sm:text-4xl">
-              You&apos;re all set
+              Order confirmed — spot reserved
             </h1>
             <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-[#64748b]">
-              Your booking request was sent to your{" "}
-              <span className="font-semibold text-[#0a1628]">
-                Customer Portal
-              </span>
-              . We&apos;ll email gate access and lease details to{" "}
-              <span className="font-medium text-[#0a1628]">{form.email}</span>.
+              Congratulations — your parking reservation is submitted and
+              confirmed. We&apos;ll email{" "}
+              <span className="font-medium text-[#0a1628]">{form.email}</span>{" "}
+              with next steps. Your{" "}
+              <span className="font-semibold text-[#0a1628]">gate code</span>{" "}
+              arrives before your start date so you can begin parking on day
+              one. Staff will finalize yard assignment in Onboarding.
             </p>
             <p className="mt-3 text-sm text-[#94a3b8]">
               Reference{" "}
@@ -598,16 +614,16 @@ export default function BookWizardPage() {
               transition={{ delay: 0.28, duration: 0.35 }}
             >
               <Link
-                href="/portal"
-                className="inline-flex items-center justify-center rounded-xl bg-[#f5b301] px-5 py-3 text-sm font-bold text-[#0a1628]"
+                href="/book/spots"
+                className="inline-flex items-center justify-center rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
               >
-                Open Customer Portal
+                Back to spots
               </Link>
               <Link
-                href="/book/spots"
+                href="/book"
                 className="inline-flex items-center justify-center rounded-xl border border-[#0a1628]/15 px-5 py-3 text-sm font-bold text-[#0a1628]"
               >
-                Book another location
+                Home
               </Link>
             </motion.div>
           </motion.div>
@@ -640,7 +656,7 @@ export default function BookWizardPage() {
                     i === step
                       ? "bg-[#0a1628] text-white"
                       : i < step
-                        ? "bg-[#f5b301] text-[#0a1628]"
+                        ? "bg-[#E8C547] text-[#0a1628]"
                         : "bg-[#e8ecf0] text-[#94a3b8]",
                   )}
                 >
@@ -1035,7 +1051,7 @@ export default function BookWizardPage() {
                     className={cn(
                       "flex-1 rounded-xl border px-3 py-3 text-sm font-bold",
                       form.paymentMethod === id
-                        ? "border-[#f5b301] bg-[#fff8e6] text-[#0a1628]"
+                        ? "border-[#E8C547] bg-[#E8C547]/12 text-[#0a1628]"
                         : "border-[#e2e8f0] text-[#64748b]",
                     )}
                   >
@@ -1153,7 +1169,7 @@ export default function BookWizardPage() {
                 </div>
               )}
 
-              <label className="flex items-start gap-2.5 rounded-xl border border-[#f5b301]/45 bg-[#fffbeb] px-3.5 py-3 text-sm text-[#0a1628]">
+              <label className="flex items-start gap-2.5 rounded-xl border border-[#E8C547]/45 bg-[#E8C547]/10 px-3.5 py-3 text-sm text-[#0a1628]">
                 <input
                   type="checkbox"
                   className="mt-0.5 h-4 w-4 rounded border-[#cbd5e1]"
@@ -1162,13 +1178,14 @@ export default function BookWizardPage() {
                 />
                 <span>
                   <span className="font-semibold">
-                    Stress-free automatic payment every 28 days
+                    Automatic payment authorization
                     <span className="text-rose-500"> *</span>
                   </span>
                   <span className="mt-1 block text-[#64748b]">
-                    I agree that Paddock may use this payment method for
-                    automatic pulls each billing cycle so I don&apos;t have to
-                    chase invoices.
+                    I authorize Paddock Parking to automatically debit my
+                    payment method on file for each billing cycle’s lot rent and
+                    related lease charges until I revoke this authorization in
+                    writing under my lease.
                   </span>
                 </span>
               </label>
@@ -1221,7 +1238,7 @@ export default function BookWizardPage() {
                 onClick={() => {
                   if (validateStep()) submit.mutate();
                 }}
-                className="rounded-xl bg-[#f5b301] px-5 py-2.5 text-sm font-bold text-[#0a1628] disabled:opacity-60"
+                className="rounded-xl bg-[#E8C547] px-5 py-2.5 text-sm font-bold text-[#0a1628] disabled:opacity-60"
               >
                 {submit.isPending ? "Submitting…" : "Pay & complete"}
               </button>

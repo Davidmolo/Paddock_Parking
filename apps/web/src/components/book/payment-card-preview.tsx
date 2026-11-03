@@ -57,7 +57,7 @@ export function PaymentCardPreview({
           {/* Front */}
           <div className="absolute inset-0 overflow-hidden rounded-2xl bg-gradient-to-br from-[#0a1628] via-[#152a45] to-[#0f766e] p-5 text-white shadow-[0_20px_40px_rgba(10,22,40,0.35)] [backface-visibility:hidden]">
             <div className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-            <div className="pointer-events-none absolute -bottom-12 left-8 h-32 w-32 rounded-full bg-[#f5b301]/20 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-12 left-8 h-32 w-32 rounded-full bg-[#E8C547]/20 blur-2xl" />
             <div className="relative flex h-full flex-col justify-between">
               <div className="flex items-start justify-between">
                 {/* Modern EMV chip + contactless */}

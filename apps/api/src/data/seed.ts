@@ -76,6 +76,9 @@ export type Customer = {
   /** ISO date — when the customer record was created (newest-first sorts) */
   createdAt?: string;
   portalLastLogin?: string;
+  /** Demo portal auth (set after invite) */
+  portalPassword?: string;
+  portalInviteToken?: string;
   documents: CustomerDocument[];
   notes?: string;
 };
@@ -161,9 +164,25 @@ export type BookingVehicle = {
 
 /**
  * FMS-style onboarding progress (last step completed, 1–5).
- * 1 Contact · 2 Lease details · 3 Docs · 4 Agreement · 5 Pay
+ * 1 Get started · 2 Business / lease · 3 Verify & pay · 4 Review & sign · 5 Pay
  */
 export type BookingWizardStep = 1 | 2 | 3 | 4 | 5;
+
+/** Staff decision on Onboarding Profiles (FMS: Approve / Conditional / Deny) */
+export type BookingDecision =
+  | "pending"
+  | "approved"
+  | "conditional"
+  | "denied";
+
+export type BookingCondition =
+  | "escrow"
+  | "bond"
+  | "prepaid"
+  | "coi_pending"
+  | "deposit_hold";
+
+export type BookingPortalStatus = "not_invited" | "invited" | "active";
 
 export type Booking = {
   id: string;
@@ -177,7 +196,7 @@ export type Booking = {
   createdAt: string;
   notes?: string;
   lotId?: string;
-  /** Set after convert to tenant */
+  /** Set after convert / approve to tenant */
   customerId?: string;
   productType?: BookingProductType;
   spotCount?: number;
@@ -186,11 +205,19 @@ export type Booking = {
   leaseStart?: string;
   vehicles?: BookingVehicle[];
   docsSubmitLater?: boolean;
-  /** Last wizard step completed (for Onboarding inbox) */
+  /** Last wizard step completed (for Onboarding Profiles) */
   wizardStep?: BookingWizardStep;
   paymentMethod?: "card" | "ach" | "pending";
   autoPullAgreed?: boolean;
   autoPullWaived?: boolean;
+  /** FMS: Pending until staff decide once */
+  decision?: BookingDecision;
+  conditions?: BookingCondition[];
+  decidedAt?: string;
+  decisionNotes?: string;
+  referredBy?: string;
+  /** Portal invite is separate from approval (FMS) */
+  portalStatus?: BookingPortalStatus;
 };
 
 /**
@@ -321,13 +348,6 @@ export const properties: Property[] = [
     address: "325 S 31st Ave",
     city: "Phoenix, AZ 85009",
     legalEntityName: "Paddock Parking 325 LLC",
-  },
-  {
-    id: "prop-51",
-    name: "Paddock 51",
-    address: "5310 W Roeser Rd",
-    city: "Laveen Village, AZ 85339",
-    legalEntityName: "Paddock Parking 51 LLC",
   },
   {
     id: "prop-6060",
@@ -855,24 +875,6 @@ export const leases: Lease[] = [
     notes: "Renewal window open — landlord notice due",
   },
   {
-    id: "ll-51",
-    direction: "landlord",
-    propertyId: "prop-51",
-    landlordName: "Roeser Land Co",
-    landlordContact: "Nina Cho",
-    landlordEmail: "nina@roeserland.example",
-    lotNumbers: ["Yard master"],
-    startDate: "2025-03-01",
-    endDate: "2030-02-28",
-    renewalDate: "2030-02-28",
-    notificationLeadDays: 120,
-    termMonths: 60,
-    monthlyRent: 18000,
-    status: "active",
-    achEnabled: false,
-    notes: "New yard — long lead before first renewal",
-  },
-  {
     id: "ll-6060",
     direction: "landlord",
     propertyId: "prop-6060",
@@ -1041,18 +1043,85 @@ export const bookings: Booking[] = [
     monthlyRate: 225,
     createdAt: "2026-10-05",
     notes: "From Book Now — Truck and Trailer",
+    productType: "parking_spot",
+    spotCount: 2,
+    leaseStart: "2026-11-01",
+    wizardStep: 4,
+    paymentMethod: "ach",
+    autoPullAgreed: true,
+    decision: "pending",
+    portalStatus: "not_invited",
+    referredBy: "Yard walk-in",
+    vehicles: [
+      {
+        make: "Peterbilt",
+        color: "White",
+        truckNumber: "CB-12",
+        licensePlate: "",
+        submitLater: true,
+      },
+    ],
+    docsSubmitLater: true,
   },
   {
     id: "bk2",
     propertyId: "prop-325",
-    lotType: "general_storage",
+    lotType: "acre",
     customerName: "Ava Monroe Fleet",
     email: "ava@monroefleet.example",
     phone: "(480) 555-0202",
     status: "reserved",
-    monthlyRate: 375,
+    monthlyRate: 2400,
     createdAt: "2026-10-03",
     lotId: "p325-Lot5",
+    productType: "storage_acre",
+    acreSize: 1,
+    storageDescription: "Empty containers",
+    leaseStart: "2026-11-15",
+    wizardStep: 5,
+    paymentMethod: "card",
+    autoPullAgreed: true,
+    decision: "pending",
+    portalStatus: "not_invited",
+    vehicles: [
+      {
+        make: "Freightliner",
+        color: "Blue",
+        truckNumber: "AM-4",
+        licensePlate: "AZ-99821",
+        submitLater: false,
+      },
+    ],
+  },
+  {
+    id: "bk3",
+    propertyId: "prop-6060",
+    lotType: "truck_trailer",
+    customerName: "Desert Line Logistics",
+    email: "ops@desertline.example",
+    phone: "(623) 555-0203",
+    status: "new",
+    monthlyRate: 250,
+    createdAt: "2026-10-28",
+    notes: "From Book Now — Truck and Trailer",
+    productType: "parking_spot",
+    spotCount: 1,
+    leaseStart: "2026-11-10",
+    wizardStep: 4,
+    paymentMethod: "ach",
+    autoPullAgreed: true,
+    decision: "pending",
+    portalStatus: "not_invited",
+    referredBy: "Website",
+    vehicles: [
+      {
+        make: "Kenworth",
+        color: "Black",
+        truckNumber: "DL-7",
+        licensePlate: "AZ-44102",
+        submitLater: false,
+      },
+    ],
   },
 ];
 
@@ -1086,15 +1155,6 @@ export const propertyMetrics: Record<
     overdue: 21533.93,
     overdueInvoices: 16,
     revenueTrend: [63698, 62201, 84733, 59011, 59868, 7999],
-  },
-  "prop-51": {
-    revenue30d: 0,
-    projectedMonthly: 0,
-    monthlyMortgage: 0,
-    outstandingDue: 0,
-    overdue: 0,
-    overdueInvoices: 0,
-    revenueTrend: [12000, 8000, 4200, 0, 0, 0],
   },
   "prop-6060": {
     revenue30d: 84733,

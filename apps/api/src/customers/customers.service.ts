@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DataStoreService } from '../data/data-store.service.js';
@@ -49,6 +54,88 @@ export class CustomersService {
       throw new NotFoundException(`Customer ${id} not found`);
     }
     return this.detail(customer);
+  }
+
+  /** Tenant portal — set password from invite email/token */
+  portalSetPassword(body: {
+    email: string;
+    password: string;
+    inviteToken?: string;
+  }) {
+    const email = body.email.trim().toLowerCase();
+    const customer = this.store.customers.find(
+      (c) => c.email.toLowerCase() === email,
+    );
+    if (!customer) {
+      throw new NotFoundException('No customer found for that email.');
+    }
+    if (!customer.portalInviteToken && !customer.portalPassword) {
+      throw new BadRequestException(
+        'Ask staff to send a portal invitation first.',
+      );
+    }
+    if (
+      body.inviteToken &&
+      customer.portalInviteToken &&
+      body.inviteToken !== customer.portalInviteToken
+    ) {
+      throw new BadRequestException('Invite link is invalid or expired.');
+    }
+    if (!body.password || body.password.length < 6) {
+      throw new BadRequestException('Password must be at least 6 characters.');
+    }
+    customer.portalPassword = body.password;
+    customer.portalInviteToken = undefined;
+    const booking = this.store.bookings.find((b) => b.customerId === customer.id);
+    if (booking) booking.portalStatus = 'active';
+    return {
+      ok: true,
+      message: 'Password set. You can sign in to the customer portal.',
+      gateCode: customer.gateCode,
+    };
+  }
+
+  portalLogin(body: { email: string; password: string }) {
+    const email = body.email.trim().toLowerCase();
+    const customer = this.store.customers.find(
+      (c) => c.email.toLowerCase() === email,
+    );
+    if (!customer?.portalPassword || customer.portalPassword !== body.password) {
+      throw new UnauthorizedException('Invalid email or password.');
+    }
+    customer.portalLastLogin = new Date().toISOString();
+    const booking = this.store.bookings.find((b) => b.customerId === customer.id);
+    if (booking) booking.portalStatus = 'active';
+    return {
+      ok: true,
+      customerId: customer.id,
+      name: customer.name,
+      email: customer.email,
+      gateCode: customer.gateCode,
+      propertyId: customer.propertyId,
+    };
+  }
+
+  portalResetPassword(body: { email: string }) {
+    const email = body.email.trim().toLowerCase();
+    const customer = this.store.customers.find(
+      (c) => c.email.toLowerCase() === email,
+    );
+    if (!customer) {
+      return {
+        ok: true,
+        message: 'If that email is on file, a reset link was sent (demo).',
+      };
+    }
+    customer.portalInviteToken = `rst-${Date.now().toString(36)}`;
+    customer.portalPassword = undefined;
+    const booking = this.store.bookings.find((b) => b.customerId === customer.id);
+    if (booking) booking.portalStatus = 'invited';
+    return {
+      ok: true,
+      message: 'Reset ready — use Set password with your email (demo token).',
+      inviteToken: customer.portalInviteToken,
+    };
   }
 
   upsertCertificate(customerId: string, dto: UpsertCoiDto) {
@@ -154,9 +241,10 @@ export class CustomersService {
     );
     const coiEval = evaluateCoi(coi, property);
     customer.insuranceOk = coiEval.status === 'valid';
+    const { portalPassword: _pw, portalInviteToken: _tok, ...safe } = customer;
 
     return {
-      ...customer,
+      ...safe,
       insuranceOk: customer.insuranceOk,
       property,
       lots,
@@ -202,8 +290,9 @@ export class CustomersService {
     const coiEval = evaluateCoi(coi, property);
     c.insuranceOk = coiEval.status === 'valid';
 
+    const { portalPassword: _pw, portalInviteToken: _tok, ...safe } = c;
     return {
-      ...c,
+      ...safe,
       /** Greta “Added” — fall back to lease start when seed has no createdAt */
       createdAt: c.createdAt ?? c.leaseStart,
       insuranceOk: c.insuranceOk,

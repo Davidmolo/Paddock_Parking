@@ -43,7 +43,7 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
         <div className={`${BOOK_SHELL} py-3.5 lg:py-4`}>
           <div className="flex items-center justify-between gap-4">
             <Link href="/book" className="flex shrink-0 items-center gap-2.5">
-              <span className="grid h-9 w-9 place-items-center rounded-md bg-[#f5b301] text-sm font-black text-[#0a1628]">
+              <span className="grid h-9 w-9 place-items-center rounded-md bg-[#E8C547] text-sm font-black text-[#0a1628]">
                 P
               </span>
               <span className="font-[family-name:var(--font-sora)] text-[13px] font-semibold tracking-[0.16em]">
@@ -117,7 +117,7 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
                       ))}
                       <Link
                         href="/book/spots"
-                        className="block border-t border-white/10 px-4 py-2.5 text-sm font-semibold text-[#f5b301] hover:bg-white/5"
+                        className="block border-t border-white/10 px-4 py-2.5 text-sm font-semibold text-[#E8C547] hover:bg-white/5"
                       >
                         Find Your Spot →
                       </Link>
@@ -143,19 +143,19 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <Link
                 href="/portal"
-                className="hidden items-center justify-center whitespace-nowrap rounded-lg bg-[#f5b301] px-3.5 py-2 text-[13px] font-bold !text-[#0a1628] sm:inline-flex"
+                className="hidden items-center justify-center whitespace-nowrap rounded-lg bg-[#E8C547] px-3.5 py-2 text-[13px] font-bold !text-[#0a1628] sm:inline-flex"
               >
                 Customer Portal
               </Link>
               <Link
                 href="/book/spots"
-                className="hidden items-center justify-center whitespace-nowrap rounded-lg bg-[#f5b301] px-3.5 py-2 text-[13px] font-bold !text-[#0a1628] md:inline-flex"
+                className="hidden items-center justify-center whitespace-nowrap rounded-lg bg-[#E8C547] px-3.5 py-2 text-[13px] font-bold !text-[#0a1628] md:inline-flex"
               >
                 Book Now
               </Link>
               <a
                 href={SITE_PHONE_TEL}
-                className="hidden items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-[#f5b301]/40 px-3.5 py-2 text-[13px] font-bold text-[#f5b301] sm:inline-flex lg:hidden xl:inline-flex"
+                className="hidden items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-[#E8C547]/40 px-3.5 py-2 text-[13px] font-bold text-[#E8C547] sm:inline-flex lg:hidden xl:inline-flex"
               >
                 <Phone className="h-3.5 w-3.5" />
                 {SITE_PHONE}
@@ -217,7 +217,7 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
               <div className="flex flex-col gap-2 pt-2">
                 <Link
                   href="/book/spots"
-                  className="inline-flex items-center justify-center rounded-lg bg-[#f5b301] px-3.5 py-2.5 text-sm font-bold text-[#0a1628]"
+                  className="inline-flex items-center justify-center rounded-lg bg-[#E8C547] px-3.5 py-2.5 text-sm font-bold text-[#0a1628]"
                   onClick={() => setMobileOpen(false)}
                 >
                   Book Now
@@ -231,7 +231,7 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
                 </Link>
                 <a
                   href={SITE_PHONE_TEL}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#f5b301] px-3.5 py-2.5 text-sm font-bold text-[#0a1628]"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#E8C547] px-3.5 py-2.5 text-sm font-bold text-[#0a1628]"
                 >
                   <Phone className="h-3.5 w-3.5" />
                   {SITE_PHONE}
@@ -332,7 +332,7 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
             </p>
             <Link
               href="/book/spots"
-              className="mt-4 inline-flex rounded-lg bg-[#f5b301] px-4 py-2 text-sm font-bold text-[#0a1628]"
+              className="mt-4 inline-flex rounded-lg bg-[#E8C547] px-4 py-2 text-sm font-bold text-[#0a1628]"
             >
               Book Now
             </Link>

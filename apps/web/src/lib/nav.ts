@@ -5,6 +5,7 @@ import {
   Users,
   Wallet,
   FileText,
+  Receipt,
   UserPlus,
   ScrollText,
   ShieldCheck,
@@ -28,16 +29,14 @@ export type NavGroup = {
 };
 
 /**
- * FMS-like ops nav (David Oct 27):
- * Overview · Customers (+ Compliance) · Onboarding · Invoices · Properties
- * Leases stay reachable under Customers for landlord/tenant chase.
+ * FMS-like ops nav (David meeting):
+ * Overview · Customers · Properties · Invoices (Invoices + Collections) · Onboarding
+ * David: “side menu should have invoice and then underneath collections”
+ * Invoices = billing / on-time. Collections = past-due QB aging.
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
-    items: [
-      { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-      { href: "/collections", label: "Collections", icon: Wallet },
-    ],
+    items: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }],
   },
   {
     label: "Customers",
@@ -59,10 +58,16 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Invoices",
+    icon: FileText,
+    expandable: true,
     items: [
-      { href: "/bookings", label: "Onboarding", icon: UserPlus },
-      { href: "/invoices", label: "Invoices", icon: FileText },
+      { href: "/invoices", label: "Billing", icon: Receipt },
+      { href: "/collections", label: "Collections", icon: Wallet },
     ],
+  },
+  {
+    items: [{ href: "/bookings", label: "Onboarding", icon: UserPlus }],
   },
 ];
 

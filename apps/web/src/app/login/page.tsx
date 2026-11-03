@@ -106,7 +106,12 @@ export default function LoginPage() {
               {error}
             </p>
           )}
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          <Button
+            type="submit"
+            className="w-full bg-[var(--ink)] text-white hover:bg-[#142338]"
+            size="lg"
+            disabled={loading}
+          >
             {loading ? "Signing in…" : "Enter workspace"}
           </Button>
         </div>

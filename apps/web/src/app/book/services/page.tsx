@@ -8,7 +8,7 @@ export default function ServicesPage() {
     <BookChrome>
       <section className="bg-[#0a1628] py-16 text-white">
         <div className={BOOK_SHELL}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#f5b301]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
             Services
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-sora)] text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -20,7 +20,7 @@ export default function ServicesPage() {
           </p>
           <Link
             href="/book/spots"
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#f5b301] px-5 py-3 text-sm font-bold text-[#0a1628]"
+            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
           >
             Book Now <ArrowRight className="h-4 w-4" />
           </Link>
@@ -40,7 +40,7 @@ export default function ServicesPage() {
                   {s.title}
                 </h2>
                 {"popular" in s && s.popular ? (
-                  <span className="rounded-full bg-[#f5b301]/15 px-2.5 py-0.5 text-[11px] font-bold text-[#0a1628]">
+                  <span className="rounded-full bg-[#E8C547]/15 px-2.5 py-0.5 text-[11px] font-bold text-[#0a1628]">
                     Most Popular
                   </span>
                 ) : null}

@@ -7,7 +7,7 @@ export default function AboutPage() {
     <BookChrome>
       <section className="bg-[#0a1628] py-16 text-white">
         <div className={BOOK_SHELL}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#f5b301]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
             About Us
           </p>
           <h1 className="mt-2 max-w-3xl font-[family-name:var(--font-sora)] text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -34,7 +34,7 @@ export default function AboutPage() {
           </p>
           <Link
             href="/book/spots"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#f5b301] px-5 py-3 text-sm font-bold text-[#0a1628]"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
           >
             Book Now <ArrowRight className="h-4 w-4" />
           </Link>

@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { endpoints, type AuthUser, type Property } from "@/lib/api";
+import { isLivePropertyId, LIVE_PROPERTY_ORDER } from "@/lib/yards";
 
 type AppContextValue = {
   user: AuthUser | null;
@@ -24,6 +25,20 @@ type AppContextValue = {
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
+
+function livePropertiesOnly(props: Property[]) {
+  return props
+    .filter((p) => isLivePropertyId(p.id))
+    .sort(
+      (a, b) =>
+        LIVE_PROPERTY_ORDER.indexOf(
+          a.id as (typeof LIVE_PROPERTY_ORDER)[number],
+        ) -
+        LIVE_PROPERTY_ORDER.indexOf(
+          b.id as (typeof LIVE_PROPERTY_ORDER)[number],
+        ),
+    );
+}
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUserState] = useState<AuthUser | null>(null);
@@ -52,7 +67,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           endpoints.properties(),
         ]);
         setUserState(me);
-        setProperties(props);
+        setProperties(livePropertiesOnly(props));
+        if (
+          savedProperty &&
+          savedProperty !== "all" &&
+          !isLivePropertyId(savedProperty)
+        ) {
+          setPropertyIdState("all");
+          localStorage.setItem("pp_property", "all");
+        }
       } catch {
         localStorage.removeItem("pp_token");
         setToken(null);
@@ -84,7 +107,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setToken(res.token);
     setUserState(res.user);
     const props = await endpoints.properties();
-    setProperties(props);
+    setProperties(livePropertiesOnly(props));
   }, []);
 
   const logout = useCallback(() => {

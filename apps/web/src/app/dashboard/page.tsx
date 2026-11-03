@@ -1,8 +1,18 @@
 "use client";
 
+import { useMemo, type ComponentType } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowRight, CalendarPlus, ScrollText, ShieldAlert } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarPlus,
+  ScrollText,
+  ShieldAlert,
+  Users,
+  Wallet,
+  TrendingUp,
+  AlertTriangle,
+} from "lucide-react";
 import { endpoints } from "@/lib/api";
 import { propertyParam, queryKeys } from "@/lib/prefetch";
 import { useApp } from "@/components/app-provider";
@@ -21,6 +31,17 @@ export default function DashboardPage() {
     queryKey: queryKeys.dashboard(propertyId),
     queryFn: () => endpoints.dashboard(propertyParam(propertyId)),
   });
+
+  const trend = useMemo(() => {
+    if (!data?.properties.length) return [0, 0, 0, 0, 0, 0];
+    const out = [0, 0, 0, 0, 0, 0];
+    for (const p of data.properties) {
+      p.revenueTrend.forEach((v, i) => {
+        out[i] += v;
+      });
+    }
+    return out;
+  }, [data]);
 
   const alerts = data
     ? [
@@ -68,7 +89,7 @@ export default function DashboardPage() {
                   variant="secondary"
                   className="h-11 w-full justify-start px-3.5"
                 >
-                  <Icon className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" />
+                  <Icon className="h-4 w-4 shrink-0 text-[var(--accent)]" />
                   <span className="truncate">{a.label}</span>
                 </Button>
               </Link>
@@ -78,40 +99,64 @@ export default function DashboardPage() {
       )}
 
       {isPending && !data ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28" />
-          ))}
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+          <Skeleton className="h-56" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-28" />
+            ))}
+          </div>
         </div>
       ) : data ? (
         <>
-          <Stagger className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StaggerItem>
-              <Stat
-                label="30-day revenue"
-                value={formatCurrency(data.totals.revenue30d)}
-              />
-            </StaggerItem>
-            <StaggerItem>
-              <Stat
-                label="Projected monthly"
-                value={formatCurrency(data.totals.projectedMonthly)}
-              />
-            </StaggerItem>
-            <StaggerItem>
-              <Stat
-                label="Projected gross margin"
-                value={formatCurrency(data.totals.projectedGrossMargin)}
-              />
-            </StaggerItem>
-            <StaggerItem>
-              <Stat
-                label="Overdue"
-                value={formatCurrency(data.totals.overdue)}
-                danger
-              />
-            </StaggerItem>
-          </Stagger>
+          <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+            <div className="rounded-2xl bg-[var(--ink)] p-5 text-white shadow-[var(--shadow-card)]">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/55">
+                    Revenue trend
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold text-white">
+                    Last 6 months
+                  </h2>
+                </div>
+                <TrendingUp className="h-5 w-5 text-[var(--accent)]" />
+              </div>
+              <MiniTrend data={trend} dark />
+            </div>
+
+            <Stagger className="grid gap-3 sm:grid-cols-2">
+              <StaggerItem>
+                <Stat
+                  label="30-day revenue"
+                  value={formatCurrency(data.totals.revenue30d)}
+                  icon={Wallet}
+                />
+              </StaggerItem>
+              <StaggerItem>
+                <Stat
+                  label="Projected monthly"
+                  value={formatCurrency(data.totals.projectedMonthly)}
+                  icon={TrendingUp}
+                />
+              </StaggerItem>
+              <StaggerItem>
+                <Stat
+                  label="Gross margin"
+                  value={formatCurrency(data.totals.projectedGrossMargin)}
+                  icon={Users}
+                />
+              </StaggerItem>
+              <StaggerItem>
+                <Stat
+                  label="Overdue"
+                  value={formatCurrency(data.totals.overdue)}
+                  icon={AlertTriangle}
+                  danger
+                />
+              </StaggerItem>
+            </Stagger>
+          </div>
 
           <Stagger className="mt-6 grid gap-5 xl:grid-cols-2">
             {data.properties.map((p) => (
@@ -175,7 +220,7 @@ export default function DashboardPage() {
                           p.inventory.availableSpots.slice(0, 12).map((s) => (
                             <span
                               key={s}
-                              className="rounded-lg bg-[var(--accent-soft)] px-2 py-1 text-xs font-medium text-[var(--accent-ink)]"
+                              className="rounded-lg bg-[var(--ink)] px-2 py-1 text-xs font-medium text-[var(--accent)]"
                             >
                               {s}
                             </span>
@@ -199,11 +244,11 @@ export default function DashboardPage() {
                       />
                     </div>
 
-                    <div>
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+                    <div className="rounded-xl bg-[var(--ink)] p-3">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/55">
                         6-month revenue trend
                       </p>
-                      <MiniTrend data={p.revenueTrend} />
+                      <MiniTrend data={p.revenueTrend} dark />
                     </div>
                   </CardBody>
                 </Card>
@@ -220,25 +265,35 @@ function Stat({
   label,
   value,
   danger,
+  icon: Icon,
 }: {
   label: string;
   value: string;
   danger?: boolean;
+  icon: ComponentType<{ className?: string }>;
 }) {
   return (
-    <Card interactive={false} className="flex h-full min-h-[7.25rem] flex-col p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-        {label}
-      </p>
+    <div className="flex h-full min-h-[7.25rem] flex-col rounded-2xl bg-[var(--ink)] p-4 text-white shadow-[var(--shadow-card)]">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/55">
+          {label}
+        </p>
+        <Icon
+          className={cn(
+            "h-4 w-4 shrink-0",
+            danger ? "text-[var(--danger)]" : "text-[var(--accent)]",
+          )}
+        />
+      </div>
       <p
         className={cn(
           "mt-auto pt-3 text-2xl font-semibold tracking-tight tabular-nums",
-          danger && "text-[var(--danger)]",
+          danger ? "text-[var(--danger)]" : "text-[var(--accent)]",
         )}
       >
         {value}
       </p>
-    </Card>
+    </div>
   );
 }
 
@@ -254,19 +309,19 @@ function Money({
   danger?: boolean;
 }) {
   return (
-    <div className="flex min-h-[5.25rem] flex-col rounded-xl bg-[var(--surface-muted)] px-3 py-2.5">
-      <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-[0.1em] text-[var(--muted)]">
+    <div className="flex min-h-[5.25rem] flex-col rounded-xl bg-[var(--ink)] px-3 py-2.5 text-white">
+      <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-[0.1em] text-white/55">
         {label}
       </p>
       <p
         className={cn(
           "mt-1.5 text-sm font-semibold tabular-nums",
-          danger && "text-[var(--danger)]",
+          danger ? "text-[var(--danger)]" : "text-[var(--accent)]",
         )}
       >
         {value}
       </p>
-      <p className="mt-auto pt-1 text-[11px] leading-snug text-[var(--muted)]">
+      <p className="mt-auto pt-1 text-[11px] leading-snug text-white/45">
         {hint ? hint : "\u00a0"}
       </p>
     </div>
@@ -275,11 +330,13 @@ function Money({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex min-h-[4.5rem] flex-col rounded-xl bg-[var(--surface-muted)] px-3 py-2">
+    <div className="flex min-h-[4.5rem] flex-col rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
       <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] text-[var(--muted)]">
         {label}
       </p>
-      <p className="mt-auto pt-1 text-sm font-semibold tabular-nums">{value}</p>
+      <p className="mt-auto pt-1 text-sm font-semibold tabular-nums text-[var(--ink)]">
+        {value}
+      </p>
     </div>
   );
 }

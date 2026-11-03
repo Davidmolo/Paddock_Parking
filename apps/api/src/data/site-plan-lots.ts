@@ -1,5 +1,8 @@
 /** Spaces from Darya parkingpaddock.com maps — `number` matches map unit id. */
-export const sitePlanLots = [
+/** Live yards only: 16 / 325 / 6060 (51 + Rio Vista excluded from ops demo). */
+const LIVE_YARD_IDS = new Set(["prop-16", "prop-325", "prop-6060"]);
+
+const allSitePlanLots = [
   { id: "elw-Lot1", propertyId: "prop-16", number: "Lot 1", size: "1 acre", lotType: "acre", monthlyRate: 2400, status: "available", acres: 1.0 },
   { id: "elw-Lot2", propertyId: "prop-16", number: "Lot 2", size: "2 acre", lotType: "acre", monthlyRate: 4800, status: "available", acres: 2.0 },
   { id: "elw-Lot3", propertyId: "prop-16", number: "Lot 3", size: "0.5 acre", lotType: "acre", monthlyRate: 1200, status: "available", acres: 0.5 },
@@ -392,3 +395,7 @@ export const sitePlanLots = [
   { id: "rv-P-119", propertyId: "prop-riovista", number: "P-119", size: "storage / parking", lotType: "general_storage", monthlyRate: 450, status: "available" },
   { id: "rv-P-120", propertyId: "prop-riovista", number: "P-120", size: "storage / parking", lotType: "general_storage", monthlyRate: 450, status: "available" },
 ];
+
+export const sitePlanLots = allSitePlanLots.filter((l) =>
+  LIVE_YARD_IDS.has(l.propertyId),
+);

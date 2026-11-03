@@ -35,7 +35,9 @@ export async function api<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, body.message ?? "Request failed");
+    const raw = body.message ?? "Request failed";
+    const message = Array.isArray(raw) ? raw.join(". ") : String(raw);
+    throw new ApiError(res.status, message);
   }
 
   if (res.status === 204) return undefined as T;
@@ -381,6 +383,19 @@ export type BookingVehicle = {
   submitLater: boolean;
 };
 
+export type BookingDecision =
+  | "pending"
+  | "approved"
+  | "conditional"
+  | "denied";
+
+export type BookingCondition =
+  | "escrow"
+  | "bond"
+  | "prepaid"
+  | "coi_pending"
+  | "deposit_hold";
+
 export type Booking = {
   id: string;
   propertyId: string;
@@ -409,6 +424,17 @@ export type Booking = {
   autoPullWaived?: boolean;
   missingPlates?: number;
   compliancePending?: boolean;
+  decision?: BookingDecision;
+  decisionLabel?: string;
+  conditions?: BookingCondition[];
+  decidedAt?: string;
+  decisionNotes?: string;
+  referredBy?: string;
+  portalStatus?: "not_invited" | "invited" | "active";
+  gateCode?: string;
+  portalInviteToken?: string;
+  stepLabel?: string;
+  stepsComplete?: number;
 };
 
 export type ComplianceQueueItem = {
@@ -547,6 +573,48 @@ export const endpoints = {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
+  decideBooking: (
+    id: string,
+    body: {
+      decision: "approve" | "conditional" | "deny";
+      lotId?: string;
+      conditions?: BookingCondition[];
+      notes?: string;
+    },
+  ) =>
+    api<{
+      booking: Booking;
+      customerId?: string;
+      lotId?: string;
+    }>(`/bookings/${id}/decide`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  inviteBookingPortal: (id: string) =>
+    api<Booking>(`/bookings/${id}/invite-portal`, { method: "POST" }),
+  portalLogin: (body: { email: string; password: string }) =>
+    api<{
+      ok: boolean;
+      customerId: string;
+      name: string;
+      email: string;
+      gateCode: string;
+      propertyId: string;
+    }>("/portal/login", { method: "POST", body: JSON.stringify(body) }),
+  portalSetPassword: (body: {
+    email: string;
+    password: string;
+    inviteToken?: string;
+  }) =>
+    api<{ ok: boolean; message: string; gateCode?: string }>(
+      "/portal/set-password",
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  portalResetPassword: (body: { email: string }) =>
+    api<{ ok: boolean; message: string; inviteToken?: string }>(
+      "/portal/reset-password",
+      { method: "POST", body: JSON.stringify(body) },
+    ),
   convertBooking: (id: string, lotId: string) =>
     api<{ booking: Booking; customerId: string; lotId: string }>(
       `/bookings/${id}/convert`,

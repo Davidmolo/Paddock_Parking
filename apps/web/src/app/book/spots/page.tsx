@@ -249,7 +249,7 @@ function LocationCard({
         ) : (
           <Link
             href={`/book/${property.id}`}
-            className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#f5b301] px-4 py-3.5 text-[15px] font-bold !text-[#0a1628]"
+            className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#E8C547] px-4 py-3.5 text-[15px] font-bold !text-[#0a1628]"
           >
             Book Now
             <ArrowRight className="h-4 w-4 shrink-0" />
@@ -314,7 +314,7 @@ export default function BookLandingPage() {
         />
         <div className={`relative ${BOOK_SHELL} text-center`}>
           <h1 className="font-[family-name:var(--font-sora)] text-[2.5rem] font-semibold tracking-tight sm:text-5xl">
-            Find Your <span className="text-[#f5b301]">Spot</span>
+            Find Your <span className="text-[#E8C547]">Spot</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/75 sm:text-base">
             Live availability at Paddock 16, Paddock 325, and Paddock 6060 —
@@ -365,7 +365,7 @@ export default function BookLandingPage() {
           <div className="mt-5 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
             <Link
               href="/book/contact"
-              className="inline-flex items-center justify-center rounded-xl bg-[#f5b301] px-6 py-3 text-sm font-bold text-[#0a1628]"
+              className="inline-flex items-center justify-center rounded-xl bg-[#E8C547] px-6 py-3 text-sm font-bold text-[#0a1628]"
             >
               Get a Personalized Quote
             </Link>

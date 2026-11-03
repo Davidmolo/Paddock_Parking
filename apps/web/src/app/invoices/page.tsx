@@ -96,12 +96,12 @@ export default function InvoicesPage() {
   return (
     <PageTransition>
       <PageHeader
-        title="Invoices"
-        subtitle="Monthly rent by collection path — ACH debit first, send invoice when ACH is not authorized."
+        title="Billing"
+        subtitle="Scheduled / on-time charges — ACH debit first, send invoice when ACH is not authorized. Past due moves to Invoices → Collections."
         action={
           <Link href="/collections" className="w-full sm:w-auto">
             <Button variant="secondary" className="w-full sm:w-auto">
-              Open collections
+              Collections
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>

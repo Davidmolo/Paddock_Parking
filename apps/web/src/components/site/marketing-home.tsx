@@ -38,7 +38,7 @@ export function MarketingHome() {
         >
           <div>
             <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-[#f5b301]/40 bg-[#f5b301]/10 px-3 py-1 text-xs font-semibold text-[#f5b301]">
+              <span className="rounded-full border border-[#E8C547]/40 bg-[#E8C547]/10 px-3 py-1 text-xs font-semibold text-[#E8C547]">
                 Watch Your Equipment 24/7
               </span>
               <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/90">
@@ -47,7 +47,7 @@ export function MarketingHome() {
             </div>
             <h1 className="mt-6 font-[family-name:var(--font-sora)] text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.25rem]">
               Secure Outdoor Storage Yard &{" "}
-              <span className="text-[#f5b301]">Outdoor Parking</span>
+              <span className="text-[#E8C547]">Outdoor Parking</span>
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg">
               Gated outdoor storage in Phoenix for trucks, trailers, heavy
@@ -63,7 +63,7 @@ export function MarketingHome() {
                 "Live Cameras",
               ].map((t) => (
                 <span key={t} className="inline-flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5 text-[#f5b301]" />
+                  <Check className="h-3.5 w-3.5 text-[#E8C547]" />
                   {t}
                 </span>
               ))}
@@ -71,7 +71,7 @@ export function MarketingHome() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/book/spots"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#f5b301] px-6 py-3.5 text-sm font-bold text-[#0a1628]"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#E8C547] px-6 py-3.5 text-sm font-bold text-[#0a1628]"
               >
                 Book Now
                 <ArrowRight className="h-4 w-4" />
@@ -131,7 +131,7 @@ export function MarketingHome() {
               </div>
             </div>
             <blockquote className="rounded-2xl border border-white/10 bg-[#132033]/95 p-5 backdrop-blur">
-              <div className="mb-2 flex gap-0.5 text-[#f5b301]">
+              <div className="mb-2 flex gap-0.5 text-[#E8C547]">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="h-3.5 w-3.5 fill-current" />
                 ))}
@@ -159,7 +159,7 @@ export function MarketingHome() {
                 key={r.name}
                 className="rounded-2xl border border-[#e8ecf0] bg-[#f8fafc] p-5"
               >
-                <div className="mb-3 flex gap-0.5 text-[#f5b301]">
+                <div className="mb-3 flex gap-0.5 text-[#E8C547]">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} className="h-3.5 w-3.5 fill-current" />
                   ))}
@@ -176,7 +176,7 @@ export function MarketingHome() {
 
       <section className="bg-[#eef1f4] py-16">
         <div className={BOOK_SHELL}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#f5b301]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
             Phoenix&apos;s Most Trusted Storage Yard
           </p>
           <h2 className="mt-2 max-w-2xl font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0a1628]">
@@ -229,7 +229,7 @@ export function MarketingHome() {
               <Link
                 key={item.title}
                 href="/book/services"
-                className="group rounded-2xl border border-[#e8ecf0] bg-[#f8fafc] p-6 transition hover:border-[#f5b301]"
+                className="group rounded-2xl border border-[#e8ecf0] bg-[#f8fafc] p-6 transition hover:border-[#E8C547]"
               >
                 <h3 className="font-semibold text-[#0a1628]">{item.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#64748b]">
@@ -266,14 +266,14 @@ export function MarketingHome() {
                     {tier.price}
                   </p>
                 ) : (
-                  <p className="mt-3 text-sm font-semibold text-[#f5b301]">
+                  <p className="mt-3 text-sm font-semibold text-[#E8C547]">
                     Custom quote
                   </p>
                 )}
                 <ul className="mt-4 flex-1 space-y-2 text-sm text-[#64748b]">
                   {tier.items.map((item) => (
                     <li key={item} className="flex gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#f5b301]" />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#E8C547]" />
                       {item}
                     </li>
                   ))}
@@ -306,7 +306,7 @@ export function MarketingHome() {
               >
                 <h3 className="font-semibold text-[#0a1628]">{loc.name}</h3>
                 <p className="mt-2 text-sm text-[#64748b]">{loc.address}</p>
-                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#f5b301]">
+                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
                   24/7 Access
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
@@ -331,7 +331,7 @@ export function MarketingHome() {
           <div className="mt-8">
             <Link
               href="/book/spots"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#f5b301] px-5 py-3 text-sm font-bold text-[#0a1628]"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
             >
               See live availability <ArrowRight className="h-4 w-4" />
             </Link>
@@ -381,7 +381,7 @@ export function MarketingHome() {
           <div className="mt-10 flex flex-wrap gap-3">
             <Link
               href="/book/spots"
-              className="inline-flex rounded-xl bg-[#f5b301] px-5 py-3 text-sm font-bold text-[#0a1628]"
+              className="inline-flex rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
             >
               Get a Quote / Book Now
             </Link>

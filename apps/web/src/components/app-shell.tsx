@@ -125,12 +125,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-24 top-0 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(15,118,110,0.12),transparent_70%)]" />
-        <div className="absolute right-0 top-40 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(11,21,36,0.08),transparent_70%)]" />
+        <div className="absolute -left-24 top-0 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(10,22,40,0.08),transparent_70%)]" />
+        <div className="absolute right-0 top-40 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(10,22,40,0.05),transparent_70%)]" />
       </div>
 
       <div className="relative flex min-h-screen w-full">
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface)] px-4 py-5 lg:flex">
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-[var(--ink)] px-4 py-5 text-white lg:flex">
           <Brand />
           <nav className="mt-8 flex flex-1 flex-col gap-0.5 overflow-y-auto pb-4">
             {NAV_GROUPS.map((group, gi) => (
@@ -189,7 +189,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </header>
 
           {open && (
-            <div className="border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3 lg:hidden">
+            <div className="border-b border-[var(--ink)] bg-[var(--ink)] px-4 py-3 text-white lg:hidden">
               <nav className="grid gap-0.5">
                 {NAV_GROUPS.map((group, gi) => (
                   <NavBlock
@@ -250,14 +250,14 @@ function NavBlock({
           aria-expanded={isOpen}
           className={cn(
             navBtnClass,
-            "text-left text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]",
+            "text-left text-white/55 hover:bg-white/10 hover:text-white",
           )}
         >
           {GroupIcon ? <GroupIcon className="h-4 w-4 shrink-0" /> : null}
           <span className="min-w-0 flex-1 truncate">{group.label}</span>
           <ChevronDown
             className={cn(
-              "h-4 w-4 shrink-0 text-[var(--muted)] transition-transform duration-200",
+              "h-4 w-4 shrink-0 text-white/45 transition-transform duration-200",
               isOpen ? "rotate-0" : "-rotate-90",
             )}
           />
@@ -274,7 +274,7 @@ function NavBlock({
           <div
             className={cn(
               "flex flex-col gap-0.5",
-              expandable && "ml-4 border-l border-[var(--border)] pl-2",
+              expandable && "ml-4 border-l border-white/15 pl-2",
             )}
           >
             {group.items.map((item) => {
@@ -293,12 +293,12 @@ function NavBlock({
                   className={cn(
                     navBtnClass,
                     active
-                      ? "bg-[var(--accent-soft)] text-[var(--ink)]"
-                      : "text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]",
+                      ? "border-l-2 border-[var(--accent)] bg-white/10 font-semibold text-white"
+                      : "border-l-2 border-transparent text-white/60 hover:bg-white/10 hover:text-white",
                   )}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{item.label}</span>
+                  <Icon className="h-4 w-4 shrink-0 text-current" />
+                  <span className="truncate text-current">{item.label}</span>
                 </Link>
               );
             })}
@@ -312,15 +312,25 @@ function NavBlock({
 function Brand({ compact }: { compact?: boolean }) {
   return (
     <Link href="/dashboard" className="flex items-center gap-3" prefetch>
-      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--ink)] text-sm font-bold tracking-wider text-[#5eead4] shadow-[0_10px_30px_rgba(11,21,36,0.35)]">
+      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--accent)] text-sm font-bold tracking-wider text-[var(--ink)]">
         PP
       </span>
       {!compact && (
         <span>
-          <span className="block text-base font-semibold tracking-tight">
+          <span
+            className={cn(
+              "block text-base font-semibold tracking-tight",
+              compact ? "text-[var(--ink)]" : "text-white",
+            )}
+          >
             Paddock Parking
           </span>
-          <span className="block text-xs text-[var(--muted)]">
+          <span
+            className={cn(
+              "block text-xs",
+              compact ? "text-[var(--muted)]" : "text-white/55",
+            )}
+          >
             Property management
           </span>
         </span>
