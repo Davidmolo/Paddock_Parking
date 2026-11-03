@@ -150,7 +150,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3 sm:px-6">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 className="rounded-xl border border-[var(--border)] p-2 lg:hidden"
                 onClick={() => setOpen((v) => !v)}
@@ -161,8 +161,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="lg:hidden">
                 <Brand compact />
               </div>
-              <div className="ml-auto flex min-w-0 items-center gap-2">
-                <div className="relative min-w-0 max-w-[9.5rem] sm:max-w-[14rem]">
+              <div className="ml-auto flex min-w-0 w-full items-center gap-2 sm:w-auto">
+                <div className="relative min-w-0 flex-1 sm:max-w-[14rem]">
                   <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
                   <select
                     value={propertyId}

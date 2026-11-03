@@ -11,8 +11,8 @@ import { Input } from "@/components/ui/input";
 export default function LoginPage() {
   const { login } = useApp();
   const router = useRouter();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("paddockparking");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -28,7 +28,7 @@ export default function LoginPage() {
       setError(
         offline
           ? "API is unreachable. Make sure the API is running on port 4001."
-          : "Invalid credentials. Use admin / paddockparking",
+          : "Invalid username or password.",
       );
     } finally {
       setLoading(false);
@@ -60,7 +60,7 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)]/90 p-8 shadow-[0_30px_80px_rgba(11,18,32,0.14)] backdrop-blur-xl"
+        className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)]/90 p-5 shadow-[0_30px_80px_rgba(11,18,32,0.14)] backdrop-blur-xl sm:p-8"
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent" />
 
@@ -68,7 +68,7 @@ export default function LoginPage() {
           <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--ink)] text-sm font-bold text-[var(--accent)] shadow-[0_10px_30px_rgba(11,18,32,0.3)]">
             PP
           </div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)]">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)] sm:text-3xl">
             Admin Portal
           </h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
@@ -117,12 +117,6 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-[var(--muted)]">
-          Demo access:{" "}
-          <span className="font-medium text-[var(--ink)]">
-            admin / paddockparking
-          </span>
-        </p>
-        <p className="mt-3 text-center text-xs text-[var(--muted)]">
           <a href="/book" className="underline underline-offset-2">
             Customer website
           </a>

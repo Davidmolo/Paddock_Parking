@@ -367,7 +367,7 @@ export default function CustomersPage() {
                           <StatusCell status={customer.paymentStatus} />
                         </div>
                         <GapsCell gaps={gaps} />
-                        <div className="grid grid-cols-3 gap-2 text-sm">
+                        <div className="grid grid-cols-1 gap-2 text-sm min-[480px]:grid-cols-3">
                           <div className="rounded-xl bg-[var(--surface-muted)] px-3 py-2">
                             <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
                               Yard

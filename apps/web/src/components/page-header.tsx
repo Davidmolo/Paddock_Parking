@@ -24,7 +24,7 @@ export function PageHeader({
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-ink)]">
           Paddock Parking
         </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
           {title}
         </h1>
         {subtitle && (

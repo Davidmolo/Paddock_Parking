@@ -46,7 +46,7 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
               <span className="grid h-9 w-9 place-items-center rounded-md bg-[#E8C547] text-sm font-black text-[#0a1628]">
                 P
               </span>
-              <span className="font-[family-name:var(--font-sora)] text-[13px] font-semibold tracking-[0.16em]">
+              <span className="max-w-[38vw] truncate font-[family-name:var(--font-sora)] text-[11px] font-semibold tracking-[0.08em] sm:max-w-none sm:text-[13px] sm:tracking-[0.16em]">
                 PADDOCK PARKING
               </span>
             </Link>

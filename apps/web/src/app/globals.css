@@ -49,6 +49,10 @@ h1, h2, h3, .font-display {
 
 a { text-decoration: none; }
 
+img, video, canvas { max-width: 100%; height: auto; }
+
+input, select, textarea { max-width: 100%; }
+
 ::selection { background: rgba(245, 208, 74, 0.35); }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
