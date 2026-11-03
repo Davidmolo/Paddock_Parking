@@ -560,6 +560,7 @@ export const endpoints = {
     paymentMethod?: "card" | "ach" | "pending";
     autoPullAgreed?: boolean;
     lotId?: string;
+    referredBy?: string;
   }) =>
     api<Booking>("/bookings", {
       method: "POST",
