@@ -142,22 +142,28 @@ export default function CustomerPortalPage() {
               </h2>
               <p className="mt-1 text-sm text-[#64748b]">
                 {mode === "set"
-                  ? "Use the email from your portal invite (token optional for demo)."
+                  ? "Choose a password for the email on your portal invite."
                   : mode === "reset"
-                    ? "We’ll send a reset link so you can set a new password."
-                    : "Use the password from your portal invite setup."}
+                    ? "Enter your email to set a new password."
+                    : "Sign in with the email and password for your lease."}
               </p>
 
-              <form className="mt-5 space-y-4" onSubmit={submit}>
+              <form
+                className="mt-5 space-y-4"
+                onSubmit={submit}
+                autoComplete="off"
+              >
                 <label className="block text-sm font-medium text-[#0a1628]">
                   Email
                   <input
                     type="email"
+                    name="portal-email"
                     required
                     value={email}
+                    autoComplete="off"
                     onChange={(e) => setEmail(e.target.value)}
                     className="mt-1.5 h-11 w-full rounded-md border border-[#cbd5e1] px-3 text-sm"
-                    placeholder="you@company.com"
+                    placeholder="name@company.com"
                   />
                 </label>
                 {mode !== "reset" && (
@@ -165,12 +171,13 @@ export default function CustomerPortalPage() {
                     Password
                     <input
                       type="password"
+                      name="portal-password"
                       required
                       minLength={6}
                       value={password}
+                      autoComplete="new-password"
                       onChange={(e) => setPassword(e.target.value)}
                       className="mt-1.5 h-11 w-full rounded-md border border-[#cbd5e1] px-3 text-sm"
-                      placeholder="••••••••"
                     />
                   </label>
                 )}
