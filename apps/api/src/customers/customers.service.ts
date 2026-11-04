@@ -4,8 +4,10 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { sendPortalInviteEmail } from '../mail/send-portal-invite.js';
 import { DataStoreService } from '../data/data-store.service.js';
 import type { CertificateOfInsurance, CustomerDocument } from '../data/seed.js';
 import { LOT_TYPE_LABELS } from '../data/seed.js';
@@ -125,26 +127,45 @@ export class CustomersService {
     };
   }
 
-  portalResetPassword(body: { email: string }) {
+  async portalResetPassword(body: { email: string }) {
     const email = body.email.trim().toLowerCase();
+    const quiet = {
+      ok: true,
+      message: 'If that email is on file, a reset link was sent.',
+    };
     const customer = this.store.customers.find(
       (c) => c.email.toLowerCase() === email,
     );
-    if (!customer) {
-      return {
-        ok: true,
-        message: 'If that email is on file, a reset link was sent (demo).',
-      };
-    }
-    customer.portalInviteToken = `rst-${Date.now().toString(36)}`;
+    if (!customer) return quiet;
+
+    const previousToken = customer.portalInviteToken;
+    const previousExpires = customer.portalInviteExpiresAt;
+    const previousPassword = customer.portalPassword;
+    const token = randomBytes(24).toString('hex');
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    customer.portalInviteToken = token;
+    customer.portalInviteExpiresAt = expires.toISOString();
     customer.portalPassword = undefined;
-    const booking = this.store.bookings.find((b) => b.customerId === customer.id);
-    if (booking) booking.portalStatus = 'invited';
-    return {
-      ok: true,
-      message: 'Reset ready — use Set password with your email (demo token).',
-      inviteToken: customer.portalInviteToken,
-    };
+
+    const appUrl = (
+      process.env.APP_URL || 'https://pms.paddockparking.com'
+    ).replace(/\/$/, '');
+    try {
+      await sendPortalInviteEmail({
+        to: customer.email,
+        name: customer.contactName || customer.name,
+        inviteUrl: `${appUrl}/portal?token=${encodeURIComponent(token)}&email=${encodeURIComponent(customer.email)}`,
+        expiresAt: expires,
+      });
+      const booking = this.store.bookings.find((b) => b.customerId === customer.id);
+      if (booking) booking.portalStatus = 'invited';
+    } catch (err) {
+      customer.portalInviteToken = previousToken;
+      customer.portalInviteExpiresAt = previousExpires;
+      customer.portalPassword = previousPassword;
+      console.error('[mail] portal reset failed', err);
+    }
+    return quiet;
   }
 
   upsertCertificate(customerId: string, dto: UpsertCoiDto) {

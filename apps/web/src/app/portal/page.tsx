@@ -1,20 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { ArrowLeft, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { BookChrome, BOOK_SHELL } from "@/components/book/book-chrome";
 import { ApiError, endpoints } from "@/lib/api";
 
-type Mode = "login" | "set" | "reset";
-
 /**
- * Customer Portal — login, set password (from invite), reset password.
+ * Customer sign-in. Same choices as paddockparking.com/login_form.html:
+ * email, password, sign in, forgot password, contact us.
+ * A password is chosen only from the invite email link, not from this screen.
  */
 export default function CustomerPortalPage() {
-  const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [inviteToken, setInviteToken] = useState("");
+  const [fromInvite, setFromInvite] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [forgot, setForgot] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [flash, setFlash] = useState("");
@@ -23,7 +26,6 @@ export default function CustomerPortalPage() {
     gateCode: string;
     email: string;
   } | null>(null);
-  const [emailLocked, setEmailLocked] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -31,224 +33,207 @@ export default function CustomerPortalPage() {
     const invitedEmail = params.get("email");
     if (!token) return;
     setInviteToken(token);
-    setMode("set");
-    if (invitedEmail) {
-      setEmail(invitedEmail);
-      setEmailLocked(true);
-    }
+    setFromInvite(true);
+    if (invitedEmail) setEmail(invitedEmail);
   }, []);
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError("");
     setFlash("");
     try {
-      if (mode === "login") {
-        const res = await endpoints.portalLogin({ email, password });
-        setSession({
-          name: res.name,
-          gateCode: res.gateCode,
-          email: res.email,
-        });
-      } else if (mode === "set") {
+      if (fromInvite) {
         const res = await endpoints.portalSetPassword({
           email,
           password,
           inviteToken: inviteToken || undefined,
         });
         setFlash(res.message);
-        setMode("login");
+        setFromInvite(false);
         setPassword("");
-      } else {
+        setInviteToken("");
+        window.history.replaceState(null, "", "/portal");
+        return;
+      }
+      if (forgot) {
         const res = await endpoints.portalResetPassword({ email });
         setFlash(res.message);
-        if (res.inviteToken) {
-          setInviteToken(res.inviteToken);
-          setMode("set");
-        }
+        setForgot(false);
+        return;
       }
+      const res = await endpoints.portalLogin({ email, password });
+      setSession({
+        name: res.name,
+        gateCode: res.gateCode,
+        email: res.email,
+      });
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : "Something went wrong.",
-      );
+      setError(err instanceof ApiError ? err.message : "Something went wrong.");
     } finally {
       setBusy(false);
     }
   }
 
+  const title = fromInvite
+    ? "Set your password"
+    : forgot
+      ? "Forgot your password?"
+      : "Welcome back";
+
   return (
     <BookChrome>
-      <section className="bg-[#0a1628] py-16 text-white">
-        <div className={BOOK_SHELL}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
-            Customer Portal
-          </p>
-          <h1 className="mt-2 font-[family-name:var(--font-sora)] text-4xl font-semibold tracking-tight sm:text-5xl">
-            Manage your lease online
-          </h1>
-          <p className="mt-4 max-w-2xl text-white/70">
-            Pay rent, view agreements, and check your gate code at Paddock 16,
-            325, or 6060.
-          </p>
-        </div>
-      </section>
+      <section className="bg-[#eef1f4] py-10 sm:py-16">
+        <div className={`${BOOK_SHELL} max-w-[450px]`}>
+          <div className="rounded-xl bg-white p-6 shadow-[0_24px_38px_rgba(10,22,40,0.14)] sm:p-8">
+            <Link
+              href="/book"
+              className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[#0a1628]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Link>
 
-      <section className="bg-white py-16">
-        <div className={`${BOOK_SHELL} max-w-lg`}>
-          {session ? (
-            <div className="rounded-2xl border border-[#e8ecf0] p-6 sm:p-8">
-              <h2 className="text-lg font-semibold text-[#0a1628]">
-                Welcome, {session.name}
-              </h2>
-              <p className="mt-2 text-sm text-[#64748b]">{session.email}</p>
-              <div className="mt-6 rounded-xl bg-[#0a1628] px-4 py-5 text-center text-white">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
-                  Gate code
-                </p>
-                <p className="mt-2 font-mono text-3xl font-bold tracking-widest">
-                  {session.gateCode}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="mt-6 w-full rounded-xl border border-[#0a1628]/15 py-3 text-sm font-bold text-[#0a1628]"
-                onClick={() => setSession(null)}
-              >
-                Sign out
-              </button>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-[#e8ecf0] p-6 sm:p-8">
-              <div className="flex gap-2 text-sm font-semibold">
-                {(
-                  [
-                    ["login", "Sign in"],
-                    ["set", "Set password"],
-                    ["reset", "Reset"],
-                  ] as const
-                ).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => {
-                      setMode(key);
-                      setError("");
-                      setFlash("");
-                    }}
-                    className={
-                      mode === key
-                        ? "rounded-full bg-[#0a1628] px-3 py-1.5 text-white"
-                        : "rounded-full px-3 py-1.5 text-[#64748b] hover:bg-[#f4f6f9]"
-                    }
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <h2 className="mt-5 text-lg font-semibold text-[#0a1628]">
-                {mode === "login"
-                  ? "Sign in"
-                  : mode === "set"
-                    ? "Set / create password"
-                    : "Reset password"}
-              </h2>
-              <p className="mt-1 text-sm text-[#64748b]">
-                {mode === "set"
-                  ? "Choose a password for the email on your portal invite."
-                  : mode === "reset"
-                    ? "Enter your email to set a new password."
-                    : "Sign in with the email and password for your lease."}
+            <div className="mb-8 text-center">
+              <h1 className="font-[family-name:var(--font-sora)] text-3xl font-medium text-[#0a1628]">
+                {title}
+              </h1>
+              <p className="mt-2 text-[#5b6b7c]">
+                {fromInvite
+                  ? "Choose a password for your Paddock Parking account."
+                  : forgot
+                    ? "Enter your email and we will send a link to set a new password."
+                    : "Sign in to your Paddock Parking account"}
               </p>
+            </div>
 
-              <form
-                className="mt-5 space-y-4"
-                onSubmit={submit}
-                autoComplete="off"
-              >
-                <label className="block text-sm font-medium text-[#0a1628]">
-                  Email
-                  <input
-                    type="email"
-                    name="portal-email"
-                    required
-                    value={email}
-                    readOnly={emailLocked}
-                    autoComplete="off"
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1.5 h-11 w-full rounded-md border border-[#cbd5e1] px-3 text-sm"
-                    placeholder="name@company.com"
-                  />
-                </label>
-                {mode !== "reset" && (
-                  <label className="block text-sm font-medium text-[#0a1628]">
-                    Password
-                    <input
-                      type="password"
-                      name="portal-password"
-                      required
-                      minLength={6}
-                      value={password}
-                      autoComplete="new-password"
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="mt-1.5 h-11 w-full rounded-md border border-[#cbd5e1] px-3 text-sm"
-                    />
-                  </label>
-                )}
-                {mode === "set" && (
-                  <label className="block text-sm font-medium text-[#0a1628]">
-                    Invite token (optional)
-                    <input
-                      value={inviteToken}
-                      onChange={(e) => setInviteToken(e.target.value)}
-                      className="mt-1.5 h-11 w-full rounded-md border border-[#cbd5e1] px-3 font-mono text-sm"
-                      placeholder="From invite / reset email"
-                    />
-                  </label>
-                )}
+            {session ? (
+              <div>
+                <p className="text-lg font-semibold text-[#0a1628]">
+                  {session.name}
+                </p>
+                <p className="mt-1 text-sm text-[#5b6b7c]">{session.email}</p>
+                <div className="mt-6 rounded-xl bg-[#0a1628] px-4 py-5 text-center text-white">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#F5D04A]">
+                    Gate code
+                  </p>
+                  <p className="mt-2 font-mono text-3xl font-bold tracking-widest">
+                    {session.gateCode}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="mt-6 w-full rounded-md border border-[#0a1628]/15 py-3 text-sm font-bold text-[#0a1628]"
+                  onClick={() => setSession(null)}
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <>
                 {error && (
-                  <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                  <p className="mb-4 rounded border-l-4 border-rose-600 bg-rose-50 px-4 py-3 text-sm text-rose-800">
                     {error}
                   </p>
                 )}
                 {flash && (
-                  <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  <p className="mb-4 rounded bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                     {flash}
                   </p>
                 )}
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="w-full rounded-xl bg-[#E8C547] py-3 text-sm font-bold text-[#0a1628] disabled:opacity-50"
-                >
-                  {busy
-                    ? "Please wait…"
-                    : mode === "login"
-                      ? "Sign in to Customer Portal"
-                      : mode === "set"
+                <form className="space-y-4" onSubmit={submit} autoComplete="off">
+                  <label className="relative block">
+                    <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#5b6b7c]" />
+                    <input
+                      type="email"
+                      name="portal-email"
+                      required
+                      value={email}
+                      readOnly={fromInvite}
+                      autoComplete="off"
+                      placeholder="Email Address"
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-14 w-full rounded border border-[#ddd] bg-white pl-12 pr-4 text-base outline-none focus:border-[#0a1628]"
+                    />
+                  </label>
+                  {!forgot && (
+                    <label className="relative block">
+                      <Lock className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#5b6b7c]" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="portal-password"
+                        required
+                        minLength={fromInvite ? 6 : undefined}
+                        value={password}
+                        autoComplete="new-password"
+                        placeholder="Password"
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-14 w-full rounded border border-[#ddd] bg-white pl-12 pr-12 text-base outline-none focus:border-[#0a1628]"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#5b6b7c]"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        onClick={() => setShowPassword((v) => !v)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </label>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={busy}
+                    className="mt-2 w-full rounded bg-[#0a1628] py-4 text-base font-semibold text-[#F5D04A] disabled:opacity-60"
+                  >
+                    {busy
+                      ? "Please wait…"
+                      : fromInvite
                         ? "Save password"
-                        : "Send reset"}
-                </button>
-              </form>
+                        : forgot
+                          ? "Send reset link"
+                          : "Sign In"}
+                  </button>
+                </form>
 
-              <p className="mt-4 text-center text-sm text-[#64748b]">
-                New customer?{" "}
-                <Link
-                  href="/book/spots"
-                  className="font-semibold text-[#0a1628] underline"
-                >
-                  Book Now
-                </Link>
-              </p>
-            </div>
-          )}
-          <p className="mt-8 text-center text-xs text-[#94a3b8]">
-            Staff / Admin Portal —{" "}
-            <Link href="/login" className="underline">
-              /login
-            </Link>
-          </p>
+                {!fromInvite && (
+                  <>
+                    <div className="my-6 flex items-center gap-4 text-sm text-[#5b6b7c]">
+                      <span className="h-px flex-1 bg-[#ddd]" />
+                      Need help?
+                      <span className="h-px flex-1 bg-[#ddd]" />
+                    </div>
+                    <div className="text-center text-sm text-[#5b6b7c]">
+                      <button
+                        type="button"
+                        className="font-medium text-[#0a1628] underline"
+                        onClick={() => {
+                          setForgot((v) => !v);
+                          setError("");
+                          setFlash("");
+                          setPassword("");
+                        }}
+                      >
+                        Forgot your password?
+                      </button>
+                      <p className="mt-4">
+                        Don&apos;t have an account?{" "}
+                        <a
+                          href="mailto:info@paddockparking.com"
+                          className="font-medium text-[#0a1628] underline"
+                        >
+                          Contact us to get started
+                        </a>
+                      </p>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </section>
     </BookChrome>
