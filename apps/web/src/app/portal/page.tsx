@@ -36,6 +36,27 @@ export default function CustomerPortalPage() {
     if (invitedEmail) setEmail(invitedEmail);
   }, []);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const prev = {
+      rootBg: root.style.background,
+      bodyBg: body.style.background,
+      rootOverflow: root.style.overflow,
+      bodyOverflow: body.style.overflow,
+    };
+    root.style.background = "#0a1628";
+    body.style.background = "#0a1628";
+    root.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      root.style.background = prev.rootBg;
+      body.style.background = prev.bodyBg;
+      root.style.overflow = prev.rootOverflow;
+      body.style.overflow = prev.bodyOverflow;
+    };
+  }, []);
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -81,19 +102,19 @@ export default function CustomerPortalPage() {
       : "Welcome back";
 
   return (
-    <div className="grid min-h-screen place-items-center bg-[#0a1628] px-4 py-8">
-      <div className="w-full max-w-[450px]">
-          <div className="rounded-xl bg-white p-6 shadow-[0_24px_38px_rgba(10,22,40,0.14)] sm:p-8">
+    <div className="fixed inset-0 grid h-dvh place-items-center overflow-hidden bg-[#0a1628] px-4 py-4">
+      <div className="max-h-full w-full max-w-[450px] overflow-y-auto overscroll-contain">
+          <div className="rounded-xl bg-white p-5 shadow-[0_24px_38px_rgba(10,22,40,0.14)] sm:p-6">
             <Link
               href="/book"
-              className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[#0a1628]"
+              className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-[#0a1628]"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Home
             </Link>
 
-            <div className="mb-8 text-center">
-              <h1 className="font-[family-name:var(--font-sora)] text-3xl font-medium text-[#0a1628]">
+            <div className="mb-5 text-center">
+              <h1 className="font-[family-name:var(--font-sora)] text-2xl font-medium text-[#0a1628] sm:text-3xl">
                 {title}
               </h1>
               <p className="mt-2 text-[#5b6b7c]">
@@ -151,7 +172,7 @@ export default function CustomerPortalPage() {
                       autoComplete="off"
                       placeholder="Email Address"
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-14 w-full rounded border border-[#ddd] bg-white pl-12 pr-4 text-base outline-none focus:border-[#0a1628]"
+                      className="h-12 w-full rounded border border-[#ddd] bg-white pl-12 pr-4 text-base outline-none focus:border-[#0a1628]"
                     />
                   </label>
                   {!forgot && (
@@ -166,7 +187,7 @@ export default function CustomerPortalPage() {
                         autoComplete="new-password"
                         placeholder="Password"
                         onChange={(e) => setPassword(e.target.value)}
-                        className="h-14 w-full rounded border border-[#ddd] bg-white pl-12 pr-12 text-base outline-none focus:border-[#0a1628]"
+                        className="h-12 w-full rounded border border-[#ddd] bg-white pl-12 pr-12 text-base outline-none focus:border-[#0a1628]"
                       />
                       <button
                         type="button"
@@ -185,7 +206,7 @@ export default function CustomerPortalPage() {
                   <button
                     type="submit"
                     disabled={busy}
-                    className="mt-2 w-full rounded bg-[#0a1628] py-4 text-base font-semibold text-[#F5D04A] disabled:opacity-60"
+                    className="mt-1 w-full rounded bg-[#0a1628] py-3 text-base font-semibold text-[#F5D04A] disabled:opacity-60"
                   >
                     {busy
                       ? "Please wait…"
@@ -199,7 +220,7 @@ export default function CustomerPortalPage() {
 
                 {!fromInvite && (
                   <>
-                    <div className="my-6 flex items-center gap-4 text-sm text-[#5b6b7c]">
+                    <div className="my-4 flex items-center gap-4 text-sm text-[#5b6b7c]">
                       <span className="h-px flex-1 bg-[#ddd]" />
                       Need help?
                       <span className="h-px flex-1 bg-[#ddd]" />
@@ -217,7 +238,7 @@ export default function CustomerPortalPage() {
                       >
                         Forgot your password?
                       </button>
-                      <p className="mt-4">
+                      <p className="mt-3">
                         Don&apos;t have an account?{" "}
                         <a
                           href="mailto:info@paddockparking.com"
@@ -228,7 +249,7 @@ export default function CustomerPortalPage() {
                       </p>
                       <Link
                         href="/book/spots"
-                        className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-[#F5D04A] px-4 py-3 text-sm font-bold text-[#0a1628]"
+                        className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-[#F5D04A] px-4 py-2.5 text-sm font-bold text-[#0a1628]"
                       >
                         Book Now
                       </Link>
