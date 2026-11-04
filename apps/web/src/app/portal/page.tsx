@@ -47,8 +47,8 @@ export default function CustomerPortalPage() {
     };
     root.style.background = "#0a1628";
     body.style.background = "#0a1628";
-    root.style.overflow = "hidden";
-    body.style.overflow = "hidden";
+    root.style.overflow = "auto";
+    body.style.overflow = "auto";
     return () => {
       root.style.background = prev.rootBg;
       body.style.background = prev.bodyBg;
@@ -102,8 +102,8 @@ export default function CustomerPortalPage() {
       : "Welcome back";
 
   return (
-    <div className="fixed inset-0 grid h-dvh place-items-center overflow-hidden bg-[#0a1628] px-4 py-4">
-      <div className="max-h-full w-full max-w-[450px] overflow-y-auto overscroll-contain">
+    <div className="flex min-h-dvh flex-col bg-[#0a1628] px-4 py-6">
+      <div className="m-auto w-full max-w-[450px]">
           <div className="rounded-xl bg-white p-5 shadow-[0_24px_38px_rgba(10,22,40,0.14)] sm:p-6">
             <Link
               href="/book"
