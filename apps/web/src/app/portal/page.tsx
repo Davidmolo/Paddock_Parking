@@ -2,8 +2,37 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { ApiError, endpoints } from "@/lib/api";
+
+const PORTAL_SESSION_KEY = "paddock-portal-session";
+
+type PortalSession = {
+  name: string;
+  gateCode: string;
+  email: string;
+};
+
+function readPortalSession(): PortalSession | null {
+  try {
+    const raw = localStorage.getItem(PORTAL_SESSION_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as PortalSession;
+    if (!data?.email || !data?.name) return null;
+    return {
+      name: data.name,
+      email: data.email,
+      gateCode: data.gateCode ?? "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writePortalSession(session: PortalSession | null) {
+  if (!session) localStorage.removeItem(PORTAL_SESSION_KEY);
+  else localStorage.setItem(PORTAL_SESSION_KEY, JSON.stringify(session));
+}
 
 /**
  * Customer sign-in. Same choices as paddockparking.com/login_form.html:
@@ -20,11 +49,13 @@ export default function CustomerPortalPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [flash, setFlash] = useState("");
-  const [session, setSession] = useState<{
-    name: string;
-    gateCode: string;
-    email: string;
-  } | null>(null);
+  const [session, setSession] = useState<PortalSession | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    setSession(readPortalSession());
+    setSessionReady(true);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -83,11 +114,13 @@ export default function CustomerPortalPage() {
         return;
       }
       const res = await endpoints.portalLogin({ email, password });
-      setSession({
+      const next = {
         name: res.name,
         gateCode: res.gateCode,
         email: res.email,
-      });
+      };
+      writePortalSession(next);
+      setSession(next);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong.");
     } finally {
@@ -101,29 +134,27 @@ export default function CustomerPortalPage() {
       ? "Forgot your password?"
       : "Welcome back";
 
+  if (!sessionReady) {
+    return <div className="min-h-dvh bg-[#0a1628]" />;
+  }
+
   return (
     <div className="flex min-h-dvh flex-col bg-[#0a1628] px-4 py-6">
       <div className="m-auto w-full max-w-[450px]">
           <div className="rounded-xl bg-white p-5 shadow-[0_24px_38px_rgba(10,22,40,0.14)] sm:p-6">
-            <Link
-              href="/book"
-              className="mb-3 inline-flex items-center gap-2 text-sm font-medium text-[#0a1628]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Link>
-
             <div className="mb-5 text-center">
               <h1 className="font-[family-name:var(--font-sora)] text-2xl font-medium text-[#0a1628] sm:text-3xl">
-                {title}
+                {session ? "Welcome back" : title}
               </h1>
-              <p className="mt-2 text-[#5b6b7c]">
-                {fromInvite
-                  ? "Choose a password for your Paddock Parking account."
-                  : forgot
-                    ? "Enter your email and we will send a link to set a new password."
-                    : "Sign in to your Paddock Parking account"}
-              </p>
+              {!session && (
+                <p className="mt-2 text-[#5b6b7c]">
+                  {fromInvite
+                    ? "Choose a password for your Paddock Parking account."
+                    : forgot
+                      ? "Enter your email and we will send a link to set a new password."
+                      : "Sign in to your Paddock Parking account"}
+                </p>
+              )}
             </div>
 
             {session ? (
@@ -143,7 +174,10 @@ export default function CustomerPortalPage() {
                 <button
                   type="button"
                   className="mt-6 w-full rounded-md border border-[#0a1628]/15 py-3 text-sm font-bold text-[#0a1628]"
-                  onClick={() => setSession(null)}
+                  onClick={() => {
+                    writePortalSession(null);
+                    setSession(null);
+                  }}
                 >
                   Sign out
                 </button>
