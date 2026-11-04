@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, Lock, Mail } from "lucide-react";
-import { BookChrome, BOOK_SHELL } from "@/components/book/book-chrome";
 import { ApiError, endpoints } from "@/lib/api";
 
 /**
@@ -82,9 +81,8 @@ export default function CustomerPortalPage() {
       : "Welcome back";
 
   return (
-    <BookChrome>
-      <section className="bg-[#eef1f4] py-10 sm:py-16">
-        <div className={`${BOOK_SHELL} max-w-[450px]`}>
+    <div className="grid min-h-screen place-items-center bg-[#0a1628] px-4 py-8">
+      <div className="w-full max-w-[450px]">
           <div className="rounded-xl bg-white p-6 shadow-[0_24px_38px_rgba(10,22,40,0.14)] sm:p-8">
             <Link
               href="/book"
@@ -228,14 +226,19 @@ export default function CustomerPortalPage() {
                           Contact us to get started
                         </a>
                       </p>
+                      <Link
+                        href="/book/spots"
+                        className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-[#F5D04A] px-4 py-3 text-sm font-bold text-[#0a1628]"
+                      >
+                        Book Now
+                      </Link>
                     </div>
                   </>
                 )}
               </>
             )}
           </div>
-        </div>
-      </section>
-    </BookChrome>
+      </div>
+    </div>
   );
 }
