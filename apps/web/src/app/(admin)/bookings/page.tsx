@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { X } from "lucide-react";
 import {
   ApiError,
   endpoints,
@@ -274,7 +275,7 @@ export default function BookingsPage() {
               setFormError("");
             }}
           >
-            {showAssist ? "Close assist" : "Onboarding Assist"}
+            Onboarding Assist
           </Button>
         }
       />
@@ -284,18 +285,26 @@ export default function BookingsPage() {
           <p>{flash}</p>
           <button
             type="button"
-            className="shrink-0 text-emerald-800/70"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-emerald-800/70 hover:bg-emerald-100 hover:text-emerald-950"
             onClick={() => setFlash("")}
             aria-label="Dismiss"
           >
-            ✕
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
       {showAssist && (
-        <div className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-          <h2 className="font-display text-base font-semibold">
+        <div className="relative mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+          <button
+            type="button"
+            className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"
+            onClick={() => setShowAssist(false)}
+            aria-label="Close assist"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <h2 className="pr-10 font-display text-base font-semibold">
             Onboarding Assist
           </h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
@@ -488,12 +497,13 @@ export default function BookingsPage() {
           </div>
 
           {/* FMS detail / decide panel */}
-          <aside className="rounded-xl border border-[var(--border)] bg-[var(--surface)] lg:sticky lg:top-4 lg:self-start">
+          <aside className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] lg:sticky lg:top-4 lg:self-start">
             {!selected ? (
               <p className="px-5 py-16 text-center text-sm text-[var(--muted)]">
                 Select a profile to review and decide.
               </p>
             ) : (
+              <div key={selected.id} className="panel-in">
               <ProfileDetail
                 booking={selected}
                 availableLots={availableLots}
@@ -515,6 +525,7 @@ export default function BookingsPage() {
                 inviting={invite.isPending}
                 onClose={() => setSelectedId(null)}
               />
+              </div>
             )}
           </aside>
         </div>
@@ -587,9 +598,10 @@ function ProfileDetail({
         <button
           type="button"
           onClick={onClose}
-          className="text-xs font-medium text-[var(--muted)] hover:text-[var(--ink)]"
+          aria-label="Close"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"
         >
-          Close
+          <X className="h-4 w-4" />
         </button>
       </div>
 

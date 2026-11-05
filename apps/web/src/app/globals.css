@@ -99,9 +99,19 @@ input, select, textarea { max-width: 100%; }
 .stagger-fast > .stagger-item:nth-child(6) { animation-delay: 100ms; }
 .stagger-fast > .stagger-item:nth-child(n + 7) { animation-delay: 110ms; }
 
+@keyframes panel-in {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.panel-in {
+  animation: panel-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .page-enter,
-  .stagger-fast > .stagger-item {
+  .stagger-fast > .stagger-item,
+  .panel-in {
     animation: none;
   }
 }

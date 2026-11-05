@@ -9,6 +9,7 @@ import {
   type AgingBucketKey,
   type CollectionAccount,
   type CollectionStage,
+  type CollectionsData,
 } from "@/lib/api";
 import { propertyParam, queryKeys } from "@/lib/prefetch";
 import { useApp } from "@/components/app-provider";
@@ -125,7 +126,24 @@ export default function CollectionsPage() {
         logEmail?: boolean;
       };
     }) => endpoints.patchCollection(args.id, args.body),
-    onSuccess: invalidate,
+    onSuccess: (updated) => {
+      queryClient.setQueryData<CollectionsData>(
+        queryKeys.collections(cacheProperty),
+        (current) => {
+          if (!current) return current;
+          const swap = (account: CollectionAccount) =>
+            account.id === updated.id ? { ...account, ...updated } : account;
+          return {
+            ...current,
+            accounts: current.accounts.map(swap),
+            sections: current.sections.map((section) => ({
+              ...section,
+              accounts: section.accounts.map(swap),
+            })),
+          };
+        },
+      );
+    },
   });
 
   const sendEmails = useMutation({
@@ -317,7 +335,7 @@ export default function CollectionsPage() {
                       accounts={section.accounts}
                       editingNotes={editingNotes}
                       setEditingNotes={setEditingNotes}
-                      patchPending={patch.isPending}
+                      busyId={patch.isPending ? patch.variables?.id ?? null : null}
                       onStage={(id, stage) =>
                         patch.mutate({ id, body: { stage } })
                       }
@@ -389,7 +407,7 @@ function AgingSection({
   accounts,
   editingNotes,
   setEditingNotes,
-  patchPending,
+  busyId,
   onStage,
   onNotes,
   onLogCall,
@@ -401,7 +419,7 @@ function AgingSection({
   accounts: CollectionAccount[];
   editingNotes: string | null;
   setEditingNotes: (id: string | null) => void;
-  patchPending: boolean;
+  busyId: string | null;
   onStage: (id: string, stage: CollectionStage) => void;
   onNotes: (id: string, notes: string) => void;
   onLogCall: (id: string) => void;
@@ -445,7 +463,7 @@ function AgingSection({
             <select
               className="h-8 max-w-[11.5rem] rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
               value={account.stage}
-              disabled={patchPending}
+              disabled={busyId === account.id}
               onChange={(e) =>
                 onStage(account.id, e.target.value as CollectionStage)
               }
@@ -486,13 +504,13 @@ function AgingSection({
           <td className="px-4 py-3 align-top sm:px-5">
             <button
               type="button"
-              disabled={patchPending}
+              disabled={busyId === account.id}
               onClick={() => onLogCall(account.id)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--ink)] transition hover:border-[var(--accent)]/40 hover:bg-[var(--surface-muted)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--ink)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-muted)] disabled:opacity-50"
               title={`Logged — Emails ${account.emails} · Texts ${account.texts} · Calls ${account.calls}`}
             >
               <Phone className="h-3.5 w-3.5 text-[var(--muted)]" />
-              Log call
+              {busyId === account.id ? "Saving" : `Log call${account.calls ? ` · ${account.calls}` : ""}`}
             </button>
           </td>
         </tr>
