@@ -11,7 +11,7 @@ export function PageTransition({
   className?: string;
 }) {
   return (
-    <div className={cn("page-enter min-h-full", className)}>{children}</div>
+    <div className={cn("flex h-full min-h-0 flex-col overflow-y-auto overscroll-none", className)}>{children}</div>
   );
 }
 

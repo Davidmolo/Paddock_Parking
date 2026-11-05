@@ -38,7 +38,7 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
   const [locationsOpen, setLocationsOpen] = useState(false);
 
   return (
-    <div className="min-h-screen w-full overflow-x-clip bg-[#eef1f4] text-[#0b1524]">
+    <div className="h-dvh w-full overflow-x-clip overflow-y-auto overscroll-none bg-[#eef1f4] text-[#0b1524]">
       <header className="relative z-50 bg-[#0a1628] text-white">
         <div className={`${BOOK_SHELL} py-3.5 lg:py-4`}>
           <div className="flex items-center justify-between gap-4">

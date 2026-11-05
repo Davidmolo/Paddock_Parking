@@ -36,7 +36,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative grid min-h-screen place-items-center overflow-hidden px-4">
+    <div className="relative grid h-dvh place-items-center overflow-y-auto overscroll-none px-4">
       <div className="pointer-events-none absolute inset-0">
         <motion.div
           className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-[radial-gradient(circle,var(--accent-soft),transparent_70%)]"
@@ -65,7 +65,7 @@ export default function LoginPage() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent" />
 
         <div className="mb-8">
-          <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--primary)] text-sm font-bold text-white shadow-[0_10px_30px_rgba(0,120,212,0.28)]">
+          <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--ink)] text-sm font-bold text-[var(--accent)] shadow-[0_10px_30px_rgba(11,18,32,0.3)]">
             PP
           </div>
           <h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)] sm:text-3xl">
@@ -108,7 +108,7 @@ export default function LoginPage() {
           )}
           <Button
             type="submit"
-            className="w-full"
+            className="w-full bg-[var(--ink)] text-white hover:bg-[#142338]"
             size="lg"
             disabled={loading}
           >

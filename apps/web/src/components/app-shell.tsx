@@ -136,21 +136,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-[var(--canvas)] text-[var(--ink)]">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-24 top-0 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(0,120,212,0.1),transparent_70%)]" />
-        <div className="absolute right-0 top-40 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(255,107,87,0.06),transparent_70%)]" />
+    <div className="fixed inset-0 flex overflow-hidden overscroll-none bg-[var(--canvas)] text-[var(--ink)]">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-24 top-0 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(10,22,40,0.08),transparent_70%)]" />
+        <div className="absolute right-0 top-40 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(10,22,40,0.05),transparent_70%)]" />
       </div>
 
       <div className="relative flex h-full min-h-0 w-full">
         <aside
           className={cn(
-            "hidden h-full shrink-0 flex-col bg-[var(--primary)] py-4 text-white transition-[width,padding] duration-200 ease-out lg:flex",
+            "hidden h-full shrink-0 flex-col bg-[var(--ink)] py-4 text-white transition-[width,padding] duration-200 ease-out lg:flex",
             collapsed ? "w-[4.25rem] px-2" : "w-56 px-3",
           )}
         >
           <Brand compact={collapsed} />
-          <nav className="mt-6 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden pb-3">
+          <nav className="mt-6 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden overscroll-none pb-3">
             {NAV_GROUPS.map((group, gi) => (
               <NavBlock
                 key={group.label ?? `group-${gi}`}
@@ -205,7 +205,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         e.target.value === "all" ? "all" : e.target.value,
                       )
                     }
-                    className="h-9 w-full max-w-full appearance-none truncate rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-8 pr-8 text-[13px] outline-none transition focus:border-[var(--primary)]"
+                    className="h-9 w-full max-w-full appearance-none truncate rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-8 pr-8 text-[13px] outline-none transition focus:border-[var(--ink)]"
                     aria-label="Filter by yard"
                   >
                     <option value="all">All yards</option>
@@ -223,7 +223,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </header>
 
           {open && (
-            <div className="max-h-[40vh] shrink-0 overflow-y-auto border-b border-[var(--primary)] bg-[var(--primary)] px-4 py-3 text-white lg:hidden">
+            <div className="max-h-[40vh] shrink-0 overflow-y-auto overscroll-none border-b border-[var(--ink)] bg-[var(--ink)] px-4 py-3 text-white lg:hidden">
               <nav className="grid gap-0.5">
                 {NAV_GROUPS.map((group, gi) => (
                   <NavBlock
@@ -242,7 +242,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          <main className="relative min-h-0 w-full flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+          <main className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden px-4 py-4 sm:px-5">
             {children}
           </main>
         </div>
@@ -352,7 +352,7 @@ function NavBlock({
 function Brand({ compact }: { compact?: boolean }) {
   return (
     <Link href="/dashboard" className="flex items-center gap-3" prefetch>
-      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--accent)] text-sm font-bold tracking-wider text-white">
+      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--accent)] text-sm font-bold tracking-wider text-[var(--accent-ink)]">
         PP
       </span>
       {!compact && (

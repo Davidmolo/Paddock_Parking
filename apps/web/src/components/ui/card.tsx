@@ -19,7 +19,7 @@ export function Card({
       className={cn(
         "group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]",
         interactive &&
-          "transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[var(--shadow-card-hover)]",
+          "transition-shadow duration-200 ease-out hover:shadow-[var(--shadow-card-hover)]",
         glow &&
           "before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_right,rgba(13,148,136,0.12),transparent_45%)]",
         className,

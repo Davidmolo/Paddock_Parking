@@ -227,16 +227,16 @@ export default function CustomersPage() {
   ]);
 
   const selectClass =
-    "h-9 w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 pr-8 text-[13px] text-[var(--ink)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--accent-soft)]";
+    "h-9 w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 pr-8 text-[13px] text-[var(--ink)] outline-none transition focus:border-[var(--ink)] focus:ring-4 focus:ring-[var(--accent-soft)]";
 
   return (
-    <PageTransition>
+    <PageTransition className="overflow-hidden">
       <PageHeader
         title="Customers"
         subtitle="Newest first. Gaps replace COI — see COI, plates, and lease missing in one column."
       />
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div className="mb-3 grid shrink-0 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
           <Input
@@ -341,7 +341,7 @@ export default function CustomersPage() {
         </Card>
       ) : (
         <>
-          <p className="mb-3 text-sm text-[var(--muted)]">
+          <p className="mb-2 shrink-0 text-[13px] text-[var(--muted)]">
             Showing {filtered.length}
             {data && filtered.length !== data.length
               ? ` of ${data.length}`
@@ -349,6 +349,7 @@ export default function CustomersPage() {
             customers
           </p>
 
+          <div className="min-h-0 flex-1 overflow-auto overscroll-none">
           <Stagger className="grid gap-3 md:hidden">
             {filtered.map(({ customer, gaps }) => {
               const yard = properties.find((p) => p.id === customer.propertyId);
@@ -411,8 +412,8 @@ export default function CustomersPage() {
             })}
           </Stagger>
 
-          <div className="hidden overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] md:block">
-            <table className="w-full min-w-[860px] border-collapse text-left text-[13px]">
+          <div className="hidden md:block">
+            <table className="w-full min-w-[860px] border-collapse rounded-xl border border-[var(--border)] bg-[var(--surface)] text-left text-[13px]">
               <thead>
                 <tr className="border-b border-[var(--border)] bg-[var(--surface-muted)] text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">
                   <th className="whitespace-nowrap px-3 py-2 font-semibold">Customer</th>
@@ -480,6 +481,7 @@ export default function CustomersPage() {
                 })}
               </tbody>
             </table>
+          </div>
           </div>
         </>
       )}
