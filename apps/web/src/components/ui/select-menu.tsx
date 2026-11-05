@@ -109,7 +109,19 @@ export function SelectMenu({
         setOpen(false);
         return;
       }
-      setPos(next);
+      setPos((current) => {
+        if (
+          current &&
+          current.top === next.top &&
+          current.bottom === next.bottom &&
+          current.left === next.left &&
+          current.width === next.width &&
+          current.maxHeight === next.maxHeight
+        ) {
+          return current;
+        }
+        return next;
+      });
     };
     update();
     window.addEventListener("scroll", update, true);
@@ -180,11 +192,17 @@ export function SelectMenu({
       list.scrollTop = bottom - list.clientHeight;
     }
     if (!motionOn) {
-      setBox(next);
+      setBox((prev) =>
+        prev && prev.top === next.top && prev.height === next.height ? prev : next,
+      );
       setMotionOn(true);
       return;
     }
-    const frame = requestAnimationFrame(() => setBox(next));
+    const frame = requestAnimationFrame(() => {
+      setBox((prev) =>
+        prev && prev.top === next.top && prev.height === next.height ? prev : next,
+      );
+    });
     return () => cancelAnimationFrame(frame);
   }, [active, filtered, open, motionOn]);
 

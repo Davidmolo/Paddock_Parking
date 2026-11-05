@@ -227,9 +227,6 @@ export default function CustomersPage() {
     addedFilter,
   ]);
 
-  const selectClass =
-    "h-9 w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 pr-8 text-[13px] text-[var(--ink)] outline-none transition focus:border-[var(--ink)] focus:ring-4 focus:ring-[var(--accent-soft)]";
-
   return (
     <PageTransition>
       <PageHeader
@@ -241,7 +238,7 @@ export default function CustomersPage() {
         <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
           <Input
-            className="pl-10"
+            className="h-10 pl-10"
             placeholder="Search company, contact, email…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -251,7 +248,6 @@ export default function CustomersPage() {
         <FilterSelect
           label="Payment"
           value={paymentFilter}
-          className={selectClass}
           onChange={(v) => setPaymentFilter(v as PaymentFilter)}
           options={[
             { value: "all", label: "All payment status" },
@@ -264,7 +260,6 @@ export default function CustomersPage() {
         <FilterSelect
           label="Gaps"
           value={gapFilter}
-          className={selectClass}
           onChange={(v) => setGapFilter(v as GapFilter)}
           options={[
             { value: "all", label: "All gaps / clear" },
@@ -279,7 +274,6 @@ export default function CustomersPage() {
         <FilterSelect
           label="Added"
           value={addedFilter}
-          className={selectClass}
           onChange={(v) => setAddedFilter(v as AddedFilter)}
           options={[
             { value: "all", label: "Any added date (newest first)" },
@@ -293,7 +287,6 @@ export default function CustomersPage() {
         <FilterSelect
           label="Active"
           value={activeFilter}
-          className={selectClass}
           onChange={(v) => setActiveFilter(v as ActiveFilter)}
           options={[
             { value: "all", label: "All customers" },
@@ -305,7 +298,6 @@ export default function CustomersPage() {
         <FilterSelect
           label="Lots"
           value={lotFilter}
-          className={selectClass}
           onChange={(v) => setLotFilter(v as LotFilter)}
           options={[
             { value: "all", label: "All lot assignment" },
@@ -317,7 +309,6 @@ export default function CustomersPage() {
         <FilterSelect
           label="Contract start"
           value={startFilter}
-          className={selectClass}
           onChange={(v) => setStartFilter(v as StartFilter)}
           options={[
             { value: "all", label: "Any start date" },
@@ -350,7 +341,7 @@ export default function CustomersPage() {
             customers
           </p>
 
-          <div className="min-h-[280px] flex-1 overflow-auto overscroll-none">
+          <div className="min-w-0">
           <Stagger className="grid gap-3 md:hidden">
             {filtered.map(({ customer, gaps }) => {
               const yard = properties.find((p) => p.id === customer.propertyId);
@@ -495,13 +486,11 @@ function FilterSelect({
   value,
   options,
   onChange,
-  className,
 }: {
   label: string;
   value: string;
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
-  className: string;
 }) {
   return (
     <SelectMenu
@@ -509,8 +498,7 @@ function FilterSelect({
       value={value}
       onChange={onChange}
       options={options}
-      size="sm"
-      className={className}
+      className="h-10"
     />
   );
 }
