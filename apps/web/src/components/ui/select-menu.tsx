@@ -83,6 +83,9 @@ export function SelectMenu({
   const [box, setBox] = useState<{ top: number; height: number } | null>(null);
   const [motionOn, setMotionOn] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const keyboardMove = useRef(false);
+  const chosen = useRef(false);
+  const ignoreTrigger = useRef(false);
 
   const selected = options.find((option) => option.value === value);
   const filtered = useMemo(() => {
@@ -185,11 +188,14 @@ export function SelectMenu({
       return;
     }
     const next = { top: item.offsetTop, height: item.offsetHeight };
-    const top = item.offsetTop;
-    const bottom = top + item.offsetHeight;
-    if (top < list.scrollTop) list.scrollTop = top;
-    else if (bottom > list.scrollTop + list.clientHeight) {
-      list.scrollTop = bottom - list.clientHeight;
+    if (keyboardMove.current) {
+      const top = item.offsetTop;
+      const bottom = top + item.offsetHeight;
+      if (top < list.scrollTop) list.scrollTop = top;
+      else if (bottom > list.scrollTop + list.clientHeight) {
+        list.scrollTop = bottom - list.clientHeight;
+      }
+      keyboardMove.current = false;
     }
     if (!motionOn) {
       setBox((prev) =>
@@ -207,18 +213,27 @@ export function SelectMenu({
   }, [active, filtered, open, motionOn]);
 
   function choose(next: string) {
+    if (chosen.current) return;
+    chosen.current = true;
+    ignoreTrigger.current = true;
     onChange(next);
-    setOpen(false);
     setQuery("");
-    triggerRef.current?.focus();
+    setOpen(false);
+    window.setTimeout(() => {
+      chosen.current = false;
+      ignoreTrigger.current = false;
+      triggerRef.current?.focus();
+    }, 50);
   }
 
   function onSearchKey(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === "ArrowDown") {
       event.preventDefault();
+      keyboardMove.current = true;
       setActive((index) => Math.min(filtered.length - 1, index + 1));
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
+      keyboardMove.current = true;
       setActive((index) => Math.max(0, index - 1));
     } else if (event.key === "Enter") {
       event.preventDefault();
@@ -228,7 +243,7 @@ export function SelectMenu({
   }
 
   function toggle() {
-    if (disabled) return;
+    if (disabled || ignoreTrigger.current) return;
     setOpen((current) => {
       if (current) return false;
       setQuery("");
@@ -309,7 +324,16 @@ export function SelectMenu({
                         index === active && "text-[var(--ink)]",
                       )}
                       onMouseEnter={() => setActive(index)}
-                      onClick={() => choose(option.value)}
+                      onPointerDown={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        choose(option.value);
+                      }}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        choose(option.value);
+                      }}
                     >
                       <Check
                         className={cn(
@@ -338,6 +362,11 @@ export function SelectMenu({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={`${id}-menu`}
+        onPointerDown={(event) => {
+          if (!ignoreTrigger.current) return;
+          event.preventDefault();
+          event.stopPropagation();
+        }}
         onClick={toggle}
         onKeyDown={(event) => {
           if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
@@ -346,7 +375,7 @@ export function SelectMenu({
           }
         }}
         className={cn(
-          "flex w-full items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-left text-[var(--ink)] outline-none transition-[border-color,box-shadow] duration-150",
+          "flex w-full items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-left leading-none text-[var(--ink)] outline-none transition-[border-color,box-shadow] duration-150",
           "focus-visible:border-[var(--accent)] focus-visible:ring-4 focus-visible:ring-[var(--accent-soft)]",
           open && "border-[var(--accent)] ring-4 ring-[var(--accent-soft)]",
           "disabled:opacity-50",
@@ -354,12 +383,12 @@ export function SelectMenu({
           className,
         )}
       >
-        <span className={cn("min-w-0 truncate", !selected && "text-[var(--muted)]")}>
+        <span className={cn("min-w-0 truncate leading-none", !selected && "text-[var(--muted)]")}>
           {selected?.label ?? placeholder}
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 shrink-0 text-[var(--muted)] transition-transform duration-200",
+            "relative -top-px h-4 w-4 shrink-0 text-[var(--muted)] transition-transform duration-200",
             open && "rotate-180",
           )}
         />
