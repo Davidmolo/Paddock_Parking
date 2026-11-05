@@ -128,6 +128,7 @@ export class BookingsService {
       portalStatus: 'not_invited',
     };
     this.store.bookings.unshift(booking);
+    this.store.persistBookings();
     return this.enrich(booking);
   }
 
@@ -140,6 +141,7 @@ export class BookingsService {
     if (body.autoPullWaived != null) {
       booking.autoPullWaived = body.autoPullWaived;
     }
+    this.store.persistBookings();
     return this.enrich(booking);
   }
 
@@ -173,6 +175,7 @@ export class BookingsService {
       booking.decisionNotes =
         body.notes ?? 'Denied by staff — customer emailed (demo).';
       booking.portalStatus = 'not_invited';
+      this.store.persistBookings();
       return {
         booking: this.enrich(booking),
         customerId: undefined as string | undefined,
@@ -235,6 +238,7 @@ export class BookingsService {
       }
     }
 
+    this.store.persistBookings();
     return {
       booking: this.enrich(updated),
       customerId: converted.customerId,
@@ -300,6 +304,7 @@ export class BookingsService {
     ]
       .filter(Boolean)
       .join(' · ');
+    this.store.persistBookings();
     return this.enrich(booking);
   }
 
@@ -378,6 +383,7 @@ export class BookingsService {
     }
     if (!booking.portalStatus) booking.portalStatus = 'not_invited';
 
+    this.store.persistBookings();
     return { booking: this.enrich(booking), customerId, lotId: lot.id };
   }
 

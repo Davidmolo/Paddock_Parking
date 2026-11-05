@@ -10,5 +10,6 @@ coverage
 .turbo
 *.tsbuildinfo
 apps/api/uploads
+apps/api/data
 *.traineddata
 eng.traineddata

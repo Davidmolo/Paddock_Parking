@@ -69,6 +69,7 @@ jobs:
             --exclude 'apps/web/.env*' \
             --exclude 'apps/web/.next/cache' \
             --exclude 'apps/api/uploads' \
+            --exclude 'apps/api/data' \
             --exclude '*.traineddata' \
             --exclude '*.log' \
             -e "$RSYNC_SSH" \
