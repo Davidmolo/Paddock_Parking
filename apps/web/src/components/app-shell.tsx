@@ -74,24 +74,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     });
   }
 
-  /**
-   * Public (no admin auth):
-   * - Customer marketing website: /book/*
-   * - Customer portal: /portal
-   * - Admin login page: /login
-   */
-  const isPublic =
-    pathname === "/login" ||
-    pathname === "/portal" ||
-    pathname.startsWith("/portal/") ||
-    pathname === "/book" ||
-    pathname.startsWith("/book/");
-
   useEffect(() => {
     if (!ready) return;
-    if (!user && !isPublic) router.replace("/login");
-    if (user && pathname === "/login") router.replace("/dashboard");
-  }, [ready, user, pathname, router, isPublic]);
+    if (!user) router.replace("/login");
+  }, [ready, user, router]);
 
   useEffect(() => {
     setOpen(false);
@@ -130,16 +116,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     });
   }
 
-  if (!ready) {
+  if (!ready || !user) {
     return (
       <div className="grid min-h-screen place-items-center bg-[var(--canvas)]">
         <div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
       </div>
     );
-  }
-
-  if (!user || isPublic) {
-    return <>{children}</>;
   }
 
   return (

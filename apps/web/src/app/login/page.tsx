@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useApp } from "@/components/app-provider";
@@ -9,12 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
-  const { login } = useApp();
+  const { login, user, ready } = useApp();
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (ready && user) router.replace("/dashboard");
+  }, [ready, user, router]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -34,6 +38,8 @@ export default function LoginPage() {
       setLoading(false);
     }
   }
+
+  if (ready && user) return null;
 
   return (
     <div className="relative grid h-dvh place-items-center overflow-y-auto overscroll-none px-4">

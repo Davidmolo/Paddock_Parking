@@ -843,6 +843,9 @@ function drawScene(){
 
 /* ---- pan & zoom: wheel to zoom at the cursor, drag to pan, pinch on touch ---- */
 function initPanZoom(){
+  if(window.__ypPan) window.__ypPan.abort();
+  const panCtl=new AbortController();
+  window.__ypPan=panCtl;
   const MIN=1,MAX=7,stage=document.getElementById('stage'),hint=document.getElementById('zhint');
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const apply=()=>{VP.setAttribute('transform',
@@ -866,13 +869,25 @@ function initPanZoom(){
   const fade=()=>{if(!hid){hid=true;hint.style.opacity='0';}};
   if(matchMedia('(hover:none)').matches) hint.textContent='Pinch to zoom · drag to pan';
 
+  const sig={signal:panCtl.signal};
   svgRoot.addEventListener('wheel',e=>{
     e.preventDefault();
-    const p=toUser(e.clientX,e.clientY);
-    zoomAt(view.k*Math.exp(-e.deltaY*0.0016),p.x,p.y);
-  },{passive:false});
+    const m=svgRoot.getScreenCTM();
+    if(!m) return;
+    if(e.ctrlKey||e.metaKey){
+      const p=toUser(e.clientX,e.clientY);
+      const step=Math.sign(e.deltaY)*Math.min(Math.abs(e.deltaY),40);
+      zoomAt(view.k*Math.exp(-step*0.0022),p.x,p.y);
+      return;
+    }
+    const gain=0.22;
+    view.tx-=(e.deltaX*gain)/m.a;
+    view.ty-=(e.deltaY*gain)/m.d;
+    clampPan(); apply(); fade();
+  },{passive:false,signal:panCtl.signal});
 
   let last=null,moved=0;
+  const drag=0.42;
   svgRoot.addEventListener('mousedown',e=>{
     if(e.button!==0)return;
     e.preventDefault();
@@ -880,22 +895,22 @@ function initPanZoom(){
     last={x:e.clientX,y:e.clientY};
     stage.classList.add('dragging');
     tip.classList.remove('show');
-  });
+  },sig);
   window.addEventListener('mousemove',e=>{
     if(!view.panning)return;
     const m=svgRoot.getScreenCTM();
     const dx=e.clientX-last.x,dy=e.clientY-last.y;
     moved+=Math.abs(dx)+Math.abs(dy);
     if(moved>4){view.dragged=true;fade();}
-    view.tx+=dx/m.a; view.ty+=dy/m.d;
+    view.tx+=(dx*drag)/m.a; view.ty+=(dy*drag)/m.d;
     last={x:e.clientX,y:e.clientY};
     clampPan(); apply();
-  });
+  },sig);
   window.addEventListener('mouseup',()=>{
     if(!view.panning)return;
     view.panning=false; stage.classList.remove('dragging');
     setTimeout(()=>{view.dragged=false;},0);   // let the click handler read it first
-  });
+  },sig);
 
   // touch: one finger pans, two fingers pinch-zoom
   const dist=(a,b)=>Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
@@ -903,25 +918,26 @@ function initPanZoom(){
   svgRoot.addEventListener('touchstart',e=>{
     if(e.touches.length===1){view.panning=true;last={x:e.touches[0].clientX,y:e.touches[0].clientY};}
     else if(e.touches.length===2){view.panning=false;pinch={d:dist(e.touches[0],e.touches[1]),k:view.k};}
-  },{passive:false});
+  },{passive:false,signal:panCtl.signal});
   svgRoot.addEventListener('touchmove',e=>{
     e.preventDefault();
     if(e.touches.length===1&&view.panning){
       const m=svgRoot.getScreenCTM();
-      view.tx+=(e.touches[0].clientX-last.x)/m.a;
-      view.ty+=(e.touches[0].clientY-last.y)/m.d;
+      view.tx+=((e.touches[0].clientX-last.x)*drag)/m.a;
+      view.ty+=((e.touches[0].clientY-last.y)*drag)/m.d;
       last={x:e.touches[0].clientX,y:e.touches[0].clientY};
       clampPan(); apply(); fade();
     }else if(e.touches.length===2&&pinch){
       const mx=(e.touches[0].clientX+e.touches[1].clientX)/2,
             my=(e.touches[0].clientY+e.touches[1].clientY)/2;
       const p=toUser(mx,my);
-      zoomAt(pinch.k*dist(e.touches[0],e.touches[1])/pinch.d,p.x,p.y);
+      const spread=dist(e.touches[0],e.touches[1])/pinch.d;
+      zoomAt(pinch.k*(1+(spread-1)*0.45),p.x,p.y);
     }
-  },{passive:false});
-  svgRoot.addEventListener('touchend',e=>{if(!e.touches.length){view.panning=false;pinch=null;}});
+  },{passive:false,signal:panCtl.signal});
+  svgRoot.addEventListener('touchend',e=>{if(!e.touches.length){view.panning=false;pinch=null;}},sig);
 
-  svgRoot.addEventListener('dblclick',()=>resetView());
+  svgRoot.addEventListener('dblclick',()=>resetView(),sig);
   window.zoomBy=f=>zoomAt(view.k*f,W/2,H/2);
   window.resetView=()=>{view.k=1;view.tx=0;view.ty=0;apply();};
   apply();

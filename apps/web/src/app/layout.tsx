@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Outfit, Sora } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { AppProvider } from "@/components/app-provider";
-import { AppShell } from "@/components/app-shell";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -29,9 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full">
         <Providers>
-          <AppProvider>
-            <AppShell>{children}</AppShell>
-          </AppProvider>
+          <AppProvider>{children}</AppProvider>
         </Providers>
       </body>
     </html>
