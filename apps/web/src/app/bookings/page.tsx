@@ -18,6 +18,7 @@ import { PageTransition } from "@/components/ui/motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Segmented } from "@/components/ui/segmented";
 import { formatCurrency, cn } from "@/lib/utils";
 
 type Filter = BookingDecision | "all";
@@ -400,32 +401,20 @@ export default function BookingsPage() {
       )}
 
       {/* FMS status tabs */}
-      <div className="mb-3 flex flex-wrap gap-1 border-b border-[var(--border)]">
-        {(
-          [
-            ["pending", "Pending", counts.pending],
-            ["approved", "Approved", counts.approved],
-            ["conditional", "Conditional", counts.conditional],
-            ["denied", "Denied", counts.denied],
-            ["all", "All", counts.all],
-          ] as const
-        ).map(([key, label, n]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setFilter(key)}
-            className={cn(
-              "-mb-px border-b-2 px-3 py-2.5 text-sm transition",
-              filter === key
-                ? "border-[var(--ink)] font-semibold text-[var(--ink)]"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]",
-            )}
-          >
-            {label}
-            <span className="ml-1.5 tabular-nums text-[var(--muted)]">{n}</span>
-          </button>
-        ))}
-      </div>
+      <Segmented
+        className="mb-3"
+        variant="underline"
+        ariaLabel="Onboarding status"
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { value: "pending", label: "Pending", count: counts.pending },
+          { value: "approved", label: "Approved", count: counts.approved },
+          { value: "conditional", label: "Conditional", count: counts.conditional },
+          { value: "denied", label: "Denied", count: counts.denied },
+          { value: "all", label: "All", count: counts.all },
+        ]}
+      />
 
       {isPending && !data ? (
         <Skeleton className="h-72 w-full rounded-xl" />

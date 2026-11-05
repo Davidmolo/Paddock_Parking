@@ -12,7 +12,7 @@ import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { Segmented } from "@/components/ui/segmented";
 
 const ISSUE_COI: CoiStatus[] = [
   "missing",
@@ -157,30 +157,18 @@ export default function CustomersCompliancePage() {
             <Stat label="Lease renewals" value={String(summary.lease)} />
           </div>
 
-          <div className="mb-4 inline-flex rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1">
-            {(
-              [
-                ["all", "All gaps"],
-                ["coi", "COI"],
-                ["plates", "Plates"],
-                ["lease", "Lease"],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setFilter(id)}
-                className={cn(
-                  "rounded-lg px-3.5 py-1.5 text-sm font-medium transition",
-                  filter === id
-                    ? "bg-[var(--accent-soft)] text-[var(--accent-ink)]"
-                    : "text-[var(--muted)] hover:text-[var(--ink)]",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            className="mb-4"
+            ariaLabel="Compliance gaps"
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: "all", label: "All gaps" },
+              { value: "coi", label: "COI" },
+              { value: "plates", label: "Plates" },
+              { value: "lease", label: "Lease" },
+            ]}
+          />
 
           {rows.length === 0 ? (
             <Card interactive={false} className="p-10 text-center">

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Grid3X3, Map, X } from "lucide-react";
+import { X } from "lucide-react";
 import {
   endpoints,
   type Lot,
@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Segmented } from "@/components/ui/segmented";
 import { formatCurrency, cn } from "@/lib/utils";
 import { ACRE_COLORS, effectiveAcres } from "@/lib/lot-layout";
 import { YardSitePlanEmbed } from "@/components/lots/yard-site-plan-embed";
@@ -228,34 +229,15 @@ export default function LotsPage() {
         title="Inventory"
         subtitle="Yard site plans with live occupancy — hover for details, click a space to update status, rate, or tenant."
         action={
-          <div className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-1">
-            <button
-              type="button"
-              onClick={() => setView("map")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition",
-                view === "map"
-                  ? "bg-[var(--surface-elevated)] text-[var(--ink)] shadow-sm"
-                  : "text-[var(--muted)]",
-              )}
-            >
-              <Map className="h-4 w-4" />
-              Site plan
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("grid")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition",
-                view === "grid"
-                  ? "bg-[var(--surface-elevated)] text-[var(--ink)] shadow-sm"
-                  : "text-[var(--muted)]",
-              )}
-            >
-              <Grid3X3 className="h-4 w-4" />
-              Grid
-            </button>
-          </div>
+          <Segmented
+            ariaLabel="Inventory view"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "map", label: "Site plan" },
+              { value: "grid", label: "Grid" },
+            ]}
+          />
         }
       />
 

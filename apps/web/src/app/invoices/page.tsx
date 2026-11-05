@@ -17,6 +17,7 @@ import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Segmented } from "@/components/ui/segmented";
 import { cn, formatCurrency } from "@/lib/utils";
 
 type MethodFilter = InvoiceCollectionMethod | "all";
@@ -164,35 +165,16 @@ export default function InvoicesPage() {
           </Stagger>
 
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div
-              className="inline-flex w-fit rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1"
-              role="tablist"
-              aria-label="Collection method"
-            >
-              {(
-                [
-                  { value: "all", label: "All" },
-                  { value: "ach_debit", label: "ACH" },
-                  { value: "send_invoice", label: "Invoice" },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  role="tab"
-                  aria-selected={method === opt.value}
-                  onClick={() => setMethod(opt.value)}
-                  className={cn(
-                    "rounded-lg px-3.5 py-1.5 text-sm font-medium transition",
-                    method === opt.value
-                      ? "bg-[var(--accent-soft)] text-[var(--accent-ink)]"
-                      : "text-[var(--muted)] hover:text-[var(--ink)]",
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            <Segmented
+              ariaLabel="Collection method"
+              value={method}
+              onChange={setMethod}
+              options={[
+                { value: "all", label: "All" },
+                { value: "ach_debit", label: "ACH" },
+                { value: "send_invoice", label: "Invoice" },
+              ]}
+            />
 
             <div className="flex items-center gap-2">
               <label htmlFor="invoice-status" className="sr-only">

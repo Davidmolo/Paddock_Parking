@@ -18,6 +18,7 @@ import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -91,41 +92,18 @@ export default function LeasesPage() {
         </Stagger>
       ) : null}
 
-      <div className="mb-5 flex flex-wrap gap-2">
-        {(
-          [
-            ["renewals", "Renewals due"],
-            ["tenant", "Tenant"],
-            ["landlord", "Admin"],
-            ["all", "All leases"],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setTab(key)}
-            className={cn(
-              "rounded-xl border px-3.5 py-2 text-sm font-medium transition",
-              tab === key
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
-                : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--ink)]",
-            )}
-          >
-            {label}
-            {summary && (
-              <span className="ml-2 text-xs opacity-70">
-                {key === "renewals"
-                  ? summary.renewalsDue
-                  : key === "tenant"
-                    ? summary.tenant
-                    : key === "landlord"
-                      ? summary.landlord
-                      : summary.total}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        className="mb-5"
+        ariaLabel="Lease list"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: "renewals", label: "Renewals due", count: summary?.renewalsDue },
+          { value: "tenant", label: "Tenant", count: summary?.tenant },
+          { value: "landlord", label: "Admin", count: summary?.landlord },
+          { value: "all", label: "All leases", count: summary?.total },
+        ]}
+      />
 
       {isPending && !leases ? (
         <div className="space-y-3">
