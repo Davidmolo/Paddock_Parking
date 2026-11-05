@@ -11,7 +11,14 @@ export function PageTransition({
   className?: string;
 }) {
   return (
-    <div className={cn("flex h-full min-h-0 flex-col overflow-y-auto overscroll-none", className)}>{children}</div>
+    <div
+      className={cn(
+        "flex h-full min-h-0 flex-col overflow-y-auto overscroll-none pb-6 [&>*]:min-h-min [&>*]:shrink-0",
+        className,
+      )}
+    >
+      {children}
+    </div>
   );
 }
 
