@@ -372,6 +372,33 @@ html.yp-ops #tip,
 body.ops #tip {
   z-index: 40;
 }
+html.yp-ops .shell,
+body.ops .shell {
+  position: relative !important;
+  overflow: hidden !important;
+}
+html.yp-ops .card.map,
+html.yp-ops .card.map-card,
+html.yp-ops .shell > .card,
+body.ops .card.map,
+body.ops .card.map-card,
+body.ops .shell > .card {
+  position: absolute !important;
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+html.yp-ops #stage,
+html.yp-ops #yard,
+body.ops #stage,
+body.ops #yard {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  aspect-ratio: auto !important;
+}
 
 </style>
 </head>
