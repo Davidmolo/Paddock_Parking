@@ -70,6 +70,11 @@ input, select, textarea { max-width: 100%; }
   to { opacity: 1; }
 }
 
+@keyframes screen-title {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   :where(a, button) {
     transition-property: color, background-color, border-color, box-shadow, opacity;

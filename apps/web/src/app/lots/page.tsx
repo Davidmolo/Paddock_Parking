@@ -69,6 +69,15 @@ function statusLabel(s: LotStatus | "all") {
 
 const ACRE_FILTERS = ["all", "0.25", "0.5", "1", "2", "3", "4", "5", "stall"] as const;
 
+function lotVisible(lot: Lot, filter: LotStatus | "all", acreFilter: string) {
+  if (filter !== "all" && lot.status !== filter) return false;
+  if (acreFilter === "all") return true;
+  if (acreFilter === "stall") {
+    return !(lot.lotType === "acre" || (lot.acres != null && lot.acres >= 0.25));
+  }
+  return Math.abs(effectiveAcres(lot) - Number(acreFilter)) < 0.01;
+}
+
 export default function LotsPage() {
   const { propertyId, properties } = useApp();
   const queryClient = useQueryClient();
@@ -188,14 +197,16 @@ export default function LotsPage() {
     return { total, rented, available, soon, rate };
   }, [mapLots]);
 
-  const visible = lots.filter((l) => {
-    if (filter !== "all" && l.status !== filter) return false;
-    if (acreFilter === "all") return true;
-    if (acreFilter === "stall") {
-      return !(l.lotType === "acre" || (l.acres != null && l.acres >= 0.25));
+  const visible = lots.filter((l) => lotVisible(l, filter, acreFilter));
+
+  const dimmedSpaces = useMemo(() => {
+    const dim: Record<string, true> = {};
+    if (filter === "all" && acreFilter === "all") return dim;
+    for (const lot of mapLots) {
+      if (!lotVisible(lot, filter, acreFilter)) dim[lot.number] = true;
     }
-    return Math.abs(effectiveAcres(l) - Number(acreFilter)) < 0.01;
-  });
+    return dim;
+  }, [mapLots, filter, acreFilter]);
 
   const assignableCustomers = (customers ?? []).filter(
     (c) =>
@@ -224,7 +235,7 @@ export default function LotsPage() {
   }, [lots, customers]);
 
   return (
-    <PageTransition>
+    <PageTransition className={view === "map" ? "overflow-hidden" : undefined}>
       <PageHeader
         title="Inventory"
         subtitle="Yard site plans with live occupancy — hover for details, click a space to update status, rate, or tenant."
@@ -242,7 +253,7 @@ export default function LotsPage() {
       />
 
       {!isPending && (
-        <div className="mb-4 space-y-3">
+        <div className="mb-4 shrink-0 space-y-3">
           <div className="flex flex-wrap gap-2">
             {STATUS_FILTERS.map((s) => (
               <button
@@ -251,7 +262,7 @@ export default function LotsPage() {
                 onClick={() => setFilter(s)}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition",
-                  filter === s && "ring-2 ring-[var(--accent)] ring-offset-1",
+                  filter === s && "ring-2 ring-inset ring-[var(--accent)]",
                   s === "all"
                     ? "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)]"
                     : statusMeta[s].surface,
@@ -299,7 +310,7 @@ export default function LotsPage() {
         <Skeleton className="h-[min(62vh,560px)] min-h-[420px] w-full rounded-2xl" />
       ) : data ? (
         view === "map" ? (
-          <div className="space-y-3">
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div className="flex flex-wrap gap-2">
                 {SITE_PLAN_OPTIONS.map((opt) => (
@@ -335,6 +346,7 @@ export default function LotsPage() {
             <YardSitePlanEmbed
               slug={activePlan.slug}
               lots={mapLots}
+              dimmedSpaces={dimmedSpaces}
               tenantsByLotId={tenantsByLotId}
               selectedId={selectedId}
               onSelectByNumber={(spaceNumber) => {
@@ -397,13 +409,6 @@ export default function LotsPage() {
           </Stagger>
         )
       ) : null}
-
-      {view === "map" && data && (
-        <p className="mt-3 text-xs text-[var(--muted)]">
-          Staff view only — click a space to manage occupancy, pricing, and
-          tenant assignment.
-        </p>
-      )}
 
       {selected && (
         <div

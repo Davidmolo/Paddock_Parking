@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, X, Building2, ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { NAV_GROUPS, NAV_ITEMS, type NavGroup } from "@/lib/nav";
 import { useApp } from "@/components/app-provider";
 import { ProfileMenu } from "@/components/profile-menu";
+import { ScreenTitleProvider } from "@/components/screen-title";
 import { cn } from "@/lib/utils";
 import { prefetchAllScreens, prefetchScreenData } from "@/lib/prefetch";
 
@@ -31,6 +32,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, ready, properties, propertyId, setPropertyId } = useApp();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [sidebarReady, setSidebarReady] = useState(false);
+  const [screenTitle, setScreenTitle] = useState("");
+  const setTitle = useCallback((title: string) => {
+    setScreenTitle(title);
+  }, []);
   const [, startTransition] = useTransition();
   const warmed = useRef(false);
 
@@ -57,6 +63,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setCollapsed(window.localStorage.getItem("pp_sidebar") === "1");
+    setSidebarReady(true);
   }, []);
 
   function toggleCollapsed() {
@@ -136,6 +143,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <ScreenTitleProvider setTitle={setTitle}>
     <div className="fixed inset-0 flex overflow-hidden overscroll-none bg-[var(--canvas)] text-[var(--ink)]">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-24 top-0 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(10,22,40,0.08),transparent_70%)]" />
@@ -145,8 +153,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="relative flex h-full min-h-0 w-full">
         <aside
           className={cn(
-            "hidden h-full shrink-0 flex-col bg-[var(--ink)] py-4 text-white transition-[width,padding] duration-200 ease-out lg:flex",
-            collapsed ? "w-[4.25rem] px-2" : "w-56 px-3",
+            "hidden h-full shrink-0 flex-col overflow-hidden bg-[var(--ink)] px-2 py-4 text-white lg:flex",
+            sidebarReady && "transition-[width] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+            collapsed ? "w-[4.25rem]" : "w-56",
           )}
         >
           <Brand compact={collapsed} />
@@ -168,35 +177,42 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={toggleCollapsed}
-            className="mt-2 inline-flex h-9 items-center justify-center gap-2 rounded-lg px-2.5 text-[13px] font-medium text-white/80 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+            className="mt-2 inline-flex h-9 items-center gap-2 overflow-hidden rounded-lg px-2.5 text-[13px] font-medium text-white/80 hover:bg-white/10 hover:text-white"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
+              <PanelLeftOpen className="h-4 w-4 shrink-0" />
             ) : (
-              <>
-                <PanelLeftClose className="h-4 w-4" />
-                <span>Collapse</span>
-              </>
+              <PanelLeftClose className="h-4 w-4 shrink-0" />
             )}
+            <span
+              className={cn(
+                "whitespace-nowrap transition-[max-width,opacity] duration-200",
+                collapsed ? "max-w-0 opacity-0" : "max-w-[8rem] opacity-100",
+              )}
+            >
+              Collapse
+            </span>
           </button>
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <header className="z-30 shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3 sm:px-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                className="rounded-xl border border-[var(--border)] p-2 lg:hidden"
-                onClick={() => setOpen((v) => !v)}
-                aria-label="Toggle menu"
-              >
-                {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
-              <div className="lg:hidden">
-                <Brand compact />
-              </div>
-              <div className="ml-auto flex min-w-0 w-full items-center gap-2 sm:w-auto">
-                <div className="relative min-w-0 flex-1 sm:max-w-[14rem]">
+          <header className="z-30 flex shrink-0 items-center gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 sm:px-5">
+            <button
+              className="rounded-xl border border-[var(--border)] p-2 lg:hidden"
+              onClick={() => setOpen((v) => !v)}
+              aria-label="Toggle menu"
+            >
+              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+            <h1
+              key={pathname}
+              className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-tight text-[var(--ink)] motion-safe:animate-[screen-title_180ms_ease-out]"
+            >
+              {screenTitle}
+            </h1>
+            <div className="flex shrink-0 items-center gap-2">
+                <div className="relative w-40 sm:w-52">
                   <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
                   <select
                     value={propertyId}
@@ -218,7 +234,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
                 </div>
                 <ProfileMenu />
-              </div>
             </div>
           </header>
 
@@ -248,11 +263,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     </div>
+    </ScreenTitleProvider>
   );
 }
 
 const navBtnClass =
-  "flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors duration-200 ease-out";
+  "flex h-9 w-full items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium";
 
 function NavBlock({
   group,
@@ -279,7 +295,7 @@ function NavBlock({
 
   return (
     <section className="flex min-w-0 flex-col gap-0.5">
-      {expandable && !collapsed ? (
+      {expandable ? (
         <button
           type="button"
           onClick={() => onToggle(group.label!)}
@@ -287,6 +303,7 @@ function NavBlock({
           className={cn(
             navBtnClass,
             "text-left text-white/55 hover:bg-white/10 hover:text-white",
+            collapsed && "pointer-events-none h-0 py-0 opacity-0",
           )}
         >
           {GroupIcon ? <GroupIcon className="h-4 w-4 shrink-0" /> : null}
@@ -302,7 +319,8 @@ function NavBlock({
 
       <div
         className={cn(
-          "grid transition-[grid-template-rows] duration-200 ease-out",
+          "grid",
+          !collapsed && "transition-[grid-template-rows] duration-200 ease-out",
           isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
       >
@@ -329,16 +347,21 @@ function NavBlock({
                   }}
                   className={cn(
                     navBtnClass,
-                    collapsed && "justify-center px-0",
+                    "hover:bg-white/10 hover:text-white",
                     active
-                      ? "border-l-2 border-[var(--accent)] bg-white/10 font-semibold text-white"
-                      : "border-l-2 border-transparent text-white/70 hover:bg-white/10 hover:text-white",
+                      ? "bg-white/10 font-semibold text-white shadow-[inset_2px_0_0_var(--accent)]"
+                      : "text-white/70",
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0 text-current" />
-                  {!collapsed && (
-                    <span className="truncate text-current">{item.label}</span>
-                  )}
+                  <span
+                    className={cn(
+                      "truncate transition-opacity duration-150",
+                      collapsed ? "w-0 opacity-0" : "opacity-100",
+                    )}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
@@ -351,30 +374,21 @@ function NavBlock({
 
 function Brand({ compact }: { compact?: boolean }) {
   return (
-    <Link href="/dashboard" className="flex items-center gap-3" prefetch>
-      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--accent)] text-sm font-bold tracking-wider text-[var(--accent-ink)]">
+    <Link href="/dashboard" className="flex items-center gap-3 overflow-hidden" prefetch>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[var(--accent)] text-sm font-bold tracking-wider text-[var(--accent-ink)]">
         PP
       </span>
-      {!compact && (
-        <span>
-          <span
-            className={cn(
-              "block text-base font-semibold tracking-tight",
-              compact ? "text-[var(--ink)]" : "text-white",
-            )}
-          >
-            Paddock Parking
-          </span>
-          <span
-            className={cn(
-              "block text-xs",
-              compact ? "text-[var(--muted)]" : "text-white/55",
-            )}
-          >
-            Property management
-          </span>
+      <span
+        className={cn(
+          "min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-150",
+          compact ? "w-0 opacity-0" : "opacity-100",
+        )}
+      >
+        <span className="block text-base font-semibold tracking-tight text-white">
+          Paddock Parking
         </span>
-      )}
+        <span className="block text-xs text-white/55">Property management</span>
+      </span>
     </Link>
   );
 }

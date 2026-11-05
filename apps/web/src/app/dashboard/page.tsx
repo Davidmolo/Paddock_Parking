@@ -330,11 +330,11 @@ function Money({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex min-h-[4.5rem] flex-col rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
-      <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] text-[var(--muted)]">
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] text-[var(--muted)]">
         {label}
       </p>
-      <p className="mt-auto pt-1 text-sm font-semibold tabular-nums text-[var(--ink)]">
+      <p className="mt-1 text-sm font-semibold tabular-nums text-[var(--ink)]">
         {value}
       </p>
     </div>

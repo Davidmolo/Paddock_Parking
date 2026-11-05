@@ -268,7 +268,7 @@ body.ops main{padding:0!important;max-width:none!important;min-height:0!importan
 body.ops .shell{display:block!important;grid-template-columns:1fr!important;gap:0!important;min-height:0!important}
 body.ops .card.map,body.ops .shell>.card{border:0!important;box-shadow:none!important;border-radius:0!important;background:transparent!important;padding:0!important;margin:0!important}
 body.ops .map-stage,body.ops #stage,body.ops #yard{
-  display:block!important;width:100%!important;height:min(72vh,680px)!important;min-height:520px!important;
+  display:block!important;width:100%!important;height:100%!important;min-height:0!important;
   flex:none!important;background:#dde7d0!important
 }
 body.ops{background:#e8edf2;margin:0!important;overflow:hidden!important}
@@ -360,11 +360,14 @@ body.ops #stage,
 body.ops #yard {
   display: block !important;
   width: 100% !important;
-  height: min(72vh, 680px) !important;
-  min-height: 520px !important;
+  height: 100% !important;
+  min-height: 0 !important;
   flex: none !important;
   background: #dde7d0 !important;
 }
+html.yp-ops .info,
+body.ops .info { display: none !important; }
+html.yp-ops, html.yp-ops body, html.yp-ops main, html.yp-ops .shell { height: 100% !important; }
 html.yp-ops #tip,
 body.ops #tip {
   z-index: 40;
@@ -732,7 +735,7 @@ function vehicle(cx,cy,ang,w,d,col){const g=el('g',{});const H=9;
   for(let i=0;i<4;i++){const j=(i+1)%4;const mx=(c[i][0]+c[j][0])/2,my=(c[i][1]+c[j][1])/2;
     if(depthOf(mx,my)>cd)g.appendChild(el('path',{d:`M ${P(gr[i])} L ${P(gr[j])} L ${P(tp[j])} L ${P(tp[i])} Z`,fill:shade(col,.78)}));}
   g.appendChild(el('polygon',{points:tp.map(P).join(' '),fill:col,stroke:shade(col,.85),'stroke-width':.5}));return g;}
-function attach(g,u){g.setAttribute('class','unit'+(u.taken?' taken':''));g.setAttribute('data-id',u.id);
+function attach(g,u){g.setAttribute('class','unit'+(u.taken?' taken':'')+(u.dim?' dim':''));g.setAttribute('data-id',u.id);
   g.addEventListener('mousemove',e=>showTip(e,u));
   g.addEventListener('mouseleave',()=>tip.classList.remove('show'));
   if(!u.taken) g.addEventListener('click',()=>{if(!view.dragged)toggle(u);});}  // a pan must not select
@@ -1148,13 +1151,24 @@ drawScene(); renderPanel();
     var d = ev.data;
     if (!d || d.type !== "yp:statuses") return;
     tipMeta = d.meta || {};
+    if (!document.getElementById("yp-dim-style")) {
+      var dimStyle = document.createElement("style");
+      dimStyle.id = "yp-dim-style";
+      dimStyle.textContent = ".unit.dim{opacity:.28}";
+      document.head.appendChild(dimStyle);
+    }
     var map = d.map || {};
     units.forEach(function (u) {
       var st = map[u.id];
-      if (!st) return;
-      u.state = toUnit[st] || "open";
-      u.taken = u.state !== "open";
+      if (st) {
+        u.state = toUnit[st] || "open";
+        u.taken = u.state !== "open";
+      }
+      u.dim = !!d.filtering && (!st || !!(d.dim && d.dim[u.id]));
     });
+    if (typeof svgRoot !== "undefined" && svgRoot) {
+      while (svgRoot.firstChild) svgRoot.removeChild(svgRoot.firstChild);
+    }
     if (typeof drawScene === "function") drawScene();
     bindAllClicks();
   });

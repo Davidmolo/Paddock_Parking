@@ -25,7 +25,7 @@ export const PROPERTY_SITE_PLAN: Record<LivePropertyId, SitePlanSlug> =
   ) as Record<LivePropertyId, SitePlanSlug>;
 
 export function sitePlanUrl(slug: SitePlanSlug): string {
-  return `/yard-maps/${slug}.html?ops=1&v=5`;
+  return `/yard-maps/${slug}.html?ops=1&v=8`;
 }
 
 export function sitePlanForProperty(

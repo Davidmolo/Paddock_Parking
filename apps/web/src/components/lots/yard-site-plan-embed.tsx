@@ -22,6 +22,7 @@ type Props = {
   lots: Lot[];
   tenantsByLotId: Record<string, TenantInfo | undefined>;
   selectedId: string | null;
+  dimmedSpaces?: Record<string, true>;
   onSelectByNumber: (spaceNumber: string) => void;
 };
 
@@ -31,6 +32,7 @@ export function YardSitePlanEmbed({
   lots,
   tenantsByLotId,
   selectedId,
+  dimmedSpaces,
   onSelectByNumber,
 }: Props) {
   const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
@@ -90,7 +92,16 @@ export function YardSitePlanEmbed({
       };
     }
 
-    win.postMessage({ type: "yp:statuses", map, meta }, "*");
+    win.postMessage(
+      {
+        type: "yp:statuses",
+        map,
+        meta,
+        dim: dimmedSpaces ?? {},
+        filtering: Boolean(dimmedSpaces && Object.keys(dimmedSpaces).length > 0),
+      },
+      "*",
+    );
   }
 
   useEffect(() => {
@@ -120,20 +131,20 @@ export function YardSitePlanEmbed({
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onSelectByNumber, byNumber, tenantsByLotId, slug]);
+  }, [onSelectByNumber, byNumber, tenantsByLotId, slug, dimmedSpaces]);
 
   useEffect(() => {
     pushStatuses(slug);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lots, tenantsByLotId, selectedNumber, slug]);
+  }, [lots, tenantsByLotId, selectedNumber, slug, dimmedSpaces]);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[#dde7d0]">
-      <div className="flex items-center justify-between border-b border-[var(--border)] bg-white/90 px-4 py-2.5 text-xs text-[var(--muted)]">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[#dde7d0]">
+      <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] bg-white/90 px-4 py-2.5 text-xs text-[var(--muted)]">
         <span className="font-medium text-[var(--ink)]">Site plan</span>
         <span>Hover for details · click to edit space</span>
       </div>
-      <div className="relative h-[min(72vh,680px)] min-h-[520px] w-full bg-[#dde7d0]">
+      <div className="relative min-h-0 flex-1 bg-[#dde7d0]">
         {!loaded[slug] && (
           <div className="absolute inset-0 z-10 grid place-items-center bg-[#dde7d0] text-sm text-[var(--muted)]">
             Loading site plan…
