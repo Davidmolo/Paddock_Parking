@@ -356,7 +356,7 @@ export default function CustomerDetailPage() {
                   .map((p) => (
                     <span
                       key={`${p.bookingId}-${p.detail}`}
-                      className="rounded-lg border border-[#E8C547]/35 bg-[#E8C547]/12 px-2.5 py-1 text-xs font-medium text-[#0a1628]"
+                      className="rounded-lg border border-[var(--accent)]/35 bg-[var(--accent)]/12 px-2.5 py-1 text-xs font-medium text-[var(--ink)]"
                     >
                       {p.detail}
                     </span>
@@ -368,7 +368,7 @@ export default function CustomerDetailPage() {
       </Card>
 
       {data.lease && (
-        <Card interactive={false} className="mb-5 border-[#E8C547]/35 bg-[#E8C547]/10">
+        <Card interactive={false} className="mb-5 border-[var(--accent)]/35 bg-[var(--accent)]/10">
           <CardHeader>
             <h2 className="font-semibold">Renewal follow-up</h2>
             <Badge

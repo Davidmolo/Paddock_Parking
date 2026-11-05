@@ -123,16 +123,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
+    <div className="flex h-dvh overflow-hidden bg-[var(--canvas)] text-[var(--ink)]">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-24 top-0 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(10,22,40,0.08),transparent_70%)]" />
-        <div className="absolute right-0 top-40 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(10,22,40,0.05),transparent_70%)]" />
+        <div className="absolute -left-24 top-0 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(0,120,212,0.1),transparent_70%)]" />
+        <div className="absolute right-0 top-40 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(255,107,87,0.06),transparent_70%)]" />
       </div>
 
-      <div className="relative flex min-h-screen w-full">
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-[var(--ink)] px-4 py-5 text-white lg:flex">
+      <div className="relative flex h-full min-h-0 w-full">
+        <aside className="hidden h-full w-64 shrink-0 flex-col bg-[var(--primary)] px-4 py-5 text-white lg:flex">
           <Brand />
-          <nav className="mt-8 flex flex-1 flex-col gap-0.5 overflow-y-auto pb-4">
+          <nav className="mt-8 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pb-4">
             {NAV_GROUPS.map((group, gi) => (
               <NavBlock
                 key={group.label ?? `group-${gi}`}
@@ -148,8 +148,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
         </aside>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3 sm:px-6">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <header className="z-30 shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3 sm:px-6">
             <div className="flex flex-wrap items-center gap-3">
               <button
                 className="rounded-xl border border-[var(--border)] p-2 lg:hidden"
@@ -189,7 +189,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </header>
 
           {open && (
-            <div className="border-b border-[var(--ink)] bg-[var(--ink)] px-4 py-3 text-white lg:hidden">
+            <div className="max-h-[40vh] shrink-0 overflow-y-auto border-b border-[var(--primary)] bg-[var(--primary)] px-4 py-3 text-white lg:hidden">
               <nav className="grid gap-0.5">
                 {NAV_GROUPS.map((group, gi) => (
                   <NavBlock
@@ -208,7 +208,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          <main className="relative w-full flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          <main className="relative min-h-0 w-full flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 lg:px-8">
             {children}
           </main>
         </div>
@@ -312,7 +312,7 @@ function NavBlock({
 function Brand({ compact }: { compact?: boolean }) {
   return (
     <Link href="/dashboard" className="flex items-center gap-3" prefetch>
-      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--accent)] text-sm font-bold tracking-wider text-[var(--ink)]">
+      <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--accent)] text-sm font-bold tracking-wider text-white">
         PP
       </span>
       {!compact && (

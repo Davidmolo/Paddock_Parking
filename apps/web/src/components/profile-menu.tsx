@@ -49,7 +49,7 @@ export function ProfileMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--ink)] text-[11px] font-semibold text-[#5eead4]">
+        <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--primary)] text-[11px] font-semibold text-white">
           {initials || "PP"}
         </span>
         <span className="hidden max-w-[120px] truncate font-medium sm:inline">
@@ -69,7 +69,7 @@ export function ProfileMenu() {
           className="absolute right-0 z-50 mt-2 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[0_20px_50px_rgba(11,18,32,0.18)]"
         >
           <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--ink)] text-sm font-semibold text-[#5eead4]">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--primary)] text-sm font-semibold text-white">
               {initials || "PP"}
             </span>
             <div className="min-w-0">

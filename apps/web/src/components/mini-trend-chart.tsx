@@ -11,10 +11,10 @@ export default function MiniTrendChart({
   dark?: boolean;
 }) {
   const chartData = data.map((value, index) => ({ index, value }));
-  const stroke = dark ? "#F5D04A" : "#0a1628";
+  const stroke = dark ? "#ff6b57" : "#0078d4";
   const tipBg = dark ? "#0a1628" : "#f8fafc";
   const tipBorder = dark ? "#1e2d45" : "#d5dee8";
-  const tipColor = dark ? "#F5D04A" : "#0a1628";
+  const tipColor = dark ? "#ff6b57" : "#10283f";
   return (
     <div className={dark ? "h-40 w-full" : "h-16 w-full"}>
       <ResponsiveContainer width="100%" height="100%">
