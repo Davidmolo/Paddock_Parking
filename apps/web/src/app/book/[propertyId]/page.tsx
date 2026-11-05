@@ -16,6 +16,7 @@ import {
 import { endpoints, type LotType } from "@/lib/api";
 import { isValidAbaRouting } from "@/lib/aba-routing";
 import { formatCurrency, cn } from "@/lib/utils";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { isLivePropertyId } from "@/lib/yards";
 
 /**
@@ -777,39 +778,38 @@ export default function BookWizardPage() {
                 required
                 hint="Parking by spot, or storage by acre"
               >
-                <select
-                  className={inputClass}
+                <SelectMenu
+                  ariaLabel="Lease Type"
                   value={form.productType}
-                  onChange={(e) => {
+                  placeholder="Select…"
+                  className={inputClass}
+                  onChange={(next) => {
                     patch(
                       "productType",
-                      e.target.value as FormState["productType"],
+                      next as FormState["productType"],
                     );
                     patch("selectedLotIds", []);
                   }}
-                >
-                  <option value="">Select…</option>
-                  <option value="parking_spot">Parking by spot</option>
-                  <option value="storage_acre">Storage by acre</option>
-                </select>
+                  options={[
+                    { value: "parking_spot", label: "Parking by spot" },
+                    { value: "storage_acre", label: "Storage by acre" },
+                  ]}
+                />
               </Field>
 
               {form.productType === "parking_spot" && (
                 <>
                   <Field label="How many truck spots?" required>
-                    <select
+                    <SelectMenu
+                      ariaLabel="How many truck spots?"
+                      value={String(form.spotCount)}
                       className={inputClass}
-                      value={form.spotCount}
-                      onChange={(e) =>
-                        patch("spotCount", Number(e.target.value))
-                      }
-                    >
-                      {Array.from({ length: 8 }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(next) => patch("spotCount", Number(next))}
+                      options={Array.from({ length: 8 }, (_, i) => {
+                        const n = String(i + 1);
+                        return { value: n, label: n };
+                      })}
+                    />
                   </Field>
                   {form.vehicles.map((v, i) => (
                     <div
@@ -878,19 +878,16 @@ export default function BookWizardPage() {
               {form.productType === "storage_acre" && (
                 <>
                   <Field label="How much storage?" required>
-                    <select
+                    <SelectMenu
+                      ariaLabel="How much storage?"
+                      value={String(form.acreSize)}
                       className={inputClass}
-                      value={form.acreSize}
-                      onChange={(e) =>
-                        patch("acreSize", Number(e.target.value))
-                      }
-                    >
-                      {ACRE_OPTIONS.map((a) => (
-                        <option key={a} value={a}>
-                          {a} acre{a === 1 ? "" : "s"}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(next) => patch("acreSize", Number(next))}
+                      options={ACRE_OPTIONS.map((acres) => ({
+                        value: String(acres),
+                        label: `${acres} acre${acres === 1 ? "" : "s"}`,
+                      }))}
+                    />
                   </Field>
                   <Field
                     label="What will you be storing?"
@@ -1152,19 +1149,18 @@ export default function BookWizardPage() {
                     />
                   </Field>
                   <Field label="Account type">
-                    <select
-                      className={inputClass}
+                    <SelectMenu
+                      ariaLabel="Account type"
                       value={form.accountType}
-                      onChange={(e) =>
-                        patch(
-                          "accountType",
-                          e.target.value as "checking" | "savings",
-                        )
+                      className={inputClass}
+                      onChange={(next) =>
+                        patch("accountType", next as "checking" | "savings")
                       }
-                    >
-                      <option value="checking">Checking</option>
-                      <option value="savings">Savings</option>
-                    </select>
+                      options={[
+                        { value: "checking", label: "Checking" },
+                        { value: "savings", label: "Savings" },
+                      ]}
+                    />
                   </Field>
                 </div>
               )}

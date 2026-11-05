@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import {
   endpoints,
   type CoiStatus,
@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/page-header";
 import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
 import { Card, CardBody } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -503,21 +504,13 @@ function FilterSelect({
   className: string;
 }) {
   return (
-    <label className="relative block">
-      <span className="sr-only">{label}</span>
-      <select
-        className={className}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-label={label}
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
-    </label>
+    <SelectMenu
+      ariaLabel={label}
+      value={value}
+      onChange={onChange}
+      options={options}
+      size="sm"
+      className={className}
+    />
   );
 }

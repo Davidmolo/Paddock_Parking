@@ -9,6 +9,7 @@ import { NAV_GROUPS, NAV_ITEMS, type NavGroup } from "@/lib/nav";
 import { useApp } from "@/components/app-provider";
 import { ProfileMenu } from "@/components/profile-menu";
 import { ScreenTitleProvider } from "@/components/screen-title";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { cn } from "@/lib/utils";
 import { prefetchAllScreens, prefetchScreenData } from "@/lib/prefetch";
 
@@ -195,25 +196,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </h1>
             <div className="flex shrink-0 items-center gap-2">
                 <div className="relative w-40 sm:w-52">
-                  <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
-                  <select
+                  <Building2 className="pointer-events-none absolute left-3 top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
+                  <SelectMenu
+                    ariaLabel="Filter by yard"
                     value={propertyId}
-                    onChange={(e) =>
-                      setPropertyId(
-                        e.target.value === "all" ? "all" : e.target.value,
-                      )
+                    onChange={(next) =>
+                      setPropertyId(next === "all" ? "all" : next)
                     }
-                    className="h-9 w-full max-w-full appearance-none truncate rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-8 pr-8 text-[13px] outline-none transition focus:border-[var(--ink)]"
-                    aria-label="Filter by yard"
-                  >
-                    <option value="all">All yards</option>
-                    {properties.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
+                    size="sm"
+                    className="h-9 pl-8"
+                    options={[
+                      { value: "all", label: "All yards" },
+                      ...properties.map((property) => ({
+                        value: property.id,
+                        label: property.name,
+                      })),
+                    ]}
+                  />
                 </div>
                 <ProfileMenu />
             </div>

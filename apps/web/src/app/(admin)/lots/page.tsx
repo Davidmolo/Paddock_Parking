@@ -16,6 +16,7 @@ import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Segmented } from "@/components/ui/segmented";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -450,14 +451,11 @@ export default function LotsPage() {
                 <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
                   Status
                 </span>
-                <select
-                  className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-sm"
+                <SelectMenu
+                  ariaLabel="Status"
                   value={draftStatus}
-                  onChange={(e) =>
-                    setDraftStatus(e.target.value as LotStatus)
-                  }
-                >
-                  {(
+                  onChange={(next) => setDraftStatus(next as LotStatus)}
+                  options={(
                     [
                       "available",
                       "available_soon",
@@ -465,12 +463,11 @@ export default function LotsPage() {
                       "reserved",
                       "maintenance",
                     ] as LotStatus[]
-                  ).map((s) => (
-                    <option key={s} value={s}>
-                      {statusLabel(s)}
-                    </option>
-                  ))}
-                </select>
+                  ).map((status) => ({
+                    value: status,
+                    label: statusLabel(status),
+                  }))}
+                />
               </label>
 
               <label className="block space-y-1.5">
@@ -543,24 +540,25 @@ export default function LotsPage() {
                 <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
                   Assigned customer
                 </span>
-                <select
-                  className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-sm"
+                <SelectMenu
+                  ariaLabel="Assigned customer"
                   value={draftCustomer}
-                  onChange={(e) => setDraftCustomer(e.target.value)}
-                >
-                  <option value="">Unassigned</option>
-                  {assignableCustomers
-                    .filter(
-                      (c) =>
-                        !selected.propertyId ||
-                        c.propertyId === selected.propertyId,
-                    )
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                </select>
+                  placeholder="Unassigned"
+                  onChange={setDraftCustomer}
+                  options={[
+                    { value: "", label: "Unassigned" },
+                    ...assignableCustomers
+                      .filter(
+                        (customer) =>
+                          !selected.propertyId ||
+                          customer.propertyId === selected.propertyId,
+                      )
+                      .map((customer) => ({
+                        value: customer.id,
+                        label: customer.name,
+                      })),
+                  ]}
+                />
               </label>
 
               {selected.qbItemName && (

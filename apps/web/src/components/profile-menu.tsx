@@ -66,7 +66,7 @@ export function ProfileMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[0_20px_50px_rgba(11,18,32,0.18)]"
+          className="menu-in absolute right-0 z-50 mt-2 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[0_20px_50px_rgba(11,18,32,0.18)]"
         >
           <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--ink)] text-sm font-semibold text-[#5eead4]">

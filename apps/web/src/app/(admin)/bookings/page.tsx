@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Segmented } from "@/components/ui/segmented";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { formatCurrency, cn } from "@/lib/utils";
 
 type Filter = BookingDecision | "all";
@@ -315,41 +316,34 @@ export default function BookingsPage() {
               <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
                 Yard
               </span>
-              <select
-                className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-3"
+              <SelectMenu
+                ariaLabel="Yard"
                 value={assistForm.propertyId}
-                onChange={(e) =>
-                  setAssistForm((f) => ({ ...f, propertyId: e.target.value }))
+                placeholder="Select yard"
+                onChange={(next) =>
+                  setAssistForm((form) => ({ ...form, propertyId: next }))
                 }
-              >
-                <option value="">Select yard</option>
-                {properties.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                options={properties.map((property) => ({
+                  value: property.id,
+                  label: property.name,
+                }))}
+              />
             </label>
             <label className="block space-y-1 text-sm">
               <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
                 Lot type
               </span>
-              <select
-                className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-3"
+              <SelectMenu
+                ariaLabel="Lot type"
                 value={assistForm.lotType}
-                onChange={(e) =>
-                  setAssistForm((f) => ({
-                    ...f,
-                    lotType: e.target.value as LotType,
+                onChange={(next) =>
+                  setAssistForm((form) => ({
+                    ...form,
+                    lotType: next as LotType,
                   }))
                 }
-              >
-                {LOT_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+                options={LOT_TYPES}
+              />
             </label>
             <Field
               label="Company / customer"
@@ -675,19 +669,16 @@ function ProfileDetail({
               <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
                 Assign space (required)
               </span>
-              <select
-                className="h-10 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-3 text-sm"
+              <SelectMenu
+                ariaLabel="Assign space"
                 value={lotId}
-                onChange={(e) => setLotId(e.target.value)}
-              >
-                <option value="">Select lot…</option>
-                {availableLots.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    #{l.number} · {formatCurrency(l.monthlyRate)}/mo ·{" "}
-                    {l.status.replace("_", " ")}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select lot…"
+                onChange={setLotId}
+                options={availableLots.map((lot) => ({
+                  value: lot.id,
+                  label: `#${lot.number} · ${formatCurrency(lot.monthlyRate)}/mo · ${lot.status.replace("_", " ")}`,
+                }))}
+              />
               {availableLots.length === 0 && (
                 <p className="text-xs text-amber-800">
                   No available spaces — free a lot in Inventory first.

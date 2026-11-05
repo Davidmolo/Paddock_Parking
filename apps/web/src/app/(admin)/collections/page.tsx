@@ -17,6 +17,7 @@ import { PageHeader } from "@/components/page-header";
 import { PageTransition } from "@/components/ui/motion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { cn, formatCurrency } from "@/lib/utils";
 
 const STAGES: { key: CollectionStage; label: string }[] = [
@@ -460,21 +461,18 @@ function AgingSection({
             {formatCurrency(account.balance)}
           </td>
           <td className="px-3 py-3 align-top">
-            <select
-              className="h-8 max-w-[11.5rem] rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
+            <SelectMenu
+              ariaLabel={`Stage for ${account.customerName}`}
               value={account.stage}
               disabled={busyId === account.id}
-              onChange={(e) =>
-                onStage(account.id, e.target.value as CollectionStage)
-              }
-              aria-label={`Stage for ${account.customerName}`}
-            >
-              {STAGES.map((s) => (
-                <option key={s.key} value={s.key}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+              onChange={(next) => onStage(account.id, next as CollectionStage)}
+              size="sm"
+              className="max-w-[11.5rem]"
+              options={STAGES.map((stage) => ({
+                value: stage.key,
+                label: stage.label,
+              }))}
+            />
           </td>
           <td className="min-w-[9rem] px-3 py-3 align-top">
             {editingNotes === account.id ? (

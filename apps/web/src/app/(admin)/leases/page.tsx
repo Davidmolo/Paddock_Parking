@@ -18,6 +18,7 @@ import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -339,34 +340,32 @@ function LeaseEditDrawer({
             />
           </Field>
           <Field label="Renewal status">
-            <select
-              className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 text-sm"
+            <SelectMenu
+              ariaLabel="Renewal status"
               value={stage}
-              onChange={(e) => setStage(e.target.value as LeaseStage)}
-            >
-              {LEASE_STAGES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+              onChange={(next) => setStage(next as LeaseStage)}
+              size="lg"
+              options={LEASE_STAGES.map((item) => ({
+                value: item.value,
+                label: item.label,
+              }))}
+            />
           </Field>
           <Field label="Status">
-            <select
-              className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 text-sm"
+            <SelectMenu
+              ariaLabel="Lease status"
               value={status}
-              onChange={(e) =>
-                setStatus(e.target.value as LeaseRecord["status"])
+              onChange={(next) =>
+                setStatus(next as LeaseRecord["status"])
               }
-            >
-              {(["active", "pending", "expired", "terminated"] as const).map(
-                (s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ),
-              )}
-            </select>
+              size="lg"
+              options={(
+                ["active", "pending", "expired", "terminated"] as const
+              ).map((item) => ({
+                value: item,
+                label: item,
+              }))}
+            />
           </Field>
           {lease.direction === "landlord" && (
             <>

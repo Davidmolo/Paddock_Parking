@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Segmented } from "@/components/ui/segmented";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { cn, formatCurrency } from "@/lib/utils";
 
 type MethodFilter = InvoiceCollectionMethod | "all";
@@ -177,21 +178,13 @@ export default function InvoicesPage() {
             />
 
             <div className="flex items-center gap-2">
-              <label htmlFor="invoice-status" className="sr-only">
-                Status
-              </label>
-              <select
-                id="invoice-status"
+              <SelectMenu
+                ariaLabel="Status"
                 value={status}
-                onChange={(e) => setStatus(e.target.value as StatusFilter)}
-                className="h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
-              >
-                {STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(next) => setStatus(next as StatusFilter)}
+                options={STATUS_OPTIONS}
+                className="w-40"
+              />
               <p className="hidden text-sm text-[var(--muted)] sm:block">
                 {rows.length} shown
               </p>

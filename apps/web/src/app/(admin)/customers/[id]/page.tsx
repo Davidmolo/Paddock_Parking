@@ -14,6 +14,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 
@@ -423,19 +424,16 @@ export default function CustomerDetailPage() {
                 <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
                   Renewal status
                 </span>
-                <select
-                  className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm outline-none focus:border-[var(--accent)]"
+                <SelectMenu
+                  ariaLabel="Renewal status"
                   value={leaseStage}
-                  onChange={(e) =>
-                    setLeaseStage(e.target.value as LeaseStage)
-                  }
-                >
-                  {LEASE_STAGES.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(next) => setLeaseStage(next as LeaseStage)}
+                  size="lg"
+                  options={LEASE_STAGES.map((item) => ({
+                    value: item.value,
+                    label: item.label,
+                  }))}
+                />
               </label>
               <Button
                 size="sm"
