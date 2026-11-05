@@ -204,7 +204,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       setPropertyId(next === "all" ? "all" : next)
                     }
                     size="sm"
-                    className="h-9 pl-8"
+                    className="h-10 pl-8"
                     options={[
                       { value: "all", label: "All yards" },
                       ...properties.map((property) => ({
@@ -291,7 +291,7 @@ function NavBlock({
           <span className="min-w-0 flex-1 truncate">{group.label}</span>
           <ChevronDown
             className={cn(
-              "h-4 w-4 shrink-0 text-white/45 transition-transform duration-200",
+              "relative -top-px h-4 w-4 shrink-0 text-white/45 transition-transform duration-200",
               isOpen ? "rotate-0" : "-rotate-90",
             )}
           />

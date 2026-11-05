@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, UserRound } from "lucide-react";
 import { useApp } from "@/components/app-provider";
+import { usePresence } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
 
 export function ProfileMenu() {
   const { user, logout } = useApp();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const menuOn = usePresence(open, 140);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,16 +59,19 @@ export function ProfileMenu() {
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-[var(--muted)] transition",
+            "relative -top-px h-4 w-4 text-[var(--muted)] transition-transform duration-200",
             open && "rotate-180",
           )}
         />
       </button>
 
-      {open && (
+      {menuOn.mounted && (
         <div
           role="menu"
-          className="menu-in absolute right-0 z-50 mt-2 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[0_20px_50px_rgba(11,18,32,0.18)]"
+          className={cn(
+            "absolute right-0 z-50 mt-2 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[0_20px_50px_rgba(11,18,32,0.18)]",
+            menuOn.leaving ? "menu-out pointer-events-none" : "menu-in",
+          )}
         >
           <div className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3">
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--ink)] text-sm font-semibold text-[#5eead4]">

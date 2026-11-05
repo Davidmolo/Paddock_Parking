@@ -238,7 +238,7 @@ export default function CustomersPage() {
         <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
           <Input
-            className="h-10 pl-10"
+            className="pl-10"
             placeholder="Search company, contact, email…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -498,7 +498,6 @@ function FilterSelect({
       value={value}
       onChange={onChange}
       options={options}
-      className="h-10"
     />
   );
 }

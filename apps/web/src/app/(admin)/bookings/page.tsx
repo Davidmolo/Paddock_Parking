@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
@@ -15,7 +15,7 @@ import {
 import { propertyParam, queryKeys } from "@/lib/prefetch";
 import { useApp } from "@/components/app-provider";
 import { PageHeader } from "@/components/page-header";
-import { PageTransition } from "@/components/ui/motion";
+import { PageTransition, usePresence } from "@/components/ui/motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,6 +77,14 @@ export default function BookingsPage() {
   });
 
   const selected = data?.find((b) => b.id === selectedId) ?? null;
+  const profileHold = useRef(selected);
+  if (selected) profileHold.current = selected;
+  const profileOn = usePresence(Boolean(selected), 180);
+  const profile = selected ?? profileHold.current;
+  const assistOn = usePresence(showAssist, 160);
+  const flashOn = usePresence(Boolean(flash), 160);
+  const flashHold = useRef(flash);
+  if (flash) flashHold.current = flash;
 
   const { data: lots } = useQuery({
     queryKey: queryKeys.lots(selected?.propertyId ?? propertyId),
@@ -281,12 +289,12 @@ export default function BookingsPage() {
         }
       />
 
-      {flash && (
-        <div className="mb-4 flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-950">
-          <p>{flash}</p>
+      {flashOn.mounted && flashHold.current && (
+        <div className={cn("mb-4 flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-950", flashOn.leaving ? "fade-out" : "fade-in")}>
+          <p>{flashHold.current}</p>
           <button
             type="button"
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-emerald-800/70 hover:bg-emerald-100 hover:text-emerald-950"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-emerald-800/70 transition-colors duration-150 hover:bg-emerald-100 hover:text-emerald-950"
             onClick={() => setFlash("")}
             aria-label="Dismiss"
           >
@@ -295,11 +303,11 @@ export default function BookingsPage() {
         </div>
       )}
 
-      {showAssist && (
-        <div className="relative mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+      {assistOn.mounted && (
+        <div className={cn("relative mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4", assistOn.leaving ? "fade-out" : "fade-in")}>
           <button
             type="button"
-            className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"
+            className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-lg text-[var(--muted)] transition-colors duration-150 hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"
             onClick={() => setShowAssist(false)}
             aria-label="Close assist"
           >
@@ -492,14 +500,19 @@ export default function BookingsPage() {
 
           {/* FMS detail / decide panel */}
           <aside className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] lg:sticky lg:top-4 lg:self-start">
-            {!selected ? (
-              <p className="px-5 py-16 text-center text-sm text-[var(--muted)]">
+            {!profileOn.mounted || !profile ? (
+              <p className="fade-in px-5 py-16 text-center text-sm text-[var(--muted)]">
                 Select a profile to review and decide.
               </p>
             ) : (
-              <div key={selected.id} className="panel-in">
+              <div
+                key={profile.id}
+                className={cn(
+                  profileOn.leaving ? "panel-out pointer-events-none" : "panel-in",
+                )}
+              >
               <ProfileDetail
-                booking={selected}
+                booking={profile}
                 availableLots={availableLots}
                 lotId={lotId}
                 setLotId={setLotId}
@@ -511,11 +524,11 @@ export default function BookingsPage() {
                 deciding={decide.isPending}
                 onDecide={(decision) => {
                   setFormError("");
-                  decide.mutate({ id: selected.id, decision });
+                  decide.mutate({ id: profile.id, decision });
                 }}
-                onWaive={() => waive.mutate(selected.id)}
-                onRestore={() => restore.mutate(selected.id)}
-                onInvite={() => invite.mutate(selected.id)}
+                onWaive={() => waive.mutate(profile.id)}
+                onRestore={() => restore.mutate(profile.id)}
+                onInvite={() => invite.mutate(profile.id)}
                 inviting={invite.isPending}
                 onClose={() => setSelectedId(null)}
               />
@@ -593,7 +606,7 @@ function ProfileDetail({
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--muted)] transition-colors duration-150 hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"
         >
           <X className="h-4 w-4" />
         </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Grid3X3, Map, X } from "lucide-react";
 import {
@@ -11,7 +11,7 @@ import {
 import { propertyParam, queryKeys } from "@/lib/prefetch";
 import { useApp } from "@/components/app-provider";
 import { PageHeader } from "@/components/page-header";
-import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
+import { PageTransition, Stagger, StaggerItem, usePresence } from "@/components/ui/motion";
 import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -107,6 +107,10 @@ export default function LotsPage() {
     [data],
   );
   const selected = lots.find((l) => l.id === selectedId) ?? null;
+  const lotHold = useRef(selected);
+  if (selected) lotHold.current = selected;
+  const lotOn = usePresence(Boolean(selected), 180);
+  const lot = selected ?? lotHold.current;
 
   const activePlan = useMemo(() => {
     const fromTab = SITE_PLAN_OPTIONS.find((o) => o.propertyId === mapYardId);
@@ -413,17 +417,23 @@ export default function LotsPage() {
         </>
       ) : null}
 
-      {selected && (
+      {lotOn.mounted && lot && (
         <div
-          className="fixed inset-0 z-50 flex justify-end bg-black/30"
+          className={cn(
+            "fixed inset-0 z-50 flex justify-end bg-black/30",
+            lotOn.leaving ? "fade-out" : "fade-in",
+          )}
           role="presentation"
           onClick={() => setSelectedId(null)}
         >
           <div
             role="dialog"
             aria-modal="true"
-            aria-label={`Manage lot ${selected.number}`}
-            className="flex h-full w-full max-w-md flex-col bg-[var(--surface)] shadow-2xl"
+            aria-label={`Manage lot ${lot.number}`}
+            className={cn(
+              "flex h-full w-full max-w-md flex-col bg-[var(--surface)] shadow-2xl",
+              lotOn.leaving ? "drawer-out pointer-events-none" : "drawer-in",
+            )}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
@@ -431,10 +441,10 @@ export default function LotsPage() {
                 <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
                   Manage lot
                 </p>
-                <h2 className="text-xl font-semibold">#{selected.number}</h2>
+                <h2 className="text-xl font-semibold">#{lot.number}</h2>
                 <p className="text-sm text-[var(--muted)]">
-                  {selected.lotTypeLabel} · {selected.size}
-                  {selected.acres != null ? ` · ${selected.acres} ac` : ""}
+                  {lot.lotTypeLabel} · {lot.size}
+                  {lot.acres != null ? ` · ${lot.acres} ac` : ""}
                 </p>
               </div>
               <Button
@@ -501,7 +511,7 @@ export default function LotsPage() {
               {(draftStatus === "available_soon" ||
                 draftStatus === "occupied" ||
                 draftStatus === "reserved") &&
-                selected.customerName && (
+                lot.customerName && (
                   <p className="rounded-xl bg-[var(--surface-muted)] px-3 py-2 text-sm">
                     <span className="text-[var(--muted)]">
                       {draftStatus === "available_soon"
@@ -509,14 +519,14 @@ export default function LotsPage() {
                         : "Tenant"}
                       :{" "}
                     </span>
-                    <span className="font-medium">{selected.customerName}</span>
+                    <span className="font-medium">{lot.customerName}</span>
                   </p>
                 )}
 
-              {draftStatus === "available" && selected.lastTenantName && (
+              {draftStatus === "available" && lot.lastTenantName && (
                 <p className="rounded-xl bg-[var(--surface-muted)] px-3 py-2 text-sm">
                   <span className="text-[var(--muted)]">Last tenant: </span>
-                  <span className="font-medium">{selected.lastTenantName}</span>
+                  <span className="font-medium">{lot.lastTenantName}</span>
                 </p>
               )}
 
@@ -550,8 +560,8 @@ export default function LotsPage() {
                     ...assignableCustomers
                       .filter(
                         (customer) =>
-                          !selected.propertyId ||
-                          customer.propertyId === selected.propertyId,
+                          !lot.propertyId ||
+                          customer.propertyId === lot.propertyId,
                       )
                       .map((customer) => ({
                         value: customer.id,
@@ -561,9 +571,9 @@ export default function LotsPage() {
                 />
               </label>
 
-              {selected.qbItemName && (
+              {lot.qbItemName && (
                 <p className="text-xs text-[var(--muted)]">
-                  QuickBooks item: {selected.qbItemName}
+                  QuickBooks item: {lot.qbItemName}
                 </p>
               )}
             </div>

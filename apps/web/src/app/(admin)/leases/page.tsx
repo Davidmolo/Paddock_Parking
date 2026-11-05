@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
@@ -13,7 +13,7 @@ import {
 import { propertyParam, queryKeys } from "@/lib/prefetch";
 import { useApp } from "@/components/app-provider";
 import { PageHeader } from "@/components/page-header";
-import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
+import { PageTransition, Stagger, StaggerItem, usePresence } from "@/components/ui/motion";
 import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,10 @@ export default function LeasesPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("renewals");
   const [editing, setEditing] = useState<LeaseRecord | null>(null);
+  const leaseHold = useRef(editing);
+  if (editing) leaseHold.current = editing;
+  const editOn = usePresence(Boolean(editing), 180);
+  const leaseShown = editing ?? leaseHold.current;
 
   const { data: summary, isPending: summaryPending } = useQuery({
     queryKey: queryKeys.leaseSummary(propertyId),
@@ -130,9 +134,10 @@ export default function LeasesPage() {
         </Stagger>
       )}
 
-      {editing && (
+      {editOn.mounted && leaseShown && (
         <LeaseEditDrawer
-          lease={editing}
+          lease={leaseShown}
+          leaving={editOn.leaving}
           onClose={() => setEditing(null)}
           onSaved={() => {
             void queryClient.invalidateQueries({ queryKey: ["leases"] });
@@ -244,10 +249,12 @@ function LeaseCard({
 
 function LeaseEditDrawer({
   lease,
+  leaving,
   onClose,
   onSaved,
 }: {
   lease: LeaseRecord;
+  leaving?: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -288,8 +295,8 @@ function LeaseEditDrawer({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/30">
-      <div className="flex h-full w-full max-w-md flex-col bg-[var(--surface)] shadow-2xl">
+    <div className={cn("fixed inset-0 z-50 flex justify-end bg-black/30", leaving ? "fade-out" : "fade-in")}>
+      <div className={cn("flex h-full w-full max-w-md flex-col bg-[var(--surface)] shadow-2xl", leaving ? "drawer-out pointer-events-none" : "drawer-in")}>
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
           <div>
             <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">

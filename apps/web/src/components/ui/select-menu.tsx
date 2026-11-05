@@ -48,7 +48,7 @@ function measure(trigger: HTMLElement): MenuPos | null {
 
 const sizes = {
   sm: "h-8 px-2 text-xs",
-  md: "h-10 px-3 text-sm",
+  md: "h-11 px-3.5 text-sm",
   lg: "h-11 px-3.5 text-sm",
 };
 
@@ -77,6 +77,7 @@ export function SelectMenu({
   const listRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [pos, setPos] = useState<MenuPos | null>(null);
@@ -97,6 +98,16 @@ export function SelectMenu({
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
+    if (!closing) return;
+    const timer = window.setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+      setQuery("");
+    }, 140);
+    return () => window.clearTimeout(timer);
+  }, [closing]);
+
+  useEffect(() => {
     if (!open) return;
     const frame = requestAnimationFrame(() => searchRef.current?.focus());
     return () => cancelAnimationFrame(frame);
@@ -110,6 +121,7 @@ export function SelectMenu({
       const next = measure(trigger);
       if (!next) {
         setOpen(false);
+        setClosing(false);
         return;
       }
       setPos((current) => {
@@ -141,10 +153,10 @@ export function SelectMenu({
       const target = event.target as Node;
       if (triggerRef.current?.contains(target)) return;
       if (menuRef.current?.contains(target)) return;
-      setOpen(false);
+      setClosing(true);
     }
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") setClosing(true);
     }
     document.addEventListener("mousedown", onPointer);
     document.addEventListener("keydown", onKey);
@@ -218,7 +230,7 @@ export function SelectMenu({
     ignoreTrigger.current = true;
     onChange(next);
     setQuery("");
-    setOpen(false);
+    setClosing(true);
     window.setTimeout(() => {
       chosen.current = false;
       ignoreTrigger.current = false;
@@ -245,7 +257,11 @@ export function SelectMenu({
   function toggle() {
     if (disabled || ignoreTrigger.current) return;
     setOpen((current) => {
-      if (current) return false;
+      if (current) {
+        setClosing(true);
+        return current;
+      }
+      setClosing(false);
       setQuery("");
       setMotionOn(false);
       return true;
@@ -260,7 +276,10 @@ export function SelectMenu({
             id={`${id}-menu`}
             role="listbox"
             aria-label={ariaLabel}
-            className="menu-in fixed z-[80] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[0_18px_40px_rgba(10,22,40,0.16)]"
+            className={cn(
+              "fixed z-[80] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[0_18px_40px_rgba(10,22,40,0.16)]",
+              closing ? "menu-out pointer-events-none" : "menu-in",
+            )}
             style={{
               top: pos.top,
               bottom: pos.bottom,
