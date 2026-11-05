@@ -17,9 +17,9 @@ export function Card({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]",
+        "group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]",
         interactive &&
-          "transition-[transform,box-shadow] duration-150 will-change-transform hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)]",
+          "transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-px hover:shadow-[var(--shadow-card-hover)]",
         glow &&
           "before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_right,rgba(13,148,136,0.12),transparent_45%)]",
         className,
@@ -41,7 +41,7 @@ export function CardHeader({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-4 sm:px-5",
+        "flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-3.5 py-2.5 sm:px-4",
         className,
       )}
     >
@@ -57,5 +57,5 @@ export function CardBody({
   className?: string;
   children: React.ReactNode;
 }) {
-  return <div className={cn("p-4 sm:p-5", className)}>{children}</div>;
+  return <div className={cn("p-3.5 sm:p-4", className)}>{children}</div>;
 }

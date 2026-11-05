@@ -227,7 +227,7 @@ export default function CustomersPage() {
   ]);
 
   const selectClass =
-    "h-11 w-full appearance-none rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 pr-9 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]";
+    "h-9 w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 pr-8 text-[13px] text-[var(--ink)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--accent-soft)]";
 
   return (
     <PageTransition>
@@ -412,25 +412,16 @@ export default function CustomersPage() {
           </Stagger>
 
           <div className="hidden overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] md:block">
-            <table className="w-full min-w-[720px] table-fixed border-collapse text-left text-sm">
-              <colgroup>
-                <col className="w-[26%]" />
-                <col className="w-[14%]" />
-                <col className="w-[10%]" />
-                <col className="w-[10%]" />
-                <col className="w-[10%]" />
-                <col className="w-[12%]" />
-                <col className="w-[18%]" />
-              </colgroup>
+            <table className="w-full min-w-[860px] border-collapse text-left text-[13px]">
               <thead>
-                <tr className="border-b border-[var(--border)] bg-[var(--surface-muted)] text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                  <th className="px-4 py-3 font-semibold">Customer</th>
-                  <th className="px-3 py-3 font-semibold">Yard / lots</th>
-                  <th className="px-3 py-3 font-semibold">Added</th>
-                  <th className="px-3 py-3 font-semibold">Balance</th>
-                  <th className="px-3 py-3 font-semibold">Deposit</th>
-                  <th className="px-3 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Gaps</th>
+                <tr className="border-b border-[var(--border)] bg-[var(--surface-muted)] text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">Customer</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">Yard / lots</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">Added</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">Balance</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">Deposit</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">Status</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold">Gaps</th>
                 </tr>
               </thead>
               <tbody>
@@ -443,14 +434,14 @@ export default function CustomersPage() {
                   return (
                     <tr
                       key={customer.id}
-                      className="border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--surface-muted)]/60"
+                      className="border-b border-[var(--border)] transition-colors duration-150 last:border-b-0 hover:bg-[var(--accent-soft)]"
                     >
-                      <td className="px-4 py-3 align-top">
+                      <td className="max-w-[16rem] px-3 py-2 align-middle">
                         <Link
                           href={`/customers/${customer.id}`}
                           className="block"
                         >
-                          <p className="font-semibold text-[var(--ink)]">
+                          <p className="truncate font-medium text-[var(--ink)]">
                             {customer.name}
                           </p>
                           <p className="truncate text-xs text-[var(--muted)]">
@@ -458,30 +449,30 @@ export default function CustomersPage() {
                           </p>
                         </Link>
                       </td>
-                      <td className="px-3 py-3 align-top">
+                      <td className="whitespace-nowrap px-3 py-2 align-middle">
                         <p>{yard?.name ?? "—"}</p>
                         <p className="truncate text-xs text-[var(--muted)]">
                           Lots: {customer.lotNumbers.join(", ") || "—"}
                         </p>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 align-top tabular-nums">
+                      <td className="whitespace-nowrap px-3 py-2 align-middle tabular-nums">
                         {added}
                       </td>
                       <td
                         className={cn(
-                          "whitespace-nowrap px-3 py-3 align-top font-semibold tabular-nums",
+                          "whitespace-nowrap px-3 py-2 align-middle font-semibold tabular-nums",
                           customer.balanceDue > 0 && "text-rose-600",
                         )}
                       >
                         {formatCurrency(customer.balanceDue)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 align-top font-medium tabular-nums">
+                      <td className="whitespace-nowrap px-3 py-2 align-middle font-medium tabular-nums">
                         {formatCurrency(customer.securityDeposit)}
                       </td>
-                      <td className="px-3 py-3 align-top">
+                      <td className="whitespace-nowrap px-3 py-2 align-middle">
                         <StatusCell status={customer.paymentStatus} />
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="whitespace-nowrap px-3 py-2 align-middle">
                         <GapsCell gaps={gaps} />
                       </td>
                     </tr>

@@ -273,9 +273,9 @@ function Stat({
   icon: ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="flex h-full min-h-[7.25rem] flex-col rounded-2xl bg-[var(--ink)] p-4 text-white shadow-[var(--shadow-card)]">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/55">
+    <div className="flex h-full flex-col rounded-xl bg-[var(--ink)] px-3.5 py-3 text-white shadow-[var(--shadow-card)]">
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-[12px] font-medium text-white/70">
           {label}
         </p>
         <Icon
@@ -287,7 +287,7 @@ function Stat({
       </div>
       <p
         className={cn(
-          "mt-auto pt-3 text-2xl font-semibold tracking-tight tabular-nums",
+          "mt-2 text-lg font-semibold tracking-tight tabular-nums",
           danger ? "text-[var(--danger)]" : "text-[var(--accent)]",
         )}
       >
@@ -309,8 +309,8 @@ function Money({
   danger?: boolean;
 }) {
   return (
-    <div className="flex min-h-[5.25rem] flex-col rounded-xl bg-[var(--ink)] px-3 py-2.5 text-white">
-      <p className="line-clamp-2 text-[10px] font-semibold uppercase leading-tight tracking-[0.1em] text-white/55">
+    <div className="flex min-w-0 flex-col rounded-lg bg-[var(--ink)] px-2.5 py-2 text-white">
+      <p className="truncate text-[11px] font-medium text-white/70">
         {label}
       </p>
       <p
@@ -321,7 +321,7 @@ function Money({
       >
         {value}
       </p>
-      <p className="mt-auto pt-1 text-[11px] leading-snug text-white/45">
+      <p className="mt-1 truncate text-[11px] text-white/50">
         {hint ? hint : "\u00a0"}
       </p>
     </div>

@@ -16,19 +16,16 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6",
+        "mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-ink)]">
-          Paddock Parking
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+        <h1 className="truncate text-xl font-semibold tracking-tight text-[var(--ink)] sm:text-2xl">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
+          <p className="mt-0.5 max-w-3xl text-[13px] leading-5 text-[var(--muted)]">
             {subtitle}
           </p>
         )}

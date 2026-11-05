@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { Menu, X, Building2, ChevronDown } from "lucide-react";
+import { Menu, X, Building2, ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { NAV_GROUPS, NAV_ITEMS, type NavGroup } from "@/lib/nav";
 import { useApp } from "@/components/app-provider";
@@ -30,6 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const { user, ready, properties, propertyId, setPropertyId } = useApp();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [, startTransition] = useTransition();
   const warmed = useRef(false);
 
@@ -53,6 +54,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return next;
     });
   }, [defaultOpen]);
+
+  useEffect(() => {
+    setCollapsed(window.localStorage.getItem("pp_sidebar") === "1");
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((value) => {
+      const next = !value;
+      window.localStorage.setItem("pp_sidebar", next ? "1" : "0");
+      return next;
+    });
+  }
 
   /**
    * Public (no admin auth):
@@ -130,9 +143,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="relative flex h-full min-h-0 w-full">
-        <aside className="hidden h-full w-64 shrink-0 flex-col bg-[var(--primary)] px-4 py-5 text-white lg:flex">
-          <Brand />
-          <nav className="mt-8 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pb-4">
+        <aside
+          className={cn(
+            "hidden h-full shrink-0 flex-col bg-[var(--primary)] py-4 text-white transition-[width,padding] duration-200 ease-out lg:flex",
+            collapsed ? "w-[4.25rem] px-2" : "w-56 px-3",
+          )}
+        >
+          <Brand compact={collapsed} />
+          <nav className="mt-6 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden pb-3">
             {NAV_GROUPS.map((group, gi) => (
               <NavBlock
                 key={group.label ?? `group-${gi}`}
@@ -140,12 +158,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 gi={gi}
                 pathname={pathname}
                 expanded={expanded}
+                collapsed={collapsed}
                 onToggle={toggleGroup}
                 warmRoute={warmRoute}
                 startTransition={startTransition}
               />
             ))}
           </nav>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="mt-2 inline-flex h-9 items-center justify-center gap-2 rounded-lg px-2.5 text-[13px] font-medium text-white/80 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="h-4 w-4" />
+            ) : (
+              <>
+                <PanelLeftClose className="h-4 w-4" />
+                <span>Collapse</span>
+              </>
+            )}
+          </button>
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -171,7 +205,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         e.target.value === "all" ? "all" : e.target.value,
                       )
                     }
-                    className="h-10 w-full max-w-full appearance-none truncate rounded-xl border border-[var(--border)] bg-[var(--surface)] pl-9 pr-9 text-sm outline-none transition focus:border-[var(--accent)]"
+                    className="h-9 w-full max-w-full appearance-none truncate rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-8 pr-8 text-[13px] outline-none transition focus:border-[var(--primary)]"
                     aria-label="Filter by yard"
                   >
                     <option value="all">All yards</option>
@@ -208,7 +242,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          <main className="relative min-h-0 w-full flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 lg:px-8">
+          <main className="relative min-h-0 w-full flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
             {children}
           </main>
         </div>
@@ -218,12 +252,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 const navBtnClass =
-  "flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors duration-100";
+  "flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors duration-200 ease-out";
 
 function NavBlock({
   group,
   pathname,
   expanded,
+  collapsed = false,
   onToggle,
   warmRoute,
   startTransition,
@@ -232,18 +267,19 @@ function NavBlock({
   gi: number;
   pathname: string;
   expanded: Set<string>;
+  collapsed?: boolean;
   onToggle: (label: string) => void;
   warmRoute: (href: string) => void;
   startTransition: (cb: () => void) => void;
   mobile?: boolean;
 }) {
   const expandable = Boolean(group.expandable && group.label);
-  const isOpen = !expandable || expanded.has(group.label!);
+  const isOpen = collapsed || !expandable || expanded.has(group.label!);
   const GroupIcon = group.icon;
 
   return (
     <section className="flex min-w-0 flex-col gap-0.5">
-      {expandable ? (
+      {expandable && !collapsed ? (
         <button
           type="button"
           onClick={() => onToggle(group.label!)}
@@ -274,7 +310,7 @@ function NavBlock({
           <div
             className={cn(
               "flex flex-col gap-0.5",
-              expandable && "ml-4 border-l border-white/15 pl-2",
+              expandable && !collapsed && "ml-3 border-l border-white/15 pl-2",
             )}
           >
             {group.items.map((item) => {
@@ -285,6 +321,7 @@ function NavBlock({
                   key={item.href + item.label}
                   href={item.href}
                   prefetch
+                  title={item.label}
                   onMouseEnter={() => warmRoute(item.href)}
                   onFocus={() => warmRoute(item.href)}
                   onClick={() => {
@@ -292,13 +329,16 @@ function NavBlock({
                   }}
                   className={cn(
                     navBtnClass,
+                    collapsed && "justify-center px-0",
                     active
                       ? "border-l-2 border-[var(--accent)] bg-white/10 font-semibold text-white"
-                      : "border-l-2 border-transparent text-white/60 hover:bg-white/10 hover:text-white",
+                      : "border-l-2 border-transparent text-white/70 hover:bg-white/10 hover:text-white",
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0 text-current" />
-                  <span className="truncate text-current">{item.label}</span>
+                  {!collapsed && (
+                    <span className="truncate text-current">{item.label}</span>
+                  )}
                 </Link>
               );
             })}
