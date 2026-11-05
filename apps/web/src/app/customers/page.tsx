@@ -230,7 +230,7 @@ export default function CustomersPage() {
     "h-9 w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 pr-8 text-[13px] text-[var(--ink)] outline-none transition focus:border-[var(--ink)] focus:ring-4 focus:ring-[var(--accent-soft)]";
 
   return (
-    <PageTransition className="overflow-hidden">
+    <PageTransition>
       <PageHeader
         title="Customers"
         subtitle="Newest first. Gaps replace COI — see COI, plates, and lease missing in one column."
@@ -349,7 +349,7 @@ export default function CustomersPage() {
             customers
           </p>
 
-          <div className="min-h-0 flex-1 overflow-auto overscroll-none">
+          <div className="min-h-[280px] flex-1 overflow-auto overscroll-none">
           <Stagger className="grid gap-3 md:hidden">
             {filtered.map(({ customer, gaps }) => {
               const yard = properties.find((p) => p.id === customer.propertyId);

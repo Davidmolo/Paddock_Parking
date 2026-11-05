@@ -235,7 +235,7 @@ export default function LotsPage() {
   }, [lots, customers]);
 
   return (
-    <PageTransition className="overflow-hidden">
+    <PageTransition>
       <PageHeader
         title="Inventory"
         subtitle="Yard site plans with live occupancy — hover for details, click a space to update status, rate, or tenant."
@@ -311,7 +311,7 @@ export default function LotsPage() {
         <Skeleton className="h-[min(62vh,560px)] min-h-[420px] w-full rounded-2xl" />
       ) : data ? (
         <>
-          <div className={cn("flex min-h-0 flex-1 flex-col gap-3", view !== "map" && "hidden")}>
+          <div className={cn("flex min-h-[520px] flex-1 flex-col gap-3", view !== "map" && "hidden")}>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div className="flex flex-wrap gap-2">
                 {SITE_PLAN_OPTIONS.map((opt) => (
@@ -364,7 +364,7 @@ export default function LotsPage() {
               }}
             />
           </div>
-          <div className={cn("min-h-0 flex-1 overflow-auto overscroll-none", view !== "grid" && "hidden")}>
+          <div className={cn(view !== "grid" && "hidden")}>
           <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
             {visible.map((lot) => {
               const yard = properties.find((p) => p.id === lot.propertyId);
