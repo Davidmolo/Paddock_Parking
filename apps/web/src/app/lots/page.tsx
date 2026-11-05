@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { Grid3X3, Map, X } from "lucide-react";
 import {
   endpoints,
   type Lot,
@@ -235,18 +235,19 @@ export default function LotsPage() {
   }, [lots, customers]);
 
   return (
-    <PageTransition className={view === "map" ? "overflow-hidden" : undefined}>
+    <PageTransition className="overflow-hidden">
       <PageHeader
         title="Inventory"
         subtitle="Yard site plans with live occupancy — hover for details, click a space to update status, rate, or tenant."
         action={
           <Segmented
             ariaLabel="Inventory view"
+            thumb="elevated"
             value={view}
             onChange={setView}
             options={[
-              { value: "map", label: "Site plan" },
-              { value: "grid", label: "Grid" },
+              { value: "map", label: "Site plan", icon: <Map className="h-4 w-4" aria-hidden /> },
+              { value: "grid", label: "Grid", icon: <Grid3X3 className="h-4 w-4" aria-hidden /> },
             ]}
           />
         }
@@ -309,8 +310,8 @@ export default function LotsPage() {
       {isPending && !data ? (
         <Skeleton className="h-[min(62vh,560px)] min-h-[420px] w-full rounded-2xl" />
       ) : data ? (
-        view === "map" ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <>
+          <div className={cn("flex min-h-0 flex-1 flex-col gap-3", view !== "map" && "hidden")}>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div className="flex flex-wrap gap-2">
                 {SITE_PLAN_OPTIONS.map((opt) => (
@@ -363,7 +364,7 @@ export default function LotsPage() {
               }}
             />
           </div>
-        ) : (
+          <div className={cn("min-h-0 flex-1 overflow-auto overscroll-none", view !== "grid" && "hidden")}>
           <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
             {visible.map((lot) => {
               const yard = properties.find((p) => p.id === lot.propertyId);
@@ -407,7 +408,8 @@ export default function LotsPage() {
               );
             })}
           </Stagger>
-        )
+          </div>
+        </>
       ) : null}
 
       {selected && (
