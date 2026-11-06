@@ -127,6 +127,78 @@ export class CustomersService {
     };
   }
 
+  portalHome(email: string) {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized.includes('@')) {
+      throw new BadRequestException('Email is required.');
+    }
+    const customer = this.store.customers.find(
+      (c) => c.email.toLowerCase() === normalized,
+    );
+    if (!customer) {
+      throw new NotFoundException('No customer found for that email.');
+    }
+    const property = this.store.properties.find(
+      (p) => p.id === customer.propertyId,
+    );
+    const lots = this.store.lots.filter((lot) =>
+      customer.lotIds.includes(lot.id),
+    );
+    const lease = this.store.leases.find(
+      (item) =>
+        item.direction === 'tenant' && item.customerId === customer.id,
+    );
+    const booking =
+      this.store.bookings.find((item) => item.customerId === customer.id) ??
+      this.store.bookings.find(
+        (item) => item.email.toLowerCase() === normalized,
+      );
+    const bookingLot = booking?.lotId
+      ? this.store.lots.find((lot) => lot.id === booking.lotId)
+      : undefined;
+    const spaceLots = bookingLot
+      ? [...lots, bookingLot].filter(
+          (lot, index, all) => all.findIndex((item) => item.id === lot.id) === index,
+        )
+      : lots;
+    const monthlyRate =
+      lease?.monthlyRent ??
+      booking?.monthlyRate ??
+      (spaceLots.length
+        ? spaceLots.reduce((sum, lot) => sum + lot.monthlyRate, 0)
+        : null);
+
+    return {
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      gateCode: customer.gateCode,
+      yardName: property?.name ?? '',
+      yardAddress: property
+        ? `${property.address}, ${property.city}`
+        : '',
+      monthlyRate,
+      spaces: spaceLots.map((lot) => lot.number),
+      leaseStart: lease?.startDate ?? customer.leaseStart ?? booking?.leaseStart ?? '',
+      booking: booking
+        ? {
+            reference: booking.id,
+            companyName: booking.customerName,
+            bookedOn: booking.createdAt,
+            spaceType: LOT_TYPE_LABELS[booking.lotType],
+            spotCount: booking.spotCount ?? null,
+            acreSize: booking.acreSize ?? null,
+            storing: booking.storageDescription ?? '',
+            leaseStart: booking.leaseStart ?? '',
+            monthlyRate: booking.monthlyRate ?? null,
+            paymentMethod: booking.paymentMethod ?? '',
+            decision: booking.decision ?? 'pending',
+            vehicles: booking.vehicles ?? [],
+          }
+        : null,
+    };
+  }
+
   async portalResetPassword(body: { email: string }) {
     const email = body.email.trim().toLowerCase();
     const quiet = {

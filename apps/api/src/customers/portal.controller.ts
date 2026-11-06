@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 import { CustomersService } from './customers.service.js';
 
@@ -35,6 +35,11 @@ export class PortalController {
   @Post('login')
   login(@Body() dto: PortalLoginDto) {
     return this.customersService.portalLogin(dto);
+  }
+
+  @Get('home')
+  home(@Query('email') email = '') {
+    return this.customersService.portalHome(email);
   }
 
   @Post('set-password')

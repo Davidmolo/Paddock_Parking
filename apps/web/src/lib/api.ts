@@ -1,3 +1,5 @@
+import type { PortalHome } from "@/app/portal/types";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001";
 
 export class ApiError extends Error {
@@ -593,6 +595,10 @@ export const endpoints = {
     }),
   inviteBookingPortal: (id: string) =>
     api<Booking>(`/bookings/${id}/invite-portal`, { method: "POST" }),
+  portalHome: (email: string) =>
+    api<PortalHome>(
+      `/portal/home?email=${encodeURIComponent(email)}`,
+    ),
   portalLogin: (body: { email: string; password: string }) =>
     api<{
       ok: boolean;
