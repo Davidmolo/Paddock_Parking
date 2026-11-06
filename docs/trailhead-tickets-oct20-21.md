@@ -7,7 +7,7 @@ Upload lease & COI documents on customer detail
 Notices queue — generate + send renewal/COI messages (demo log)
 Wire Leases edit drawer, Customers COI panel, Notices page/nav
 Profile menu — edit name/email/phone + change password
-Full-width app shell + API login stability (admin / paddockparking)
+Full-width app shell + API login stability
 
 
 TODAY — Wed Oct 21, 2026
