@@ -368,20 +368,36 @@ export const customers: Customer[] = [
     email: "demo.portal@paddockparking.com",
     phone: "(602) 555-0199",
     propertyId: "prop-16",
-    contractType: "month_to_month",
-    paymentStatus: "current",
-    balanceDue: 0,
+    contractType: "fixed",
+    paymentStatus: "past_due",
+    balanceDue: 1050,
     securityDeposit: 450,
-    leaseStatus: "Month to Month",
+    leaseStatus: "Fixed term",
     insuranceOk: true,
     achEnabled: true,
     gateCode: "2468",
     isActive: true,
-    lotIds: [],
-    leaseStart: "2026-11-01",
-    createdAt: "2026-11-04",
+    lotIds: ["elw-demo-1", "elw-demo-2"],
+    leaseStart: "2026-06-01",
+    leaseEnd: "2027-05-31",
+    createdAt: "2026-05-20",
     portalPassword: "Portal123",
-    documents: [],
+    documents: [
+      {
+        id: "d-demo-lease",
+        name: "lease_agreement.pdf",
+        kind: "lease",
+        uploadedAt: "2026-06-01",
+        sizeKb: 64,
+      },
+      {
+        id: "d-demo-coi",
+        name: "insurance_cert.pdf",
+        kind: "insurance",
+        uploadedAt: "2026-06-01",
+        sizeKb: 90,
+      },
+    ],
     notes: "Demo customer for the customer portal login.",
   },
   {
@@ -604,7 +620,8 @@ export const customers: Customer[] = [
   },
 ];
 
-export const lots: Lot[] = sitePlanLots.map((lot: (typeof sitePlanLots)[number]) => {
+export const lots: Lot[] = [
+  ...sitePlanLots.map((lot: (typeof sitePlanLots)[number]) => {
   const occupied: Record<
     string,
     { status: LotStatus; customerId: string; monthlyRate?: number }
@@ -636,7 +653,28 @@ export const lots: Lot[] = sitePlanLots.map((lot: (typeof sitePlanLots)[number])
     customerId: patch.customerId,
     monthlyRate: patch.monthlyRate ?? (lot as Lot).monthlyRate,
   };
-});
+}),
+  {
+    id: "elw-demo-1",
+    propertyId: "prop-16",
+    number: "P-D1",
+    size: "25 ft × 75 ft",
+    lotType: "truck_trailer",
+    monthlyRate: 225,
+    status: "occupied",
+    customerId: "c-portal-demo",
+  },
+  {
+    id: "elw-demo-2",
+    propertyId: "prop-16",
+    number: "P-D2",
+    size: "25 ft × 75 ft",
+    lotType: "truck_trailer",
+    monthlyRate: 225,
+    status: "occupied",
+    customerId: "c-portal-demo",
+  },
+];
 
 export const invoices: Invoice[] = [
   {
@@ -699,9 +737,62 @@ export const invoices: Invoice[] = [
     dueDate: "2026-09-20",
     issuedAt: "2026-09-05",
   },
+  {
+    id: "inv-demo-paid",
+    customerId: "c-portal-demo",
+    propertyId: "prop-16",
+    amount: 450,
+    balance: 0,
+    status: "paid",
+    dueDate: "2026-09-01",
+    issuedAt: "2026-08-25",
+    collectionMethod: "ach_debit",
+  },
+  {
+    id: "inv-demo-partial",
+    customerId: "c-portal-demo",
+    propertyId: "prop-16",
+    amount: 450,
+    balance: 150,
+    status: "partial",
+    dueDate: "2026-10-01",
+    issuedAt: "2026-09-25",
+    collectionMethod: "ach_debit",
+  },
+  {
+    id: "inv-demo-overdue",
+    customerId: "c-portal-demo",
+    propertyId: "prop-16",
+    amount: 450,
+    balance: 450,
+    status: "overdue",
+    dueDate: "2026-11-01",
+    issuedAt: "2026-10-25",
+    collectionMethod: "ach_debit",
+  },
+  {
+    id: "inv-demo-open",
+    customerId: "c-portal-demo",
+    propertyId: "prop-16",
+    amount: 450,
+    balance: 450,
+    status: "open",
+    dueDate: "2026-12-01",
+    issuedAt: "2026-11-01",
+    collectionMethod: "ach_debit",
+  },
 ];
 
 export const payments: Payment[] = [
+  {
+    id: "pay-demo",
+    customerId: "c-portal-demo",
+    amount: 450,
+    method: "ach",
+    status: "cleared",
+    paidAt: "2026-09-02",
+    reference: "ACH-DEMO-0902",
+  },
   {
     id: "pay1",
     customerId: "c5",
@@ -1006,6 +1097,22 @@ export const leases: Lease[] = [
     status: "active",
     achEnabled: true,
   },
+  {
+    id: "ls-demo",
+    direction: "tenant",
+    customerId: "c-portal-demo",
+    propertyId: "prop-16",
+    lotNumbers: ["P-D1", "P-D2"],
+    startDate: "2026-06-01",
+    endDate: "2027-05-31",
+    renewalDate: "2027-05-31",
+    notificationLeadDays: 30,
+    termMonths: 12,
+    monthlyRent: 450,
+    status: "active",
+    achEnabled: true,
+    signedDocId: "d-demo-lease",
+  },
 ];
 
 /** Tenant COIs — additional insured must match the yard's legalEntityName */
@@ -1057,6 +1164,47 @@ export const certificates: CertificateOfInsurance[] = [
 ];
 
 export const bookings: Booking[] = [
+  {
+    id: "bk-demo",
+    propertyId: "prop-16",
+    lotType: "truck_trailer",
+    customerName: "Demo Tenant LLC",
+    email: "demo.portal@paddockparking.com",
+    phone: "(602) 555-0199",
+    status: "converted",
+    monthlyRate: 450,
+    createdAt: "2026-05-20",
+    lotId: "elw-demo-1",
+    customerId: "c-portal-demo",
+    productType: "parking_spot",
+    spotCount: 2,
+    acreSize: 0.5,
+    storageDescription: "Two trucks, trailers, and spare equipment",
+    leaseStart: "2026-06-01",
+    wizardStep: 5,
+    paymentMethod: "ach",
+    autoPullAgreed: true,
+    decision: "approved",
+    decidedAt: "2026-05-22",
+    portalStatus: "active",
+    referredBy: "Website",
+    vehicles: [
+      {
+        make: "Peterbilt",
+        color: "White",
+        truckNumber: "DT-1",
+        licensePlate: "AZ-24681",
+        submitLater: false,
+      },
+      {
+        make: "Utility",
+        color: "Silver",
+        truckNumber: "DT-2",
+        licensePlate: "",
+        submitLater: true,
+      },
+    ],
+  },
   {
     id: "bk1",
     propertyId: "prop-16",

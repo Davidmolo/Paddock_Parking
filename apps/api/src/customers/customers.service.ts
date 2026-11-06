@@ -141,8 +141,9 @@ export class CustomersService {
     const property = this.store.properties.find(
       (p) => p.id === customer.propertyId,
     );
-    const lots = this.store.lots.filter((lot) =>
-      customer.lotIds.includes(lot.id),
+    const lots = this.store.lots.filter(
+      (lot) =>
+        lot.customerId === customer.id || customer.lotIds.includes(lot.id),
     );
     const lease = this.store.leases.find(
       (item) =>
