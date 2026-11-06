@@ -1,14 +1,14 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, KeyRound, LayoutDashboard, MapPin } from "lucide-react";
+import { CalendarClock, Hourglass, KeyRound, MapPin } from "lucide-react";
 import { endpoints } from "@/lib/api";
 import { text } from "@/constants/text";
 import { PageHeader } from "@/components/page-header";
 import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency } from "@/lib/utils";
 import { PortalBookingCard } from "./portal-booking";
+import { PortalInvoices } from "./portal-invoices";
 import { PortalStat } from "./portal-stat";
 import type { PortalDashboardProps } from "./types";
 
@@ -34,40 +34,48 @@ export function PortalDashboard({ email }: PortalDashboardProps) {
           </div>
         </div>
       ) : data ? (
-        <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-          <PortalBookingCard home={data} />
-          <Stagger className="grid gap-3 sm:grid-cols-2">
-            <StaggerItem>
-              <PortalStat
-                label={text.portal.monthlyRate}
-                value={
-                  data.monthlyRate == null
-                    ? text.portal.notSet
-                    : formatCurrency(data.monthlyRate)
-                }
-                icon={LayoutDashboard}
-              />
-            </StaggerItem>
-            <StaggerItem>
-              <PortalStat
-                label={text.portal.gateCode}
-                value={data.gateCode || text.portal.notSet}
-                icon={KeyRound}
-              />
-            </StaggerItem>
-            <StaggerItem>
-              <PortalStat label={text.portal.space} value={space} icon={MapPin} />
-            </StaggerItem>
-            <StaggerItem>
-              <PortalStat
-                label={text.portal.leaseStart}
-                value={data.leaseStart || text.portal.notSet}
-                icon={Calendar}
-              />
-            </StaggerItem>
-          </Stagger>
+        <div className="grid gap-4">
+          <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+            <PortalBookingCard home={data} />
+            <Stagger className="grid content-start gap-3 sm:grid-cols-2">
+              <StaggerItem>
+                <PortalStat label={text.portal.plot} value={space} icon={MapPin} />
+              </StaggerItem>
+              <StaggerItem>
+                <PortalStat
+                  label={text.portal.daysHere}
+                  value={dayCount(data.daysHere)}
+                  icon={Hourglass}
+                />
+              </StaggerItem>
+              <StaggerItem>
+                <PortalStat
+                  label={text.portal.daysLeft}
+                  value={
+                    data.daysLeft == null
+                      ? text.portal.monthToMonth
+                      : dayCount(data.daysLeft)
+                  }
+                  icon={CalendarClock}
+                />
+              </StaggerItem>
+              <StaggerItem>
+                <PortalStat
+                  label={text.portal.gateCode}
+                  value={data.gateCode || text.portal.notSet}
+                  icon={KeyRound}
+                />
+              </StaggerItem>
+            </Stagger>
+          </div>
+          <PortalInvoices home={data} />
         </div>
       ) : null}
     </PageTransition>
   );
+}
+
+function dayCount(value: number | null) {
+  if (value == null) return text.portal.notSet;
+  return `${value} ${value === 1 ? text.portal.day : text.portal.days}`;
 }

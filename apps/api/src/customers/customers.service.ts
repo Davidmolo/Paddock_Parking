@@ -180,6 +180,18 @@ export class CustomersService {
       monthlyRate,
       spaces: spaceLots.map((lot) => lot.number),
       leaseStart: lease?.startDate ?? customer.leaseStart ?? booking?.leaseStart ?? '',
+      daysHere: startedDays(lease?.startDate ?? customer.leaseStart ?? booking?.leaseStart),
+      daysLeft: remainingDays(lease?.endDate ?? lease?.renewalDate),
+      invoices: this.store.invoices
+        .filter((invoice) => invoice.customerId === customer.id)
+        .map((invoice) => ({
+          id: invoice.id,
+          amount: invoice.amount,
+          balance: invoice.balance,
+          status: invoice.status,
+          dueDate: invoice.dueDate,
+          issuedAt: invoice.issuedAt,
+        })),
       booking: booking
         ? {
             reference: booking.id,
@@ -409,4 +421,15 @@ function shiftDate(iso: string, deltaDays: number) {
   const d = new Date(`${iso}T00:00:00`);
   d.setDate(d.getDate() + deltaDays);
   return d.toISOString().slice(0, 10);
+}
+
+function startedDays(start: string | undefined) {
+  if (!start) return null;
+  const until = daysUntil(start);
+  return until > 0 ? 0 : -until;
+}
+
+function remainingDays(end: string | undefined) {
+  if (!end) return null;
+  return daysUntil(end);
 }

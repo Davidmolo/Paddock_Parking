@@ -49,6 +49,10 @@ export type PortalShellProps = {
   children: ReactNode;
 };
 
+export type PortalInvoicesProps = {
+  home: PortalHome;
+};
+
 export type PortalBookingCardProps = {
   home: PortalHome;
 };
@@ -63,5 +67,17 @@ export type PortalHome = {
   monthlyRate: number | null;
   spaces: string[];
   leaseStart: string;
+  daysHere: number | null;
+  daysLeft: number | null;
+  invoices: PortalInvoice[];
   booking: PortalBooking | null;
+};
+
+export type PortalInvoice = {
+  id: string;
+  amount: number;
+  balance: number;
+  status: "paid" | "open" | "overdue" | "partial";
+  dueDate: string;
+  issuedAt: string;
 };
