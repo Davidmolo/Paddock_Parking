@@ -117,6 +117,18 @@ export type PortalPayment = {
   method: "ach" | "card" | "check" | "cash";
   status: "cleared" | "pending";
   paidAt: string;
+  reference: string;
+};
+
+export type PortalChartsProps = {
+  home: PortalHome;
+};
+
+export type PortalChartCardProps = {
+  title: string;
+  subtitle: string;
+  rows: { name: string; amount: number; fill?: string }[];
+  fills?: boolean;
 };
 
 export type PortalPlot = {

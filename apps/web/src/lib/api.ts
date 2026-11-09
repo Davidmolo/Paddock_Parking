@@ -607,6 +607,11 @@ export const endpoints = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  portalPay: (body: { email: string; invoiceId: string; amount: number }) =>
+    api<PortalHome>("/portal/pay", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   portalUploadDocument: (body: {
     email: string;
     fileName: string;

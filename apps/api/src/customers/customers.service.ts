@@ -226,6 +226,7 @@ export class CustomersService {
           method: payment.method,
           status: payment.status,
           paidAt: payment.paidAt,
+          reference: payment.reference ?? '',
         })),
       owedPlates: (booking?.vehicles ?? []).flatMap((vehicle, index) =>
         vehicle.submitLater || !vehicle.licensePlate.trim()
@@ -292,6 +293,36 @@ export class CustomersService {
       vehicle.licensePlate = byIndex.get(index)!;
       vehicle.submitLater = false;
     }
+    return this.portalHome(customer.email);
+  }
+
+  portalPay(body: { email: string; invoiceId: string; amount: number }) {
+    const customer = this.portalCustomer(body.email);
+    const invoice = this.store.invoices.find(
+      (item) => item.id === body.invoiceId && item.customerId === customer.id,
+    );
+    if (!invoice) throw new NotFoundException('That invoice is not on this account.');
+    const amount = Math.round(body.amount * 100);
+    const balance = Math.round(invoice.balance * 100);
+    if (amount <= 0 || amount > balance) {
+      throw new BadRequestException('Enter an amount up to the balance.');
+    }
+    invoice.balance = (balance - amount) / 100;
+    invoice.status = invoice.balance === 0 ? 'paid' : 'partial';
+    this.store.payments.unshift({
+      id: `pay${Date.now()}`,
+      customerId: customer.id,
+      amount: amount / 100,
+      method: customer.achEnabled ? 'ach' : 'check',
+      status: 'pending',
+      paidAt: new Date().toISOString().slice(0, 10),
+      reference: invoice.id,
+    });
+    const rows = this.store.invoices.filter((item) => item.customerId === customer.id);
+    customer.balanceDue = rows.reduce((sum, item) => sum + item.balance, 0);
+    customer.paymentStatus = rows.some((item) => item.status === 'overdue' && item.balance > 0)
+      ? 'past_due'
+      : 'current';
     return this.portalHome(customer.email);
   }
 

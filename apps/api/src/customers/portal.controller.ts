@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { Type } from 'class-transformer';
-import { IsArray, IsEmail, IsIn, IsInt, IsOptional, IsString, Min, MinLength, ValidateNested } from 'class-validator';
+import { IsArray, IsEmail, IsIn, IsInt, IsNumber, IsOptional, IsString, Min, MinLength, ValidateNested } from 'class-validator';
 import { CustomersService } from './customers.service.js';
 
 class PortalLoginDto {
@@ -49,6 +49,19 @@ class PortalPlatesDto {
   plates!: PortalPlateItemDto[];
 }
 
+class PortalPayDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(1)
+  invoiceId!: string;
+
+  @IsNumber()
+  @Min(0.01)
+  amount!: number;
+}
+
 class PortalDocumentDto {
   @IsEmail()
   email!: string;
@@ -92,6 +105,11 @@ export class PortalController {
   @Post('plates')
   savePlates(@Body() dto: PortalPlatesDto) {
     return this.customersService.portalSavePlates(dto);
+  }
+
+  @Post('pay')
+  pay(@Body() dto: PortalPayDto) {
+    return this.customersService.portalPay(dto);
   }
 
   @Post('documents')

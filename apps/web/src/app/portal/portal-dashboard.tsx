@@ -9,6 +9,7 @@ import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PortalAccount } from "./portal-account";
 import { PortalBookingCard } from "./portal-booking";
+import { PortalCharts } from "./portal-charts";
 import { usePortalEmail } from "./portal-email";
 import { PortalStat } from "./portal-stat";
 
@@ -38,40 +39,29 @@ export function PortalDashboard() {
         </div>
       ) : data ? (
         <div className="grid gap-4">
+          <Stagger className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <StaggerItem>
+              <PortalStat label={text.portal.plot} value={space} icon={MapPin} />
+            </StaggerItem>
+            <StaggerItem>
+              <PortalStat label={text.portal.daysHere} value={dayCount(data.daysHere)} icon={Hourglass} />
+            </StaggerItem>
+            <StaggerItem>
+              <PortalStat
+                label={text.portal.daysLeft}
+                value={data.daysLeft == null ? text.portal.monthToMonth : dayCount(data.daysLeft)}
+                icon={CalendarClock}
+              />
+            </StaggerItem>
+            <StaggerItem>
+              <PortalStat label={text.portal.gateCode} value={data.gateCode || text.portal.notSet} icon={KeyRound} />
+            </StaggerItem>
+          </Stagger>
+          <PortalCharts home={data} />
           <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
             <PortalBookingCard home={data} />
-            <Stagger className="grid content-start gap-3 sm:grid-cols-2">
-              <StaggerItem>
-                <PortalStat label={text.portal.plot} value={space} icon={MapPin} />
-              </StaggerItem>
-              <StaggerItem>
-                <PortalStat
-                  label={text.portal.daysHere}
-                  value={dayCount(data.daysHere)}
-                  icon={Hourglass}
-                />
-              </StaggerItem>
-              <StaggerItem>
-                <PortalStat
-                  label={text.portal.daysLeft}
-                  value={
-                    data.daysLeft == null
-                      ? text.portal.monthToMonth
-                      : dayCount(data.daysLeft)
-                  }
-                  icon={CalendarClock}
-                />
-              </StaggerItem>
-              <StaggerItem>
-                <PortalStat
-                  label={text.portal.gateCode}
-                  value={data.gateCode || text.portal.notSet}
-                  icon={KeyRound}
-                />
-              </StaggerItem>
-            </Stagger>
+            <PortalAccount home={data} />
           </div>
-          <PortalAccount home={data} />
         </div>
       ) : null}
     </PageTransition>

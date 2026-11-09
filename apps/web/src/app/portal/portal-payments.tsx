@@ -33,6 +33,7 @@ export function PortalPayments({ home }: PortalPaymentsProps) {
                   <th className="px-4 py-3 font-semibold">{text.portal.paidOn}</th>
                   <th className="px-4 py-3 font-semibold">{text.portal.method}</th>
                   <th className="px-4 py-3 text-right font-semibold">{text.portal.amount}</th>
+                  <th className="px-4 py-3 font-semibold">{text.portal.invoice}</th>
                   <th className="px-4 py-3 font-semibold">{text.portal.status}</th>
                 </tr>
               </thead>
@@ -46,6 +47,7 @@ export function PortalPayments({ home }: PortalPaymentsProps) {
                     <td className="px-4 py-3 text-right font-semibold text-[var(--ink)]">
                       {formatCurrency(payment.amount)}
                     </td>
+                    <td className="px-4 py-3 text-[var(--ink)]">{payment.reference || text.portal.notSet}</td>
                     <td className="px-4 py-3">
                       <Badge tone={payment.status === "cleared" ? "success" : "warning"}>
                         {payment.status === "cleared" ? text.portal.cleared : text.portal.paymentPending}
