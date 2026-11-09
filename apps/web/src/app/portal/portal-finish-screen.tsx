@@ -34,8 +34,8 @@ export function PortalFinishScreen() {
   });
 
   const savePlate = useMutation({
-    mutationFn: (body: { index: number; licensePlate: string }) =>
-      endpoints.portalSavePlate({ email, ...body }),
+    mutationFn: (body: { plates: { index: number; licensePlate: string }[] }) =>
+      endpoints.portalSavePlates({ email, ...body }),
     onSuccess: (home) => {
       queryClient.setQueryData(["portal-home", email], home);
       setError("");
@@ -63,40 +63,54 @@ export function PortalFinishScreen() {
           {data.owedPlates.length === 0 && !data.docsOwed ? (
             <p className="text-sm text-[var(--muted)]">{text.portal.nothingOwed}</p>
           ) : null}
-          {data.owedPlates.map((plate) => (
-            <Card key={plate.index} interactive={false}>
-              <CardBody className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                <label className="block">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                    {plate.make} {plate.truckNumber} · {text.portal.plateFor}
-                  </span>
-                  <Input
-                    value={plates[plate.index] ?? ""}
-                    onChange={(event) =>
-                      setPlates((current) => ({
-                        ...current,
-                        [plate.index]: event.target.value,
-                      }))
-                    }
-                    className="mt-1.5"
-                    placeholder={text.portal.plateFor}
-                  />
-                </label>
+          {data.owedPlates.length > 0 ? (
+            <Card interactive={false}>
+              <CardHeader>
+                <h2 className="text-base font-semibold text-[var(--ink)]">
+                  {text.portal.plateFor}
+                </h2>
+              </CardHeader>
+              <CardBody className="grid gap-4">
+                <p className="text-sm text-[var(--muted)]">{text.portal.platesHint}</p>
+                {data.owedPlates.map((plate) => (
+                  <label key={plate.index} className="block">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+                      {plate.make} {plate.truckNumber}
+                    </span>
+                    <Input
+                      value={plates[plate.index] ?? ""}
+                      onChange={(event) =>
+                        setPlates((current) => ({
+                          ...current,
+                          [plate.index]: event.target.value,
+                        }))
+                      }
+                      className="mt-1.5"
+                      placeholder={text.portal.plateFor}
+                    />
+                  </label>
+                ))}
                 <Button
                   type="button"
-                  disabled={savePlate.isPending || !(plates[plate.index] ?? "").trim()}
+                  className="w-fit"
+                  disabled={
+                    savePlate.isPending ||
+                    data.owedPlates.some((plate) => !(plates[plate.index] ?? "").trim())
+                  }
                   onClick={() =>
                     savePlate.mutate({
-                      index: plate.index,
-                      licensePlate: plates[plate.index] ?? "",
+                      plates: data.owedPlates.map((plate) => ({
+                        index: plate.index,
+                        licensePlate: plates[plate.index] ?? "",
+                      })),
                     })
                   }
                 >
-                  {text.portal.savePlate}
+                  {data.owedPlates.length > 1 ? text.portal.savePlates : text.portal.savePlate}
                 </Button>
               </CardBody>
             </Card>
-          ))}
+          ) : null}
           {data.docsOwed ? (
             <Card interactive={false}>
               <CardHeader>

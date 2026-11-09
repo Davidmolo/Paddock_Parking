@@ -599,8 +599,11 @@ export const endpoints = {
     api<PortalHome>(
       `/portal/home?email=${encodeURIComponent(email)}`,
     ),
-  portalSavePlate: (body: { email: string; index: number; licensePlate: string }) =>
-    api<PortalHome>("/portal/plate", {
+  portalSavePlates: (body: {
+    email: string;
+    plates: { index: number; licensePlate: string }[];
+  }) =>
+    api<PortalHome>("/portal/plates", {
       method: "POST",
       body: JSON.stringify(body),
     }),

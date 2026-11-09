@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { IsEmail, IsIn, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsEmail, IsIn, IsInt, IsOptional, IsString, Min, MinLength, ValidateNested } from 'class-validator';
 import { CustomersService } from './customers.service.js';
 
 class PortalLoginDto {
@@ -28,10 +29,7 @@ class PortalResetDto {
   email!: string;
 }
 
-class PortalPlateDto {
-  @IsEmail()
-  email!: string;
-
+class PortalPlateItemDto {
   @IsInt()
   @Min(0)
   index!: number;
@@ -39,6 +37,16 @@ class PortalPlateDto {
   @IsString()
   @MinLength(1)
   licensePlate!: string;
+}
+
+class PortalPlatesDto {
+  @IsEmail()
+  email!: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PortalPlateItemDto)
+  plates!: PortalPlateItemDto[];
 }
 
 class PortalDocumentDto {
@@ -81,9 +89,9 @@ export class PortalController {
     return this.customersService.portalResetPassword(dto);
   }
 
-  @Post('plate')
-  savePlate(@Body() dto: PortalPlateDto) {
-    return this.customersService.portalSavePlate(dto);
+  @Post('plates')
+  savePlates(@Body() dto: PortalPlatesDto) {
+    return this.customersService.portalSavePlates(dto);
   }
 
   @Post('documents')

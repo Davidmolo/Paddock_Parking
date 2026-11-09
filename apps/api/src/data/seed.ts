@@ -1204,6 +1204,13 @@ export const bookings: Booking[] = [
         licensePlate: "",
         submitLater: true,
       },
+      {
+        make: "Volvo",
+        color: "Red",
+        truckNumber: "DT-3",
+        licensePlate: "",
+        submitLater: true,
+      },
     ],
   },
   {

@@ -267,17 +267,31 @@ export class CustomersService {
     };
   }
 
-  portalSavePlate(body: { email: string; index: number; licensePlate: string }) {
+  portalSavePlates(body: {
+    email: string;
+    plates: { index: number; licensePlate: string }[];
+  }) {
     const customer = this.portalCustomer(body.email);
-    const plate = body.licensePlate.trim();
-    if (!plate) throw new BadRequestException('License plate is required.');
     const booking = this.portalBooking(customer);
-    const vehicle = booking?.vehicles?.[body.index];
-    if (!booking || !vehicle) {
-      throw new NotFoundException('That vehicle is not on this account.');
+    const vehicles = booking?.vehicles ?? [];
+    const owed = vehicles.flatMap((vehicle, index) =>
+      vehicle.submitLater || !vehicle.licensePlate.trim() ? [index] : [],
+    );
+    if (!booking || owed.length === 0) {
+      throw new BadRequestException('No plates are waiting.');
     }
-    vehicle.licensePlate = plate;
-    vehicle.submitLater = false;
+    const byIndex = new Map(
+      body.plates.map((plate) => [plate.index, plate.licensePlate.trim()]),
+    );
+    if (byIndex.size !== owed.length || owed.some((index) => !byIndex.get(index))) {
+      throw new BadRequestException('Enter the plate for every truck.');
+    }
+    for (const index of owed) {
+      const vehicle = vehicles[index];
+      if (!vehicle) throw new NotFoundException('That vehicle is not on this account.');
+      vehicle.licensePlate = byIndex.get(index)!;
+      vehicle.submitLater = false;
+    }
     return this.portalHome(customer.email);
   }
 

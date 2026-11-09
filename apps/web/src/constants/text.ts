@@ -40,6 +40,8 @@ export const text = {
     toFinishSubtitle: "Plates and insurance you left for later.",
     nothingOwed: "Nothing is waiting. Files already on this account are listed below.",
     savePlate: "Save plate",
+    savePlates: "Save plates",
+    platesHint: "Enter a plate for every truck that is still missing one.",
     plateFor: "License plate",
     uploadCoi: "Upload certificate of insurance",
     coiHint: "Send the certificate of insurance for this account.",
