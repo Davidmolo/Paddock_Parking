@@ -7,6 +7,7 @@ import { text } from "@/constants/text";
 import { PageHeader } from "@/components/page-header";
 import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PortalAccount } from "./portal-account";
 import { PortalBookingCard } from "./portal-booking";
 import { usePortalEmail } from "./portal-email";
 import { PortalStat } from "./portal-stat";
@@ -17,8 +18,10 @@ export function PortalDashboard() {
     queryKey: ["portal-home", email],
     queryFn: () => endpoints.portalHome(email),
   });
-  const space = data?.spaces.length
-    ? data.spaces.join(", ")
+  const space = data?.plots.length
+    ? data.plots
+        .map((plot) => (plot.size ? `${plot.number} · ${plot.size}` : plot.number))
+        .join(", ")
     : text.portal.notAssigned;
 
   return (
@@ -34,9 +37,10 @@ export function PortalDashboard() {
           </div>
         </div>
       ) : data ? (
-        <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-          <PortalBookingCard home={data} />
-          <Stagger className="grid content-start gap-3 sm:grid-cols-2">
+        <div className="grid gap-4">
+          <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+            <PortalBookingCard home={data} />
+            <Stagger className="grid content-start gap-3 sm:grid-cols-2">
               <StaggerItem>
                 <PortalStat label={text.portal.plot} value={space} icon={MapPin} />
               </StaggerItem>
@@ -65,7 +69,9 @@ export function PortalDashboard() {
                   icon={KeyRound}
                 />
               </StaggerItem>
-          </Stagger>
+            </Stagger>
+          </div>
+          <PortalAccount home={data} />
         </div>
       ) : null}
     </PageTransition>

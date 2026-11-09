@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Receipt, X } from "lucide-react";
+import { ClipboardList, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Receipt, X } from "lucide-react";
 import { text } from "@/constants/text";
 import { ScreenTitleProvider } from "@/components/screen-title";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import type { PortalShellProps } from "./types";
 const portalNav = [
   { href: "/portal", label: text.portal.dashboard, icon: LayoutDashboard },
   { href: "/portal/invoices", label: text.portal.invoices, icon: Receipt },
+  { href: "/portal/finish", label: text.portal.toFinish, icon: ClipboardList },
 ];
 
 function navActive(pathname: string, href: string) {

@@ -40,7 +40,10 @@ export function PortalInvoices({ home }: PortalInvoicesProps) {
                   </p>
                   <p className="text-[var(--muted)]">
                     {statusLabel[invoice.status]} · {text.portal.amount}{" "}
-                    {formatCurrency(invoice.amount)}
+                    {formatCurrency(invoice.amount)} ·{" "}
+                    {invoice.collectionMethod === "ach_debit"
+                      ? text.portal.achDebit
+                      : text.portal.sendInvoice}
                   </p>
                 </div>
               </li>

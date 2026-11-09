@@ -1187,6 +1187,7 @@ export const bookings: Booking[] = [
     decision: "approved",
     decidedAt: "2026-05-22",
     portalStatus: "active",
+    docsSubmitLater: true,
     referredBy: "Website",
     vehicles: [
       {

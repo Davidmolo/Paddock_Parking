@@ -183,6 +183,58 @@ export class CustomersService {
       leaseStart: lease?.startDate ?? customer.leaseStart ?? booking?.leaseStart ?? '',
       daysHere: startedDays(lease?.startDate ?? customer.leaseStart ?? booking?.leaseStart),
       daysLeft: remainingDays(lease?.endDate ?? lease?.renewalDate),
+      contactName: customer.contactName,
+      balanceDue: this.store.invoices.some((invoice) => invoice.customerId === customer.id)
+        ? this.store.invoices
+            .filter((invoice) => invoice.customerId === customer.id)
+            .reduce((sum, invoice) => sum + invoice.balance, 0)
+        : customer.balanceDue,
+      paymentStatus: this.store.invoices.some(
+        (invoice) => invoice.customerId === customer.id && invoice.status === 'overdue',
+      )
+        ? 'past_due'
+        : customer.paymentStatus,
+      securityDeposit: customer.securityDeposit,
+      achEnabled: customer.achEnabled,
+      contractType:
+        lease?.endDate || lease?.termMonths
+          ? 'fixed'
+          : lease
+            ? 'month_to_month'
+            : customer.contractType,
+      renewalDate:
+        lease?.endDate ?? lease?.renewalDate ?? customer.leaseEnd ?? '',
+      termMonths: lease?.termMonths ?? null,
+      legalEntityName: property?.legalEntityName ?? '',
+      insuranceStatus: evaluateCoi(
+        this.store.certificates.find((item) => item.customerId === customer.id),
+        property,
+      ).status,
+      plots: spaceLots.map((lot) => ({ number: lot.number, size: lot.size })),
+      documents: customer.documents.map((doc) => ({
+        id: doc.id,
+        name: doc.name,
+        kind: doc.kind,
+        uploadedAt: doc.uploadedAt,
+        storagePath: doc.storagePath ?? '',
+      })),
+      payments: this.store.payments
+        .filter((payment) => payment.customerId === customer.id)
+        .map((payment) => ({
+          id: payment.id,
+          amount: payment.amount,
+          method: payment.method,
+          status: payment.status,
+          paidAt: payment.paidAt,
+        })),
+      owedPlates: (booking?.vehicles ?? []).flatMap((vehicle, index) =>
+        vehicle.submitLater || !vehicle.licensePlate.trim()
+          ? [{ index, truckNumber: vehicle.truckNumber, make: vehicle.make }]
+          : [],
+      ),
+      docsOwed:
+        Boolean(booking?.docsSubmitLater) ||
+        !customer.documents.some((doc) => doc.kind === 'insurance'),
       invoices: this.store.invoices
         .filter((invoice) => invoice.customerId === customer.id)
         .map((invoice) => ({
@@ -192,6 +244,9 @@ export class CustomersService {
           status: invoice.status,
           dueDate: invoice.dueDate,
           issuedAt: invoice.issuedAt,
+          collectionMethod:
+            invoice.collectionMethod ??
+            (customer.achEnabled ? 'ach_debit' : 'send_invoice'),
         })),
       booking: booking
         ? {
@@ -210,6 +265,59 @@ export class CustomersService {
           }
         : null,
     };
+  }
+
+  portalSavePlate(body: { email: string; index: number; licensePlate: string }) {
+    const customer = this.portalCustomer(body.email);
+    const plate = body.licensePlate.trim();
+    if (!plate) throw new BadRequestException('License plate is required.');
+    const booking = this.portalBooking(customer);
+    const vehicle = booking?.vehicles?.[body.index];
+    if (!booking || !vehicle) {
+      throw new NotFoundException('That vehicle is not on this account.');
+    }
+    vehicle.licensePlate = plate;
+    vehicle.submitLater = false;
+    return this.portalHome(customer.email);
+  }
+
+  portalUploadDocument(body: {
+    email: string;
+    fileName: string;
+    kind: 'lease' | 'insurance' | 'other';
+    contentBase64: string;
+  }) {
+    const customer = this.portalCustomer(body.email);
+    this.uploadDocument(customer.id, body);
+    if (body.kind === 'insurance') {
+      for (const booking of this.store.bookings) {
+        const same =
+          booking.customerId === customer.id ||
+          booking.email.toLowerCase() === customer.email.toLowerCase();
+        if (same) booking.docsSubmitLater = false;
+      }
+    }
+    return this.portalHome(customer.email);
+  }
+
+  private portalCustomer(email: string) {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized.includes('@')) {
+      throw new BadRequestException('Email is required.');
+    }
+    const customer = this.store.customers.find(
+      (item) => item.email.toLowerCase() === normalized,
+    );
+    if (!customer) throw new NotFoundException('No customer found for that email.');
+    return customer;
+  }
+
+  private portalBooking(customer: { id: string; email: string }) {
+    const email = customer.email.toLowerCase();
+    return (
+      this.store.bookings.find((item) => item.customerId === customer.id) ??
+      this.store.bookings.find((item) => item.email.toLowerCase() === email)
+    );
   }
 
   async portalResetPassword(body: { email: string }) {

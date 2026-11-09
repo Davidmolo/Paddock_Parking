@@ -43,7 +43,7 @@ export class BookingsService {
     }> = [];
 
     for (const b of this.store.bookings) {
-      if (b.status === 'converted' || b.status === 'cancelled') continue;
+      if (b.status === 'cancelled') continue;
       const property = this.store.properties.find((p) => p.id === b.propertyId);
       for (const v of b.vehicles ?? []) {
         if (v.submitLater || !v.licensePlate.trim()) {

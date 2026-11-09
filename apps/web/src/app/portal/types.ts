@@ -76,6 +76,21 @@ export type PortalHome = {
   daysLeft: number | null;
   invoices: PortalInvoice[];
   booking: PortalBooking | null;
+  contactName: string;
+  balanceDue: number;
+  paymentStatus: "current" | "past_due" | "notice";
+  securityDeposit: number;
+  achEnabled: boolean;
+  contractType: "month_to_month" | "fixed";
+  renewalDate: string;
+  termMonths: number | null;
+  legalEntityName: string;
+  insuranceStatus: "valid" | "expiring" | "expired" | "mismatch" | "missing";
+  plots: PortalPlot[];
+  documents: PortalDocument[];
+  payments: PortalPayment[];
+  owedPlates: PortalOwedPlate[];
+  docsOwed: boolean;
 };
 
 export type PortalInvoice = {
@@ -85,4 +100,40 @@ export type PortalInvoice = {
   status: "paid" | "open" | "overdue" | "partial";
   dueDate: string;
   issuedAt: string;
+  collectionMethod: "ach_debit" | "send_invoice";
+};
+
+export type PortalDocument = {
+  id: string;
+  name: string;
+  kind: "lease" | "insurance" | "other";
+  uploadedAt: string;
+  storagePath: string;
+};
+
+export type PortalPayment = {
+  id: string;
+  amount: number;
+  method: "ach" | "card" | "check" | "cash";
+  status: "cleared" | "pending";
+  paidAt: string;
+};
+
+export type PortalPlot = {
+  number: string;
+  size: string;
+};
+
+export type PortalOwedPlate = {
+  index: number;
+  truckNumber: string;
+  make: string;
+};
+
+export type PortalAccountProps = {
+  home: PortalHome;
+};
+
+export type PortalPaymentsProps = {
+  home: PortalHome;
 };

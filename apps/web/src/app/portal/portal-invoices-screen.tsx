@@ -8,6 +8,7 @@ import { PageTransition } from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePortalEmail } from "./portal-email";
 import { PortalInvoices } from "./portal-invoices";
+import { PortalPayments } from "./portal-payments";
 
 export function PortalInvoicesScreen() {
   const email = usePortalEmail();
@@ -22,7 +23,10 @@ export function PortalInvoicesScreen() {
       {isPending && !data ? (
         <Skeleton className="h-56" />
       ) : data ? (
-        <PortalInvoices home={data} />
+        <div className="grid gap-4">
+          <PortalInvoices home={data} />
+          <PortalPayments home={data} />
+        </div>
       ) : null}
     </PageTransition>
   );
