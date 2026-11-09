@@ -1,6 +1,8 @@
 import { text } from "@/constants/text";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { formatPortalDate } from "./format";
 import type { PortalBooking, PortalBookingCardProps } from "./types";
 
 const paymentLabel: Record<PortalBooking["paymentMethod"], string> = {
@@ -18,6 +20,16 @@ const decisionLabel: Record<PortalBooking["decision"], string> = {
   denied: text.portal.denied,
 };
 
+const decisionTone = {
+  "": "warning",
+  pending: "warning",
+  approved: "success",
+  conditional: "info",
+  denied: "danger",
+} as const;
+
+const labelClass = "text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]";
+
 function shown(value: string) {
   return value || text.portal.notSet;
 }
@@ -32,8 +44,7 @@ export function PortalBookingCard({ home }: PortalBookingCardProps) {
     ? [
         [text.portal.company, booking.companyName],
         [text.portal.reference, booking.reference],
-        [text.portal.bookedOn, shown(booking.bookedOn)],
-        [text.portal.status, decisionLabel[booking.decision]],
+        [text.portal.bookedOn, formatPortalDate(booking.bookedOn) || text.portal.notSet],
         [text.portal.yard, shown(home.yardName)],
         [text.portal.spaceType, shown(booking.spaceType)],
         [
@@ -46,7 +57,7 @@ export function PortalBookingCard({ home }: PortalBookingCardProps) {
         ],
         [text.portal.storing, shown(booking.storing)],
         [text.portal.payment, paymentLabel[booking.paymentMethod]],
-        [text.portal.leaseStart, shown(booking.leaseStart)],
+        [text.portal.leaseStart, formatPortalDate(booking.leaseStart) || text.portal.notSet],
         [text.portal.monthlyRate, money(booking.monthlyRate)],
       ]
     : [];
@@ -54,44 +65,54 @@ export function PortalBookingCard({ home }: PortalBookingCardProps) {
   return (
     <Card interactive={false}>
       <CardHeader>
-        <h2 className="text-base font-semibold text-[var(--ink)]">
-          {text.portal.bookingTitle}
-        </h2>
+        <h2 className="text-base font-semibold text-[var(--ink)]">{text.portal.bookingTitle}</h2>
+        {booking ? (
+          <Badge tone={decisionTone[booking.decision]}>{decisionLabel[booking.decision]}</Badge>
+        ) : null}
       </CardHeader>
       <CardBody>
         {booking ? (
-          <dl className="grid gap-3 sm:grid-cols-2">
-            {rows.map(([label, value]) => (
-              <div key={label} className="min-w-0">
-                <dt className="text-[12px] font-medium text-[var(--muted)]">
-                  {label}
-                </dt>
-                <dd className="mt-1 text-sm font-semibold text-[var(--ink)]">
-                  {value}
-                </dd>
+          <>
+            <dl className="grid gap-4 sm:grid-cols-2">
+              {rows.map(([label, value]) => (
+                <div key={label} className="min-w-0">
+                  <dt className={labelClass}>{label}</dt>
+                  <dd className="mt-1 text-sm font-semibold text-[var(--ink)]">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            {booking.vehicles.length > 0 ? (
+              <div className="mt-4 overflow-x-auto border-t border-[var(--border)] pt-4">
+                <p className={labelClass}>{text.portal.vehicles}</p>
+                <table className="mt-2 w-full min-w-[28rem] text-left text-sm">
+                  <thead>
+                    <tr className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+                      <th className="py-2 pr-3 font-semibold">{text.portal.vehicle}</th>
+                      <th className="py-2 pr-3 font-semibold">{text.portal.truck}</th>
+                      <th className="py-2 font-semibold">{text.portal.plateFor}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {booking.vehicles.map((vehicle) => (
+                      <tr key={`${vehicle.truckNumber}-${vehicle.make}`} className="border-t border-[var(--border)]">
+                        <td className="py-2 pr-3 font-medium text-[var(--ink)]">
+                          {[vehicle.make, vehicle.color].filter(Boolean).join(" · ")}
+                        </td>
+                        <td className="py-2 pr-3 text-[var(--ink)]">{vehicle.truckNumber || text.portal.notSet}</td>
+                        <td className="py-2">
+                          {vehicle.submitLater || !vehicle.licensePlate ? (
+                            <Badge tone="warning">{text.portal.plateLater}</Badge>
+                          ) : (
+                            <span className="font-semibold text-[var(--ink)]">{vehicle.licensePlate}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-            {booking.vehicles.length > 0 && (
-              <div className="sm:col-span-2">
-                <dt className="text-[12px] font-medium text-[var(--muted)]">
-                  {text.portal.vehicles}
-                </dt>
-                <dd className="mt-1 space-y-1 text-sm text-[var(--ink)]">
-                  {booking.vehicles.map((vehicle) => (
-                    <p key={`${vehicle.truckNumber}-${vehicle.make}`}>
-                      {[vehicle.make, vehicle.color, vehicle.truckNumber]
-                        .filter(Boolean)
-                        .join(" · ")}
-                      {" · "}
-                      {vehicle.submitLater || !vehicle.licensePlate
-                        ? text.portal.plateLater
-                        : vehicle.licensePlate}
-                    </p>
-                  ))}
-                </dd>
-              </div>
-            )}
-          </dl>
+            ) : null}
+          </>
         ) : (
           <p className="text-sm text-[var(--muted)]">{text.portal.noBooking}</p>
         )}

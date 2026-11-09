@@ -8,7 +8,7 @@ export function PortalStat({ label, value, icon: Icon }: PortalStatProps) {
         <p className="truncate text-[12px] font-medium text-white/70">{label}</p>
         <Icon className="h-4 w-4 shrink-0 text-[var(--accent)]" />
       </div>
-      <p className={cn("mt-2 truncate text-lg font-semibold tracking-tight")}>
+      <p className={cn("mt-2 line-clamp-2 text-base font-semibold leading-snug tracking-tight")}>
         {value}
       </p>
     </div>

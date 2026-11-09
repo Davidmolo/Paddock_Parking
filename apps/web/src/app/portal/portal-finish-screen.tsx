@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { endpoints } from "@/lib/api";
 import { text } from "@/constants/text";
@@ -8,8 +8,10 @@ import { PageHeader } from "@/components/page-header";
 import { PageTransition } from "@/components/ui/motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePortalEmail } from "./portal-email";
+import { formatPortalDate } from "./format";
 import type { PortalDocument } from "./types";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001";
@@ -23,6 +25,7 @@ const kindLabel: Record<PortalDocument["kind"], string> = {
 export function PortalFinishScreen() {
   const email = usePortalEmail();
   const queryClient = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [plates, setPlates] = useState<Record<number, string>>({});
   const [error, setError] = useState("");
   const { data, isPending } = useQuery({
@@ -64,10 +67,10 @@ export function PortalFinishScreen() {
             <Card key={plate.index} interactive={false}>
               <CardBody className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                 <label className="block">
-                  <span className="text-[12px] font-medium text-[var(--muted)]">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
                     {plate.make} {plate.truckNumber} · {text.portal.plateFor}
                   </span>
-                  <input
+                  <Input
                     value={plates[plate.index] ?? ""}
                     onChange={(event) =>
                       setPlates((current) => ({
@@ -75,7 +78,8 @@ export function PortalFinishScreen() {
                         [plate.index]: event.target.value,
                       }))
                     }
-                    className="mt-1 h-10 w-full rounded-lg border border-[var(--border)] bg-white px-3 text-sm"
+                    className="mt-1.5"
+                    placeholder={text.portal.plateFor}
                   />
                 </label>
                 <Button
@@ -100,12 +104,13 @@ export function PortalFinishScreen() {
                   {text.portal.uploadCoi}
                 </h2>
               </CardHeader>
-              <CardBody className="grid gap-2">
+              <CardBody className="grid gap-3">
                 <p className="text-sm text-[var(--muted)]">{text.portal.coiHint}</p>
                 <input
+                  ref={fileRef}
                   type="file"
                   accept="application/pdf,image/*"
-                  disabled={upload.isPending}
+                  className="sr-only"
                   onChange={(event) => {
                     const file = event.target.files?.[0];
                     event.target.value = "";
@@ -121,8 +126,15 @@ export function PortalFinishScreen() {
                     };
                     reader.readAsDataURL(file);
                   }}
-                  className="text-sm"
                 />
+                <Button
+                  type="button"
+                  className="w-fit"
+                  disabled={upload.isPending}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {upload.isPending ? text.portal.pleaseWait : text.portal.chooseFile}
+                </Button>
               </CardBody>
             </Card>
           ) : null}
@@ -132,29 +144,45 @@ export function PortalFinishScreen() {
                 {text.portal.onFile}
               </h2>
             </CardHeader>
-            <CardBody>
+            <CardBody className="p-0">
               {data.documents.length === 0 ? (
-                <p className="text-sm text-[var(--muted)]">{text.portal.noDocuments}</p>
+                <p className="p-4 text-sm text-[var(--muted)]">{text.portal.noDocuments}</p>
               ) : (
-                <ul className="divide-y divide-[var(--border)]">
-                  {data.documents.map((doc) => (
-                    <li key={doc.id} className="py-3 text-sm first:pt-0 last:pb-0">
-                      {doc.storagePath ? (
-                        <a
-                          className="font-semibold text-[var(--ink)] underline"
-                          href={`${apiUrl}/uploads/${doc.storagePath}`}
-                        >
-                          {doc.name}
-                        </a>
-                      ) : (
-                        <p className="font-semibold text-[var(--ink)]">{doc.name}</p>
-                      )}
-                      <p className="text-[var(--muted)]">
-                        {kindLabel[doc.kind]} · {doc.uploadedAt}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[32rem] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-[var(--border)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+                        <th className="px-4 py-3 font-semibold">{text.portal.onFile}</th>
+                        <th className="px-4 py-3 font-semibold">{text.portal.kind}</th>
+                        <th className="px-4 py-3 font-semibold">{text.portal.issued}</th>
+                        <th className="px-4 py-3 font-semibold">{text.portal.openFile}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.documents.map((doc) => (
+                        <tr key={doc.id} className="border-b border-[var(--border)] last:border-0">
+                          <td className="px-4 py-3 font-semibold text-[var(--ink)]">{doc.name}</td>
+                          <td className="px-4 py-3 text-[var(--muted)]">{kindLabel[doc.kind]}</td>
+                          <td className="px-4 py-3 text-[var(--muted)]">
+                            {formatPortalDate(doc.uploadedAt)}
+                          </td>
+                          <td className="px-4 py-3">
+                            {doc.storagePath ? (
+                              <a
+                                className="font-semibold text-[var(--accent-ink)]"
+                                href={`${apiUrl}/uploads/${doc.storagePath}`}
+                              >
+                                {text.portal.openFile}
+                              </a>
+                            ) : (
+                              <span className="text-[var(--muted)]">{text.portal.notSet}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </CardBody>
           </Card>
