@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PortalDashboard } from "./portal-dashboard";
+import { PortalEmailProvider } from "./portal-email";
 import { PortalShell } from "./portal-shell";
 import { PortalSignIn } from "./portal-sign-in";
-import type { PortalSession } from "./types";
+import type { PortalGateProps, PortalSession } from "./types";
 
 const PORTAL_SESSION_KEY = "paddock-portal-session";
 
@@ -29,7 +29,7 @@ function writePortalSession(session: PortalSession | null) {
   else localStorage.setItem(PORTAL_SESSION_KEY, JSON.stringify(session));
 }
 
-export function PortalGate() {
+export function PortalGate({ children }: PortalGateProps) {
   const [session, setSession] = useState<PortalSession | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -52,14 +52,16 @@ export function PortalGate() {
   }
 
   return (
-    <PortalShell
-      session={session}
-      onSignOut={() => {
-        writePortalSession(null);
-        setSession(null);
-      }}
-    >
-      <PortalDashboard email={session.email} />
-    </PortalShell>
+    <PortalEmailProvider email={session.email}>
+      <PortalShell
+        session={session}
+        onSignOut={() => {
+          writePortalSession(null);
+          setSession(null);
+        }}
+      >
+        {children}
+      </PortalShell>
+    </PortalEmailProvider>
   );
 }

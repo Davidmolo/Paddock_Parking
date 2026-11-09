@@ -1,7 +1,5 @@
-"use client";
-
-import { PortalGate } from "./portal-gate";
+import { PortalDashboard } from "./portal-dashboard";
 
 export default function CustomerPortalPage() {
-  return <PortalGate />;
+  return <PortalDashboard />;
 }

@@ -1,5 +1,5 @@
 import { text } from "@/constants/text";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import type { PortalInvoicesProps } from "./types";
 
@@ -17,11 +17,6 @@ export function PortalInvoices({ home }: PortalInvoicesProps) {
 
   return (
     <Card interactive={false}>
-      <CardHeader>
-        <h2 className="text-base font-semibold text-[var(--ink)]">
-          {text.portal.invoices}
-        </h2>
-      </CardHeader>
       <CardBody>
         {rows.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">{text.portal.noInvoices}</p>

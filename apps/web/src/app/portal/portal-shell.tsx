@@ -1,23 +1,40 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Receipt, X } from "lucide-react";
 import { text } from "@/constants/text";
 import { ScreenTitleProvider } from "@/components/screen-title";
 import { cn } from "@/lib/utils";
 import type { PortalShellProps } from "./types";
 
+const portalNav = [
+  { href: "/portal", label: text.portal.dashboard, icon: LayoutDashboard },
+  { href: "/portal/invoices", label: text.portal.invoices, icon: Receipt },
+];
+
+function navActive(pathname: string, href: string) {
+  if (href === "/portal") return pathname === "/portal";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function PortalShell({ session, onSignOut, children }: PortalShellProps) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [ready, setReady] = useState(false);
-  const [screenTitle, setScreenTitle] = useState(text.portal.dashboard);
+  const [screenTitle, setScreenTitle] = useState("");
   const setTitle = useCallback((title: string) => setScreenTitle(title), []);
 
   useEffect(() => {
     setCollapsed(window.localStorage.getItem("paddock-portal-sidebar") === "1");
     setReady(true);
   }, []);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   function toggleCollapsed() {
     setCollapsed((value) => {
@@ -41,11 +58,27 @@ export function PortalShell({ session, onSignOut, children }: PortalShellProps) 
             <p className={cn("px-2.5 text-sm font-semibold", collapsed && "sr-only")}>
               {session.name}
             </p>
-            <nav className="mt-6">
-              <p className="flex h-9 items-center gap-2.5 rounded-lg bg-white/10 px-2.5 text-[13px] font-medium">
-                <LayoutDashboard className="h-4 w-4 shrink-0 text-[var(--accent)]" />
-                <span className={cn(collapsed && "sr-only")}>{text.portal.dashboard}</span>
-              </p>
+            <nav className="mt-6 grid gap-0.5">
+              {portalNav.map((item) => {
+                const active = navActive(pathname, item.href);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={item.label}
+                    className={cn(
+                      "flex h-9 items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium hover:bg-white/10 hover:text-white",
+                      active
+                        ? "bg-white/10 font-semibold text-white shadow-[inset_2px_0_0_var(--accent)]"
+                        : "text-white/70",
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4 shrink-0", active && "text-[var(--accent)]")} />
+                    <span className={cn("truncate", collapsed && "sr-only")}>{item.label}</span>
+                  </Link>
+                );
+              })}
             </nav>
             <button
               type="button"
@@ -87,7 +120,25 @@ export function PortalShell({ session, onSignOut, children }: PortalShellProps) 
             {open && (
               <div className="border-b border-[var(--ink)] bg-[var(--ink)] px-4 py-3 text-white lg:hidden">
                 <p className="text-sm font-semibold">{session.name}</p>
-                <p className="mt-2 text-[13px] text-[var(--accent)]">{text.portal.dashboard}</p>
+                <nav className="mt-2 grid gap-0.5">
+                  {portalNav.map((item) => {
+                    const active = navActive(pathname, item.href);
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          "flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium",
+                          active ? "bg-white/10 text-[var(--accent)]" : "text-white/80",
+                        )}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </nav>
               </div>
             )}
             <main className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden px-4 py-4 sm:px-5">

@@ -8,11 +8,11 @@ import { PageHeader } from "@/components/page-header";
 import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PortalBookingCard } from "./portal-booking";
-import { PortalInvoices } from "./portal-invoices";
+import { usePortalEmail } from "./portal-email";
 import { PortalStat } from "./portal-stat";
-import type { PortalDashboardProps } from "./types";
 
-export function PortalDashboard({ email }: PortalDashboardProps) {
+export function PortalDashboard() {
+  const email = usePortalEmail();
   const { data, isPending } = useQuery({
     queryKey: ["portal-home", email],
     queryFn: () => endpoints.portalHome(email),
@@ -34,10 +34,9 @@ export function PortalDashboard({ email }: PortalDashboardProps) {
           </div>
         </div>
       ) : data ? (
-        <div className="grid gap-4">
-          <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-            <PortalBookingCard home={data} />
-            <Stagger className="grid content-start gap-3 sm:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+          <PortalBookingCard home={data} />
+          <Stagger className="grid content-start gap-3 sm:grid-cols-2">
               <StaggerItem>
                 <PortalStat label={text.portal.plot} value={space} icon={MapPin} />
               </StaggerItem>
@@ -66,9 +65,7 @@ export function PortalDashboard({ email }: PortalDashboardProps) {
                   icon={KeyRound}
                 />
               </StaggerItem>
-            </Stagger>
-          </div>
-          <PortalInvoices home={data} />
+          </Stagger>
         </div>
       ) : null}
     </PageTransition>

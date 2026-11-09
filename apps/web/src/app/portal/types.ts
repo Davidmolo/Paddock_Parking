@@ -39,8 +39,13 @@ export type PortalStatProps = {
   icon: ComponentType<{ className?: string }>;
 };
 
-export type PortalDashboardProps = {
+export type PortalEmailProps = {
   email: string;
+  children: ReactNode;
+};
+
+export type PortalGateProps = {
+  children: ReactNode;
 };
 
 export type PortalShellProps = {
