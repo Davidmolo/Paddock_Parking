@@ -58,6 +58,13 @@ export type PortalInvoicesProps = {
   home: PortalHome;
 };
 
+export type PortalPayFieldProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  inputMode?: "numeric" | "decimal" | "text";
+};
+
 export type PortalBookingCardProps = {
   home: PortalHome;
 };
@@ -81,6 +88,8 @@ export type PortalHome = {
   paymentStatus: "current" | "past_due" | "notice";
   securityDeposit: number;
   achEnabled: boolean;
+  autoPull: boolean;
+  payMethod: "card" | "ach";
   contractType: "month_to_month" | "fixed";
   renewalDate: string;
   termMonths: number | null;
@@ -91,6 +100,21 @@ export type PortalHome = {
   payments: PortalPayment[];
   owedPlates: PortalOwedPlate[];
   docsOwed: boolean;
+  signedLease: PortalSignedLease | null;
+};
+
+export type PortalSignedLease = {
+  lesseeName: string;
+  lesseeSignature: string;
+  guarantorName: string;
+  guarantorSignature: string;
+  signatureDate: string;
+};
+
+export type PortalSignatureBlockProps = {
+  label: string;
+  name: string;
+  signature: string;
 };
 
 export type PortalInvoice = {
@@ -118,17 +142,6 @@ export type PortalPayment = {
   status: "cleared" | "pending";
   paidAt: string;
   reference: string;
-};
-
-export type PortalChartsProps = {
-  home: PortalHome;
-};
-
-export type PortalChartCardProps = {
-  title: string;
-  subtitle: string;
-  rows: { name: string; amount: number; fill?: string }[];
-  fills?: boolean;
 };
 
 export type PortalPlot = {

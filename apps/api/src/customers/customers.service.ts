@@ -7,9 +7,9 @@ import {
 import { randomBytes } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { sendPortalInviteEmail } from '../mail/send-portal-invite.js';
+import { sendManualInvoiceEmail, sendPortalInviteEmail } from '../mail/send-portal-invite.js';
 import { DataStoreService } from '../data/data-store.service.js';
-import type { CertificateOfInsurance, CustomerDocument } from '../data/seed.js';
+import type { CertificateOfInsurance, Customer, CustomerDocument } from '../data/seed.js';
 import { LOT_TYPE_LABELS } from '../data/seed.js';
 import {
   daysUntil,
@@ -58,11 +58,11 @@ export class CustomersService {
     return this.detail(customer);
   }
 
-  /** Tenant portal — set password from invite email/token */
+  /** Tenant portal — set password from the invite link, then the portal can open. */
   portalSetPassword(body: {
     email: string;
     password: string;
-    inviteToken?: string;
+    inviteToken: string;
   }) {
     const email = body.email.trim().toLowerCase();
     const customer = this.store.customers.find(
@@ -71,25 +71,16 @@ export class CustomersService {
     if (!customer) {
       throw new NotFoundException('No customer found for that email.');
     }
-    if (!customer.portalInviteToken && !customer.portalPassword) {
-      throw new BadRequestException(
-        'Ask staff to send a portal invitation first.',
-      );
-    }
+    const expired =
+      !!customer.portalInviteExpiresAt &&
+      Date.parse(customer.portalInviteExpiresAt) < Date.now();
     if (
-      body.inviteToken &&
-      customer.portalInviteToken &&
-      body.inviteToken !== customer.portalInviteToken
+      !body.inviteToken ||
+      !customer.portalInviteToken ||
+      body.inviteToken !== customer.portalInviteToken ||
+      expired
     ) {
       throw new BadRequestException('Invite link is invalid or expired.');
-    }
-    if (
-      customer.portalInviteExpiresAt &&
-      Date.parse(customer.portalInviteExpiresAt) < Date.now()
-    ) {
-      throw new BadRequestException(
-        'Invite link is expired. Ask staff to send a new one.',
-      );
     }
     if (!body.password || body.password.length < 6) {
       throw new BadRequestException('Password must be at least 6 characters.');
@@ -97,12 +88,15 @@ export class CustomersService {
     customer.portalPassword = body.password;
     customer.portalInviteToken = undefined;
     customer.portalInviteExpiresAt = undefined;
+    customer.portalLastLogin = new Date().toISOString();
     const booking = this.store.bookings.find((b) => b.customerId === customer.id);
     if (booking) booking.portalStatus = 'active';
     return {
       ok: true,
       message: 'Password set. You can sign in to the customer portal.',
-      gateCode: customer.gateCode,
+      name: customer.name,
+      email: customer.email,
+      gateCode: customer.gateCode ?? '',
     };
   }
 
@@ -149,11 +143,8 @@ export class CustomersService {
       (item) =>
         item.direction === 'tenant' && item.customerId === customer.id,
     );
-    const booking =
-      this.store.bookings.find((item) => item.customerId === customer.id) ??
-      this.store.bookings.find(
-        (item) => item.email.toLowerCase() === normalized,
-      );
+    const booking = this.portalBooking(customer);
+    const bill = this.billing(customer);
     const bookingLot = booking?.lotId
       ? this.store.lots.find((lot) => lot.id === booking.lotId)
       : undefined;
@@ -196,6 +187,8 @@ export class CustomersService {
         : customer.paymentStatus,
       securityDeposit: customer.securityDeposit,
       achEnabled: customer.achEnabled,
+      autoPull: bill.autoPull,
+      payMethod: bill.payMethod,
       contractType:
         lease?.endDate || lease?.termMonths
           ? 'fixed'
@@ -245,9 +238,7 @@ export class CustomersService {
           status: invoice.status,
           dueDate: invoice.dueDate,
           issuedAt: invoice.issuedAt,
-          collectionMethod:
-            invoice.collectionMethod ??
-            (customer.achEnabled ? 'ach_debit' : 'send_invoice'),
+          collectionMethod: bill.autoPull ? 'ach_debit' : 'send_invoice',
         })),
       booking: booking
         ? {
@@ -265,6 +256,16 @@ export class CustomersService {
             vehicles: booking.vehicles ?? [],
           }
         : null,
+      signedLease:
+        booking?.lesseeSignature
+          ? {
+              lesseeName: booking.lesseeName ?? '',
+              lesseeSignature: booking.lesseeSignature,
+              guarantorName: booking.guarantorName ?? '',
+              guarantorSignature: booking.guarantorSignature ?? '',
+              signatureDate: booking.signatureDate ?? '',
+            }
+          : null,
     };
   }
 
@@ -296,8 +297,20 @@ export class CustomersService {
     return this.portalHome(customer.email);
   }
 
-  portalPay(body: { email: string; invoiceId: string; amount: number }) {
+  portalPay(body: {
+    email: string;
+    invoiceId: string;
+    amount: number;
+    method: 'card' | 'ach';
+    last4: string;
+  }) {
     const customer = this.portalCustomer(body.email);
+    if (this.billing(customer).autoPull) {
+      throw new BadRequestException('Autopull is on. Pay is not available.');
+    }
+    if (!/^\d{4}$/.test(body.last4)) {
+      throw new BadRequestException('Enter the card or account number.');
+    }
     const invoice = this.store.invoices.find(
       (item) => item.id === body.invoiceId && item.customerId === customer.id,
     );
@@ -313,8 +326,8 @@ export class CustomersService {
       id: `pay${Date.now()}`,
       customerId: customer.id,
       amount: amount / 100,
-      method: customer.achEnabled ? 'ach' : 'check',
-      status: 'pending',
+      method: body.method,
+      status: 'cleared',
       paidAt: new Date().toISOString().slice(0, 10),
       reference: invoice.id,
     });
@@ -343,6 +356,66 @@ export class CustomersService {
       }
     }
     return this.portalHome(customer.email);
+  }
+
+  setBilling(id: string, body: { autoPull?: boolean; payMethod?: 'card' | 'ach' }) {
+    const customer = this.store.customers.find((item) => item.id === id);
+    if (!customer) throw new NotFoundException(`Customer ${id} not found`);
+    if (body.payMethod) {
+      customer.payMethod = body.payMethod;
+      customer.achEnabled = body.payMethod === 'ach';
+    }
+    if (body.autoPull != null) {
+      customer.autoPull = body.autoPull;
+      this.markInvoices(customer, body.autoPull ? 'ach_debit' : 'send_invoice');
+    }
+    return this.detail(customer);
+  }
+
+  async sendInvoices(id: string) {
+    const customer = this.store.customers.find((item) => item.id === id);
+    if (!customer) throw new NotFoundException(`Customer ${id} not found`);
+    if (this.billing(customer).autoPull) {
+      throw new BadRequestException('Turn autopull off before sending an invoice.');
+    }
+    const open = this.store.invoices.filter(
+      (invoice) => invoice.customerId === customer.id && invoice.balance > 0,
+    );
+    if (open.length === 0) {
+      throw new BadRequestException('Nothing is due on this account.');
+    }
+    this.markInvoices(customer, 'send_invoice');
+    const portalUrl = `${process.env.APP_URL || 'http://localhost:3000'}/portal`;
+    await sendManualInvoiceEmail({
+      to: customer.email,
+      name: customer.name,
+      portalUrl,
+      lines: open.map((invoice) => `${invoice.id} due ${invoice.dueDate}: $${invoice.balance.toFixed(2)}`),
+    });
+    return this.detail(customer);
+  }
+
+  private billing(customer: Customer) {
+    const booking = this.store.bookings.find((item) => item.customerId === customer.id);
+    const payMethod =
+      customer.payMethod ??
+      (booking?.paymentMethod === 'card' || booking?.paymentMethod === 'ach'
+        ? booking.paymentMethod
+        : customer.achEnabled
+          ? 'ach'
+          : 'card');
+    const autoPull =
+      customer.autoPull ??
+      (booking ? !booking.autoPullWaived && booking.autoPullAgreed !== false : customer.achEnabled);
+    return { payMethod, autoPull };
+  }
+
+  private markInvoices(customer: Customer, method: 'ach_debit' | 'send_invoice') {
+    for (const invoice of this.store.invoices) {
+      if (invoice.customerId === customer.id && invoice.balance > 0) {
+        invoice.collectionMethod = method;
+      }
+    }
   }
 
   private portalCustomer(email: string) {
@@ -510,9 +583,12 @@ export class CustomersService {
     const coiEval = evaluateCoi(coi, property);
     customer.insuranceOk = coiEval.status === 'valid';
     const { portalPassword: _pw, portalInviteToken: _tok, ...safe } = customer;
+    const bill = this.billing(customer);
 
     return {
       ...safe,
+      autoPull: bill.autoPull,
+      payMethod: bill.payMethod,
       insuranceOk: customer.insuranceOk,
       property,
       lots,

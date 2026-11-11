@@ -22,7 +22,11 @@ function loadEnvFile() {
 loadEnvFile();
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+  });
+  app.useBodyParser('json', { limit: '4mb' });
+  app.useBodyParser('urlencoded', { limit: '4mb', extended: true });
   const corsOrigin = process.env.CORS_ORIGIN?.split(',')
     .map((s) => s.trim())
     .filter(Boolean);

@@ -15,6 +15,7 @@ import {
 } from "@/components/book/payment-card-preview";
 import { endpoints, type LotType } from "@/lib/api";
 import { isValidAbaRouting } from "@/lib/aba-routing";
+import { text } from "@/constants/text";
 import { formatCurrency, cn } from "@/lib/utils";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { isLivePropertyId } from "@/lib/yards";
@@ -489,6 +490,11 @@ export default function BookWizardPage() {
         autoPullAgreed: form.agreeAutoPull,
         paymentMethod: form.paymentMethod,
         lotId: primaryLot?.id,
+        lesseeName: form.lesseeName,
+        lesseeSignature: form.lesseeSignature,
+        guarantorName: form.guarantorName,
+        guarantorSignature: form.guarantorSignature,
+        signatureDate: form.signatureDate,
       });
     },
     onSuccess: (b) => setDoneId(b.id),
@@ -590,16 +596,14 @@ export default function BookWizardPage() {
             </motion.div>
 
             <h1 className="mt-6 font-[family-name:var(--font-sora)] text-3xl font-semibold tracking-tight text-[#0a1628] sm:text-4xl">
-              Order confirmed — spot reserved
+              {form.productType === "storage_acre"
+                ? text.book.confirmedAcre
+                : text.book.confirmedSpot}
             </h1>
             <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-[#64748b]">
-              Congratulations — your parking reservation is submitted and
-              confirmed. We&apos;ll email{" "}
+              {text.book.confirmedLead}{" "}
               <span className="font-medium text-[#0a1628]">{form.email}</span>{" "}
-              with next steps. Your{" "}
-              <span className="font-semibold text-[#0a1628]">gate code</span>{" "}
-              arrives before your start date so you can begin parking on day
-              one. Staff will finalize yard assignment in Onboarding.
+              {text.book.confirmedNext}
             </p>
             <p className="mt-3 text-sm text-[#94a3b8]">
               Reference{" "}
@@ -960,7 +964,7 @@ export default function BookWizardPage() {
                     : `Parking · ${form.spotCount} spot${form.spotCount === 1 ? "" : "s"}`}
                 </p>
                 <p className="text-xs text-[#64748b]">
-                  Final stall assignment is confirmed by staff after review.
+                  {text.book.reservedNote}
                 </p>
                 {selectedLots.length > 0 ? (
                   <div className="pt-1">

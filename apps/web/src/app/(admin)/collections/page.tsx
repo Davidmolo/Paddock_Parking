@@ -18,6 +18,7 @@ import { PageTransition } from "@/components/ui/motion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SelectMenu } from "@/components/ui/select-menu";
+import { text } from "@/constants/text";
 import { cn, formatCurrency } from "@/lib/utils";
 
 const STAGES: { key: CollectionStage; label: string }[] = [
@@ -111,6 +112,19 @@ export default function CollectionsPage() {
         };
       }),
     };
+  }, [data]);
+
+  const dueSoon = useMemo(() => {
+    if (!data) return [];
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    return data.accounts.filter((account) => {
+      if (account.balance <= 0 || account.daysOverdue > 0) return false;
+      const due = new Date(`${account.dueDate}T12:00:00`);
+      if (Number.isNaN(due.getTime())) return false;
+      const days = Math.round((due.getTime() - today.getTime()) / 86400000);
+      return days >= 0 && days <= 7;
+    });
   }, [data]);
 
   function invalidate() {
@@ -291,6 +305,35 @@ export default function CollectionsPage() {
               value={formatCurrency(view.totals.atRisk)}
               danger={view.totals.atRisk > 0}
             />
+          </div>
+
+          <div className="mb-4 overflow-hidden rounded-2xl border border-amber-200 bg-[var(--surface)] shadow-[var(--shadow-card)]">
+            <div className="border-b border-amber-200 px-4 py-4 sm:px-5">
+              <h2 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">
+                {text.admin.dueSoon}
+              </h2>
+            </div>
+            {dueSoon.length === 0 ? (
+              <p className="px-4 py-4 text-sm text-[var(--muted)] sm:px-5">
+                {text.admin.dueSoonEmpty}
+              </p>
+            ) : (
+              <ul>
+                {dueSoon.map((account) => (
+                  <li
+                    key={account.id}
+                    className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--border)] px-4 py-3 text-sm last:border-0 sm:px-5"
+                  >
+                    <span className="font-medium text-[var(--ink)]">{account.customerName}</span>
+                    <span className="text-[var(--muted)]">{account.propertyName ?? "—"}</span>
+                    <span>{formatDueDate(account.dueDate)}</span>
+                    <span className="font-semibold tabular-nums text-[var(--ink)]">
+                      {formatCurrency(account.balance)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]">

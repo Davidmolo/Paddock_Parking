@@ -95,6 +95,11 @@ export class BookingsService {
     autoPullAgreed?: boolean;
     lotId?: string;
     referredBy?: string;
+    lesseeName?: string;
+    lesseeSignature?: string;
+    guarantorName?: string;
+    guarantorSignature?: string;
+    signatureDate?: string;
   }) {
     const booking: Booking = {
       id: `bk${Date.now()}`,
@@ -123,6 +128,11 @@ export class BookingsService {
       autoPullWaived: false,
       lotId: input.lotId,
       referredBy: input.referredBy,
+      lesseeName: input.lesseeName,
+      lesseeSignature: input.lesseeSignature,
+      guarantorName: input.guarantorName,
+      guarantorSignature: input.guarantorSignature,
+      signatureDate: input.signatureDate,
       /** FMS: lands as Pending for staff review */
       decision: 'pending',
       portalStatus: 'not_invited',
@@ -398,8 +408,13 @@ export class BookingsService {
     ).length;
     const decision = this.inferDecision(b);
     const step = b.wizardStep ?? 1;
+    const {
+      lesseeSignature: _lesseeSignature,
+      guarantorSignature: _guarantorSignature,
+      ...booking
+    } = b;
     return {
-      ...b,
+      ...booking,
       decision,
       portalStatus: b.portalStatus ?? 'not_invited',
       gateCode: customer?.gateCode,

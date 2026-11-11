@@ -68,6 +68,10 @@ export type Customer = {
   leaseStatus: string;
   insuranceOk: boolean;
   achEnabled: boolean;
+  /** Staff can stop the monthly pull. Unset follows the booking agreement. */
+  autoPull?: boolean;
+  /** Card or ACH. Unset follows the booking, then ACH if achEnabled. */
+  payMethod?: "card" | "ach";
   gateCode: string;
   isActive: boolean;
   lotIds: string[];
@@ -220,6 +224,12 @@ export type Booking = {
   referredBy?: string;
   /** Portal invite is separate from approval (FMS) */
   portalStatus?: BookingPortalStatus;
+  /** Drawn at booking. Shown in the customer portal, not a blank lease. */
+  lesseeName?: string;
+  lesseeSignature?: string;
+  guarantorName?: string;
+  guarantorSignature?: string;
+  signatureDate?: string;
 };
 
 /**

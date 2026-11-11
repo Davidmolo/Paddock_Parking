@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { text } from "@/constants/text";
 import { formatCurrency } from "@/lib/utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001";
@@ -73,6 +74,8 @@ export default function CustomerDetailPage() {
   const [leaseStage, setLeaseStage] = useState<LeaseStage>("not_contacted");
   const [notifyMsg, setNotifyMsg] = useState("");
   const [notifyError, setNotifyError] = useState("");
+  const [billMsg, setBillMsg] = useState("");
+  const [billError, setBillError] = useState("");
 
   useEffect(() => {
     if (!data) return;
@@ -115,6 +118,31 @@ export default function CustomerDetailPage() {
       setCoiError(
         err instanceof ApiError ? err.message : "Could not save COI",
       );
+    },
+  });
+
+  const billing = useMutation({
+    mutationFn: (body: { autoPull?: boolean; payMethod?: "card" | "ach" }) =>
+      endpoints.patchCustomerBilling(id, body),
+    onSuccess: (next) => {
+      queryClient.setQueryData(queryKeys.customer(id), next);
+      setBillError("");
+    },
+    onError: (err) => {
+      setBillError(err instanceof ApiError ? err.message : text.portal.genericError);
+    },
+  });
+
+  const sendInvoices = useMutation({
+    mutationFn: () => endpoints.sendCustomerInvoices(id),
+    onSuccess: (next) => {
+      queryClient.setQueryData(queryKeys.customer(id), next);
+      setBillMsg(text.admin.invoicesSent);
+      setBillError("");
+    },
+    onError: (err) => {
+      setBillMsg("");
+      setBillError(err instanceof ApiError ? err.message : text.portal.genericError);
     },
   });
 
@@ -320,6 +348,62 @@ export default function CustomerDetailPage() {
             >
               Open yard map →
             </Link>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card interactive={false} className="mb-5">
+        <CardHeader>
+          <h2 className="font-semibold">{text.admin.autopull}</h2>
+          <Badge tone={data.autoPull ? "success" : "warning"}>
+            {data.autoPull ? text.admin.autopullOn : text.admin.autopullOff}
+          </Badge>
+        </CardHeader>
+        <CardBody className="grid gap-3">
+          <p className="text-sm text-[var(--muted)]">{text.admin.autopullHint}</p>
+          <p className="text-sm text-[var(--ink)]">
+            {text.admin.chargeWith}: {data.payMethod === "card" ? text.portal.card : text.portal.ach}
+          </p>
+          {billError ? <p className="text-sm text-rose-700">{billError}</p> : null}
+          {billMsg ? <p className="text-sm text-emerald-700">{billMsg}</p> : null}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={billing.isPending}
+              onClick={() => {
+                setBillMsg("");
+                setBillError("");
+                billing.mutate({ autoPull: !data.autoPull });
+              }}
+            >
+              {data.autoPull ? text.admin.turnOff : text.admin.turnOn}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={billing.isPending}
+              onClick={() => {
+                setBillMsg("");
+                setBillError("");
+                billing.mutate({ payMethod: data.payMethod === "card" ? "ach" : "card" });
+              }}
+            >
+              {data.payMethod === "card" ? text.admin.switchToAch : text.admin.switchToCard}
+            </Button>
+            {!data.autoPull ? (
+              <Button
+                size="sm"
+                disabled={sendInvoices.isPending}
+                onClick={() => {
+                  setBillMsg("");
+                  setBillError("");
+                  sendInvoices.mutate();
+                }}
+              >
+                {sendInvoices.isPending ? text.portal.pleaseWait : text.admin.sendInvoices}
+              </Button>
+            ) : null}
           </div>
         </CardBody>
       </Card>

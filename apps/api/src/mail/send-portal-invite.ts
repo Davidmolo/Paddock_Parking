@@ -66,3 +66,35 @@ export async function sendPortalInviteEmail(opts: {
   console.info(`[mail] portal invite → ${opts.to} messageId=${info.messageId}`);
   return info;
 }
+
+export async function sendManualInvoiceEmail(opts: {
+  to: string;
+  name: string;
+  lines: string[];
+  portalUrl: string;
+}) {
+  const port = Number(required('SMTP_PORT'));
+  const pass = required('SMTP_PASS').replace(/\s+/g, '');
+  const from = required('MAIL_FROM');
+  const contact = opts.name || opts.to;
+  const info = await createTransport({
+    host: required('SMTP_HOST'),
+    port,
+    secure: port === 465,
+    auth: { user: required('SMTP_USER'), pass },
+  }).sendMail({
+    from,
+    to: opts.to,
+    subject: 'Your Paddock Parking invoice',
+    text: [
+      `Hi ${contact},`,
+      '',
+      'An invoice is ready in your customer portal:',
+      ...opts.lines,
+      '',
+      opts.portalUrl,
+    ].join('\n'),
+  });
+  console.info(`[mail] invoice → ${opts.to} messageId=${info.messageId}`);
+  return info;
+}

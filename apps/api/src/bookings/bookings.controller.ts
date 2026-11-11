@@ -119,6 +119,26 @@ class CreateBookingDto {
   @IsOptional()
   @IsString()
   referredBy?: string;
+
+  @IsOptional()
+  @IsString()
+  lesseeName?: string;
+
+  @IsOptional()
+  @IsString()
+  lesseeSignature?: string;
+
+  @IsOptional()
+  @IsString()
+  guarantorName?: string;
+
+  @IsOptional()
+  @IsString()
+  guarantorSignature?: string;
+
+  @IsOptional()
+  @IsString()
+  signatureDate?: string;
 }
 
 class ConvertBookingDto {

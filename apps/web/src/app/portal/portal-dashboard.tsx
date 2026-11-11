@@ -9,7 +9,6 @@ import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PortalAccount } from "./portal-account";
 import { PortalBookingCard } from "./portal-booking";
-import { PortalCharts } from "./portal-charts";
 import { usePortalEmail } from "./portal-email";
 import { PortalStat } from "./portal-stat";
 
@@ -39,6 +38,11 @@ export function PortalDashboard() {
         </div>
       ) : data ? (
         <div className="grid gap-4">
+          {data.paymentStatus === "past_due" && (
+            <p className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+              {text.portal.lateNotice}
+            </p>
+          )}
           <Stagger className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StaggerItem>
               <PortalStat label={text.portal.plot} value={space} icon={MapPin} />
@@ -57,7 +61,6 @@ export function PortalDashboard() {
               <PortalStat label={text.portal.gateCode} value={data.gateCode || text.portal.notSet} icon={KeyRound} />
             </StaggerItem>
           </Stagger>
-          <PortalCharts home={data} />
           <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
             <PortalBookingCard home={data} />
             <PortalAccount home={data} />

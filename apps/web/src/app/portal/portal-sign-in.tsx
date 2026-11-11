@@ -59,13 +59,14 @@ export function PortalSignIn({ onSignedIn }: PortalSignInProps) {
         const res = await endpoints.portalSetPassword({
           email,
           password,
-          inviteToken: inviteToken || undefined,
+          inviteToken,
         });
-        setFlash(res.message);
-        setFromInvite(false);
-        setPassword("");
-        setInviteToken("");
         window.history.replaceState(null, "", "/portal");
+        onSignedIn({
+          name: res.name,
+          email: res.email,
+          gateCode: res.gateCode,
+        });
         return;
       }
       if (forgot) {

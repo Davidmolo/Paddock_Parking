@@ -184,6 +184,8 @@ export type CustomerSummary = {
   insuranceOk: boolean;
   coiStatus?: CoiStatus;
   achEnabled: boolean;
+  autoPull?: boolean;
+  payMethod?: "card" | "ach";
   gateCode: string;
   isActive: boolean;
   lotNumbers: string[];
@@ -563,6 +565,11 @@ export const endpoints = {
     autoPullAgreed?: boolean;
     lotId?: string;
     referredBy?: string;
+    lesseeName?: string;
+    lesseeSignature?: string;
+    guarantorName?: string;
+    guarantorSignature?: string;
+    signatureDate?: string;
   }) =>
     api<Booking>("/bookings", {
       method: "POST",
@@ -607,11 +614,27 @@ export const endpoints = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  portalPay: (body: { email: string; invoiceId: string; amount: number }) =>
+  portalPay: (body: {
+    email: string;
+    invoiceId: string;
+    amount: number;
+    method: "card" | "ach";
+    last4: string;
+  }) =>
     api<PortalHome>("/portal/pay", {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  patchCustomerBilling: (
+    id: string,
+    body: { autoPull?: boolean; payMethod?: "card" | "ach" },
+  ) =>
+    api<CustomerDetail>(`/customers/${id}/billing`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  sendCustomerInvoices: (id: string) =>
+    api<CustomerDetail>(`/customers/${id}/send-invoices`, { method: "POST" }),
   portalUploadDocument: (body: {
     email: string;
     fileName: string;
@@ -634,12 +657,18 @@ export const endpoints = {
   portalSetPassword: (body: {
     email: string;
     password: string;
-    inviteToken?: string;
+    inviteToken: string;
   }) =>
-    api<{ ok: boolean; message: string; gateCode?: string }>(
-      "/portal/set-password",
-      { method: "POST", body: JSON.stringify(body) },
-    ),
+    api<{
+      ok: boolean;
+      message: string;
+      name: string;
+      email: string;
+      gateCode: string;
+    }>("/portal/set-password", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   portalResetPassword: (body: { email: string }) =>
     api<{ ok: boolean; message: string; inviteToken?: string }>(
       "/portal/reset-password",

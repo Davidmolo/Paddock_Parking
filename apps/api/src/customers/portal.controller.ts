@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { Type } from 'class-transformer';
-import { IsArray, IsEmail, IsIn, IsInt, IsNumber, IsOptional, IsString, Min, MinLength, ValidateNested } from 'class-validator';
+import { IsArray, IsEmail, IsIn, IsInt, IsNumber, IsString, Min, MinLength, ValidateNested } from 'class-validator';
 import { CustomersService } from './customers.service.js';
 
 class PortalLoginDto {
@@ -19,9 +19,9 @@ class PortalSetPasswordDto {
   @MinLength(6)
   password!: string;
 
-  @IsOptional()
   @IsString()
-  inviteToken?: string;
+  @MinLength(16)
+  inviteToken!: string;
 }
 
 class PortalResetDto {
@@ -60,6 +60,13 @@ class PortalPayDto {
   @IsNumber()
   @Min(0.01)
   amount!: number;
+
+  @IsIn(['card', 'ach'])
+  method!: 'card' | 'ach';
+
+  @IsString()
+  @MinLength(4)
+  last4!: string;
 }
 
 class PortalDocumentDto {

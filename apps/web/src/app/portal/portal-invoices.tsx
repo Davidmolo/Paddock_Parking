@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
+import { isValidAbaRouting } from "@/lib/aba-routing";
+import { formatCardNumberInput, formatExpInput } from "@/components/book/payment-card-preview";
 import { formatPortalDate } from "./format";
 import { usePortalEmail } from "./portal-email";
-import type { PortalInvoicesProps } from "./types";
+import type { PortalHome, PortalInvoicesProps, PortalPayFieldProps } from "./types";
 
 const statusLabel = {
   paid: text.portal.paid,
@@ -32,6 +34,14 @@ export function PortalInvoices({ home }: PortalInvoicesProps) {
   const queryClient = useQueryClient();
   const [invoiceId, setInvoiceId] = useState("");
   const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState<"card" | "ach">(home.payMethod);
+  const [cardName, setCardName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExp, setCardExp] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [billingZip, setBillingZip] = useState("");
+  const [routingNumber, setRoutingNumber] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
   const [error, setError] = useState("");
   const rows = [...home.invoices].sort((a, b) =>
     a.dueDate < b.dueDate ? 1 : -1,
@@ -43,6 +53,13 @@ export function PortalInvoices({ home }: PortalInvoicesProps) {
       queryClient.setQueryData(["portal-home", email], next);
       setInvoiceId("");
       setAmount("");
+      setCardName("");
+      setCardNumber("");
+      setCardExp("");
+      setCardCvv("");
+      setBillingZip("");
+      setRoutingNumber("");
+      setAccountNumber("");
       setError("");
     },
     onError: (err: Error) => setError(err.message),
@@ -52,6 +69,11 @@ export function PortalInvoices({ home }: PortalInvoicesProps) {
     <div className="grid gap-4">
     <Card interactive={false}>
       <CardBody className="p-0">
+        {home.autoPull ? (
+          <p className="border-b border-[var(--border)] px-4 py-3 text-sm text-[var(--muted)]">
+            {text.portal.autopullNotice}
+          </p>
+        ) : null}
         {rows.length === 0 ? (
           <p className="p-4 text-sm text-[var(--muted)]">{text.portal.noInvoices}</p>
         ) : (
@@ -66,7 +88,9 @@ export function PortalInvoices({ home }: PortalInvoicesProps) {
                   <th className="px-4 py-3 text-right font-semibold">{text.portal.balance}</th>
                   <th className="px-4 py-3 font-semibold">{text.portal.method}</th>
                   <th className="px-4 py-3 font-semibold">{text.portal.status}</th>
-                  <th className="px-4 py-3 font-semibold">{text.portal.pay}</th>
+                  {home.autoPull ? null : (
+                    <th className="px-4 py-3 font-semibold">{text.portal.pay}</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -86,31 +110,32 @@ export function PortalInvoices({ home }: PortalInvoicesProps) {
                       {formatCurrency(invoice.balance)}
                     </td>
                     <td className="px-4 py-3 text-[var(--muted)]">
-                      {invoice.collectionMethod === "ach_debit"
-                        ? text.portal.achDebit
-                        : text.portal.sendInvoice}
+                      {collectLabel(home)}
                     </td>
                     <td className="px-4 py-3">
                       <Badge tone={statusTone[invoice.status]}>
                         {statusLabel[invoice.status]}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">
-                      {invoice.balance > 0 ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => {
-                            setInvoiceId(invoice.id);
-                            setAmount(String(invoice.balance));
-                            setError("");
-                          }}
-                        >
-                          {text.portal.pay}
-                        </Button>
-                      ) : null}
-                    </td>
+                    {home.autoPull ? null : (
+                      <td className="px-4 py-3">
+                        {invoice.balance > 0 ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              setInvoiceId(invoice.id);
+                              setAmount(String(invoice.balance));
+                              setMethod(home.payMethod);
+                              setError("");
+                            }}
+                          >
+                            {text.portal.pay}
+                          </Button>
+                        ) : null}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -119,7 +144,7 @@ export function PortalInvoices({ home }: PortalInvoicesProps) {
         )}
       </CardBody>
     </Card>
-    {selected ? (
+    {selected && !home.autoPull ? (
       <Card interactive={false}>
         <CardHeader>
           <h2 className="text-base font-semibold text-[var(--ink)]">
@@ -129,6 +154,63 @@ export function PortalInvoices({ home }: PortalInvoicesProps) {
         <CardBody className="grid max-w-md gap-3">
           <p className="text-sm text-[var(--muted)]">{text.portal.payHint}</p>
           {error ? <p className="text-sm text-rose-700">{error}</p> : null}
+          <div className="flex gap-2">
+            {(["card", "ach"] as const).map((id) => (
+              <Button
+                key={id}
+                type="button"
+                size="sm"
+                variant={method === id ? "primary" : "secondary"}
+                onClick={() => setMethod(id)}
+              >
+                {id === "card" ? text.portal.payCard : text.portal.payAch}
+              </Button>
+            ))}
+          </div>
+          {method === "card" ? (
+            <>
+              <PayField label={text.portal.nameOnCard} value={cardName} onChange={setCardName} />
+              <PayField
+                label={text.portal.cardNumber}
+                value={cardNumber}
+                onChange={(value) => setCardNumber(formatCardNumberInput(value))}
+                inputMode="numeric"
+              />
+              <PayField
+                label={text.portal.expiration}
+                value={cardExp}
+                onChange={(value) => setCardExp(formatExpInput(value))}
+                inputMode="numeric"
+              />
+              <PayField
+                label={text.portal.cvv}
+                value={cardCvv}
+                onChange={(value) => setCardCvv(value.replace(/\D/g, "").slice(0, 4))}
+                inputMode="numeric"
+              />
+              <PayField
+                label={text.portal.billingZip}
+                value={billingZip}
+                onChange={setBillingZip}
+                inputMode="numeric"
+              />
+            </>
+          ) : (
+            <>
+              <PayField
+                label={text.portal.routing}
+                value={routingNumber}
+                onChange={(value) => setRoutingNumber(value.replace(/\D/g, "").slice(0, 9))}
+                inputMode="numeric"
+              />
+              <PayField
+                label={text.portal.accountNumber}
+                value={accountNumber}
+                onChange={(value) => setAccountNumber(value.replace(/\D/g, "").slice(0, 17))}
+                inputMode="numeric"
+              />
+            </>
+          )}
           <label className="block">
             <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
               {text.portal.amount}
@@ -144,13 +226,25 @@ export function PortalInvoices({ home }: PortalInvoicesProps) {
             type="button"
             className="w-fit"
             disabled={pay.isPending || !(Number(amount) > 0)}
-            onClick={() =>
+            onClick={() => {
+              const digits = method === "card" ? cardNumber.replace(/\D/g, "") : accountNumber;
+              if (method === "card") {
+                if (!cardName.trim() || digits.length < 12 || cardExp.length < 4 || cardCvv.length < 3 || !billingZip.trim()) {
+                  setError(text.portal.cardIncomplete);
+                  return;
+                }
+              } else if (!isValidAbaRouting(routingNumber) || accountNumber.length < 4) {
+                setError(text.portal.bankIncomplete);
+                return;
+              }
               pay.mutate({
                 email,
                 invoiceId: selected.id,
                 amount: Number(amount),
-              })
-            }
+                method,
+                last4: digits.slice(-4),
+              });
+            }}
           >
             {pay.isPending ? text.portal.pleaseWait : text.portal.payConfirm}
           </Button>
@@ -158,5 +252,26 @@ export function PortalInvoices({ home }: PortalInvoicesProps) {
       </Card>
     ) : null}
     </div>
+  );
+}
+
+function collectLabel(home: PortalHome) {
+  if (!home.autoPull) return text.portal.sendInvoice;
+  return home.payMethod === "card" ? text.portal.cardPull : text.portal.achDebit;
+}
+
+function PayField({ label, value, onChange, inputMode }: PortalPayFieldProps) {
+  return (
+    <label className="block">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+        {label}
+      </span>
+      <Input
+        className="mt-1.5"
+        inputMode={inputMode}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
   );
 }
