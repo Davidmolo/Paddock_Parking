@@ -353,14 +353,14 @@ export class CustomersService {
     };
   }
 
-  portalUploadDocument(body: {
+  async portalUploadDocument(body: {
     email: string;
     fileName: string;
     kind: 'lease' | 'insurance' | 'other';
     contentBase64: string;
   }) {
     const customer = this.portalCustomer(body.email);
-    this.uploadDocument(customer.id, body);
+    await this.uploadDocument(customer.id, body);
     if (body.kind === 'insurance') {
       for (const booking of this.store.bookings) {
         const same =
@@ -531,7 +531,7 @@ export class CustomersService {
     return this.detail(customer).certificate;
   }
 
-  uploadDocument(customerId: string, dto: UploadDocumentDto) {
+  async uploadDocument(customerId: string, dto: UploadDocumentDto) {
     const customer = this.store.customers.find((c) => c.id === customerId);
     if (!customer) {
       throw new NotFoundException(`Customer ${customerId} not found`);
