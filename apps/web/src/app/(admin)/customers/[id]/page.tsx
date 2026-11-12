@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, FileText, ShieldCheck, CreditCard } from "lucide-react";
-import { ApiError, endpoints, type LeaseStage } from "@/lib/api";
+import { ApiError, endpoints, type CustomerDetail, type LeaseStage } from "@/lib/api";
 import { LEASE_STAGES } from "@/lib/lease-stages";
 import { queryKeys } from "@/lib/prefetch";
 import { PageHeader } from "@/components/page-header";
@@ -76,6 +76,8 @@ export default function CustomerDetailPage() {
   const [notifyError, setNotifyError] = useState("");
   const [billMsg, setBillMsg] = useState("");
   const [billError, setBillError] = useState("");
+  const leaseFileRef = useRef<HTMLInputElement>(null);
+  const coiFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -377,7 +379,7 @@ export default function CustomerDetailPage() {
                 billing.mutate({ autoPull: !data.autoPull });
               }}
             >
-              {data.autoPull ? text.admin.turnOff : text.admin.turnOn}
+              {data.autoPull ? text.admin.turnAutopullOff : text.admin.turnAutopullOn}
             </Button>
             <Button
               size="sm"
@@ -549,100 +551,135 @@ export default function CustomerDetailPage() {
         <StaggerItem className="space-y-5 lg:col-span-2">
           <Card>
             <CardHeader>
-              <h2 className="font-semibold">Lease & assignment</h2>
-              <Badge
-                tone={
-                  data.lease?.noticeDue
-                    ? "warning"
-                    : data.lease?.status === "active"
-                      ? "success"
-                      : "neutral"
-                }
-              >
-                {data.lease?.noticeDue
-                  ? "Renewal notice due"
-                  : data.leaseStatus}
-              </Badge>
+              <h2 className="font-semibold">{text.admin.documents}</h2>
+              <FileText className="h-4 w-4 text-[var(--muted)]" />
             </CardHeader>
-            <CardBody className="grid gap-3 sm:grid-cols-2">
-              <Meta label="Property" value={data.property?.name ?? "—"} />
-              <Meta
-                label="Legal entity"
-                value={data.property?.legalEntityName ?? "—"}
-              />
-              <Meta
-                label="Contract"
-                value={data.contractType.replaceAll("_", " ")}
-              />
-              <Meta label="Lease start" value={data.lease?.startDate ?? data.leaseStart} />
-              <Meta
-                label="Renewal date"
-                value={data.lease?.renewalDate ?? data.leaseEnd ?? "—"}
-              />
-              <Meta
-                label="Notice lead time"
-                value={
-                  data.lease
-                    ? `${data.lease.notificationLeadDays} days before renewal`
-                    : "—"
-                }
-              />
-              <Meta
-                label="Lots"
-                value={
-                  data.lots.map((l) => `#${l.number}`).join(", ") ||
-                  "Unassigned"
-                }
-              />
-              <Meta
-                label="Monthly rent"
-                value={
-                  data.lease
-                    ? formatCurrency(data.lease.monthlyRent)
-                    : data.lots.length
-                      ? formatCurrency(
-                          data.lots.reduce((s, l) => s + l.monthlyRate, 0),
-                        )
-                      : "—"
-                }
-              />
-              <Meta
-                label="Security deposit"
-                value={formatCurrency(data.securityDeposit)}
-              />
-              <Meta label="Gate code" value={data.gateCode || "—"} />
-              <Meta
-                label="ACH"
-                value={data.achEnabled ? "Enabled" : "Not set up"}
-              />
-              <Meta
-                label="Portal last login"
-                value={data.portalLastLogin ?? "Never"}
-              />
-            </CardBody>
-            {data.lease?.notes && (
-              <p className="border-t border-[var(--border)] px-5 py-3 text-sm text-[var(--muted)]">
-                {data.lease.notes}
-              </p>
-            )}
-          </Card>
+            <CardBody className="space-y-8">
+              <section className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-semibold">{text.portal.lease}</h3>
+                  <Badge
+                    tone={
+                      data.lease?.noticeDue
+                        ? "warning"
+                        : data.lease?.status === "active"
+                          ? "success"
+                          : "neutral"
+                    }
+                  >
+                    {data.lease?.noticeDue
+                      ? "Renewal notice due"
+                      : data.leaseStatus}
+                  </Badge>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Meta label="Property" value={data.property?.name ?? "—"} />
+                  <Meta
+                    label="Legal entity"
+                    value={data.property?.legalEntityName ?? "—"}
+                  />
+                  <Meta
+                    label="Contract"
+                    value={data.contractType.replaceAll("_", " ")}
+                  />
+                  <Meta label="Lease start" value={data.lease?.startDate ?? data.leaseStart} />
+                  <Meta
+                    label="Renewal date"
+                    value={data.lease?.renewalDate ?? data.leaseEnd ?? "—"}
+                  />
+                  <Meta
+                    label="Notice lead time"
+                    value={
+                      data.lease
+                        ? `${data.lease.notificationLeadDays} days before renewal`
+                        : "—"
+                    }
+                  />
+                  <Meta
+                    label="Lots"
+                    value={
+                      data.lots.map((l) => `#${l.number}`).join(", ") ||
+                      "Unassigned"
+                    }
+                  />
+                  <Meta
+                    label="Monthly rent"
+                    value={
+                      data.lease
+                        ? formatCurrency(data.lease.monthlyRent)
+                        : data.lots.length
+                          ? formatCurrency(
+                              data.lots.reduce((s, l) => s + l.monthlyRate, 0),
+                            )
+                          : "—"
+                    }
+                  />
+                  <Meta
+                    label="Security deposit"
+                    value={formatCurrency(data.securityDeposit)}
+                  />
+                  <Meta label="Gate code" value={data.gateCode || "—"} />
+                  <Meta
+                    label="ACH"
+                    value={data.achEnabled ? "Enabled" : "Not set up"}
+                  />
+                  <Meta
+                    label="Portal last login"
+                    value={data.portalLastLogin ?? "Never"}
+                  />
+                </div>
+                {data.lease?.notes && (
+                  <p className="text-sm text-[var(--muted)]">{data.lease.notes}</p>
+                )}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  type="button"
+                  onClick={() => leaseFileRef.current?.click()}
+                >
+                  {text.admin.uploadLease}
+                </Button>
+                <input
+                  ref={leaseFileRef}
+                  type="file"
+                  accept=".pdf,image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void onUpload(file, "lease");
+                    e.target.value = "";
+                  }}
+                />
+                <DocList
+                  docs={data.documents.filter((doc) => doc.kind === "lease")}
+                  empty={text.portal.noDocuments}
+                />
+              </section>
 
-          <Card>
-            <CardHeader>
-              <h2 className="font-semibold">Certificate of insurance</h2>
-              <Badge tone={coiTone(data.certificate.status)}>
-                {data.certificate.status}
-              </Badge>
-            </CardHeader>
-            <CardBody className="space-y-3">
-              <p className="text-sm text-[var(--muted)]">
-                COI must list{" "}
-                <span className="font-medium text-[var(--ink)]">
-                  {requiredEntity || "the yard legal entity"}
-                </span>{" "}
-                as additional insured.
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <section className="space-y-3 border-t border-[var(--border)] pt-6">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-semibold">{text.admin.certificate}</h3>
+                  <Badge tone={coiTone(data.certificate.status)}>
+                    {data.certificate.status}
+                  </Badge>
+                </div>
+                <details className="w-fit">
+                  <summary className="inline-flex h-8 cursor-pointer list-none items-center rounded-lg border border-[var(--ink)] bg-[var(--ink)] px-2.5 text-xs font-medium text-[var(--accent)] [&::-webkit-details-marker]:hidden">
+                    {text.portal.coiExampleAlt}
+                  </summary>
+                  <a href="/coi-example.png" target="_blank" rel="noreferrer" className="mt-3 block w-fit">
+                    <img
+                      src="/coi-example.png"
+                      alt={text.portal.coiExampleAlt}
+                      className="w-full max-w-xl cursor-pointer rounded-md border border-[var(--border)]"
+                    />
+                  </a>
+                </details>
+                <p className="text-sm text-[var(--ink)]">{text.portal.coiHint}</p>
+                {data.property?.address ? (
+                  <p className="text-sm text-[var(--muted)]">{data.property.address}</p>
+                ) : null}
+                <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block space-y-1.5">
                   <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
                     Carrier
@@ -718,6 +755,25 @@ export default function CustomerDetailPage() {
                     Use yard entity name
                   </Button>
                 )}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  type="button"
+                  onClick={() => coiFileRef.current?.click()}
+                >
+                  {text.admin.uploadCoi}
+                </Button>
+                <input
+                  ref={coiFileRef}
+                  type="file"
+                  accept=".pdf,image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void onUpload(file, "insurance");
+                    e.target.value = "";
+                  }}
+                />
               </div>
               {coiMsg && (
                 <p className="text-sm text-emerald-700">{coiMsg}</p>
@@ -725,81 +781,22 @@ export default function CustomerDetailPage() {
               {coiError && (
                 <p className="text-sm text-rose-700">{coiError}</p>
               )}
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <h2 className="font-semibold">Documents</h2>
-              <FileText className="h-4 w-4 text-[var(--muted)]" />
-            </CardHeader>
-            <CardBody className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <label className="inline-flex cursor-pointer items-center rounded-xl border border-[var(--border)] px-3 py-2 text-sm font-medium hover:border-[var(--accent)]">
-                  Upload lease PDF
-                  <input
-                    type="file"
-                    accept=".pdf,image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) void onUpload(file, "lease");
-                      e.target.value = "";
-                    }}
-                  />
-                </label>
-                <label className="inline-flex cursor-pointer items-center rounded-xl border border-[var(--border)] px-3 py-2 text-sm font-medium hover:border-[var(--accent)]">
-                  Upload COI
-                  <input
-                    type="file"
-                    accept=".pdf,image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) void onUpload(file, "insurance");
-                      e.target.value = "";
-                    }}
-                  />
-                </label>
-              </div>
+              <DocList
+                docs={data.documents.filter((doc) => doc.kind === "insurance")}
+                empty={text.portal.noDocuments}
+              />
+              </section>
               {uploadMsg && (
                 <p className="text-sm text-emerald-700">{uploadMsg}</p>
               )}
               {uploadError && (
                 <p className="text-sm text-rose-700">{uploadError}</p>
               )}
-              {data.documents.length === 0 ? (
-                <p className="text-sm text-[var(--muted)]">
-                  No documents uploaded yet.
-                </p>
-              ) : (
-                data.documents.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-center justify-between rounded-xl bg-[var(--surface-muted)] px-3 py-2.5"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{doc.name}</p>
-                      <p className="text-xs text-[var(--muted)]">
-                        {doc.kind} · {doc.uploadedAt} · {doc.sizeKb} KB
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {doc.storagePath && (
-                        <a
-                          href={`${API_URL}/uploads/${doc.storagePath}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs font-medium text-[var(--accent-ink)] hover:underline"
-                        >
-                          Open
-                        </a>
-                      )}
-                      <Badge tone="accent">{doc.kind}</Badge>
-                    </div>
-                  </div>
-                ))
-              )}
+              <DocList
+                docs={data.documents.filter(
+                  (doc) => doc.kind !== "lease" && doc.kind !== "insurance",
+                )}
+              />
             </CardBody>
           </Card>
 
@@ -879,9 +876,9 @@ export default function CustomerDetailPage() {
                         {formatCurrency(p.amount)}
                       </p>
                       <Badge
-                        tone={p.status === "cleared" ? "success" : "warning"}
+                        tone={p.status === "cleared" ? "success" : p.status === "failed" ? "danger" : "warning"}
                       >
-                        {p.status}
+                        {p.status === "failed" ? text.portal.declined : p.status}
                       </Badge>
                     </div>
                     <p className="mt-1 text-xs text-[var(--muted)]">
@@ -896,6 +893,50 @@ export default function CustomerDetailPage() {
         </StaggerItem>
       </Stagger>
     </PageTransition>
+  );
+}
+
+function DocList({
+  docs,
+  empty,
+}: {
+  docs: CustomerDetail["documents"];
+  empty?: string;
+}) {
+  if (docs.length === 0) {
+    return empty ? <p className="text-sm text-[var(--muted)]">{empty}</p> : null;
+  }
+  return (
+    <div className="max-h-72 space-y-2 overflow-y-auto">
+      {docs.map((doc) => {
+        const src = doc.storagePath ? `${API_URL}/uploads/${doc.storagePath}` : "";
+        const row = (
+          <>
+            <div>
+              <p className="text-sm font-medium">{doc.name}</p>
+              <p className="text-xs text-[var(--muted)]">
+                {doc.uploadedAt} · {doc.sizeKb} KB
+              </p>
+            </div>
+            {src ? (
+              <span className="text-xs font-medium text-[var(--accent-ink)]">
+                {text.portal.openFile}
+              </span>
+            ) : null}
+          </>
+        );
+        const className = "flex items-center justify-between rounded-xl bg-[var(--surface-muted)] px-3 py-2.5";
+        return src ? (
+          <a key={doc.id} href={src} target="_blank" rel="noreferrer" className={className}>
+            {row}
+          </a>
+        ) : (
+          <div key={doc.id} className={className}>
+            {row}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

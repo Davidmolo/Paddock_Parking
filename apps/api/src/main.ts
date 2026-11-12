@@ -54,6 +54,6 @@ async function bootstrap() {
   app.useStaticAssets(uploadsDir, { prefix: '/uploads/' });
   const port = Number(process.env.PORT ?? 4001);
   await app.listen(port);
-  console.log(`Paddock Parking API listening on http://localhost:${port}`);
+  console.log(`Phoenix Storage Yards API listening on http://localhost:${port}`);
 }
 await bootstrap();

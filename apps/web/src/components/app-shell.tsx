@@ -357,7 +357,7 @@ function Brand({ compact }: { compact?: boolean }) {
   return (
     <Link href="/dashboard" className="flex items-center gap-3 overflow-hidden" prefetch>
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[var(--accent)] text-sm font-bold tracking-wider text-[var(--accent-ink)]">
-        PP
+        PS
       </span>
       <span
         className={cn(
@@ -366,7 +366,7 @@ function Brand({ compact }: { compact?: boolean }) {
         )}
       >
         <span className="block text-base font-semibold tracking-tight text-white">
-          Paddock Parking
+          Phoenix Storage Yards
         </span>
         <span className="block text-xs text-white/55">Property management</span>
       </span>

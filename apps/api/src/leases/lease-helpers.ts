@@ -55,6 +55,17 @@ export function evaluateCoi(
     normalizeEntity(coi.additionalInsuredName) === normalizeEntity(required);
   const daysToExpiry = daysUntil(coi.expirationDate, today);
 
+  if (!coi.expirationDate || Number.isNaN(daysToExpiry)) {
+    return {
+      status: 'missing',
+      matchesEntity,
+      requiredAdditionalInsured: required,
+      daysToExpiry: null,
+    };
+  }
+
+  
+
   if (daysToExpiry < 0) {
     return {
       status: 'expired',

@@ -577,7 +577,7 @@ export const endpoints = {
     }),
   patchBooking: (
     id: string,
-    body: { autoPullWaived?: boolean },
+    body: { autoPullWaived?: boolean; paymentMethod?: "card" | "ach" },
   ) =>
     api<Booking>(`/bookings/${id}`, {
       method: "PATCH",
@@ -590,6 +590,7 @@ export const endpoints = {
       lotId?: string;
       conditions?: BookingCondition[];
       notes?: string;
+      giveGateCode?: boolean;
     },
   ) =>
     api<{
@@ -621,7 +622,12 @@ export const endpoints = {
     method: "card" | "ach";
     last4: string;
   }) =>
-    api<PortalHome>("/portal/pay", {
+    api<{
+      result: "paid" | "partial" | "declined";
+      paid: number;
+      stillDue: number;
+      home: PortalHome;
+    }>("/portal/pay", {
       method: "POST",
       body: JSON.stringify(body),
     }),

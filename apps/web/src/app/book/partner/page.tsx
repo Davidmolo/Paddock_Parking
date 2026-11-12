@@ -15,7 +15,7 @@ export default function PartnerPage() {
           </h1>
           <p className="mt-4 max-w-2xl text-white/70">
             Have land or a yard that could work as secure outdoor storage?
-            Partner with Paddock Parking to put it to work.
+            Partner with Phoenix Storage Yards to put it to work.
           </p>
         </div>
       </section>

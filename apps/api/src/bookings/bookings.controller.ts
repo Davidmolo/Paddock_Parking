@@ -150,6 +150,10 @@ class PatchBookingDto {
   @IsOptional()
   @IsBoolean()
   autoPullWaived?: boolean;
+
+  @IsOptional()
+  @IsIn(['card', 'ach'])
+  paymentMethod?: 'card' | 'ach';
 }
 
 class DecideBookingDto {
@@ -170,6 +174,10 @@ class DecideBookingDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  giveGateCode?: boolean;
 }
 
 @Controller('bookings')

@@ -642,7 +642,7 @@ export default function BookWizardPage() {
       <section className="border-b border-[#e8ecf0] bg-white py-8">
         <div className={BOOK_SHELL}>
           <p className="text-center text-sm font-semibold tracking-wide text-[#0a1628]">
-            Paddock Parking
+            Phoenix Storage Yards
           </p>
           <h1 className="mt-2 text-center text-2xl font-bold text-[#0a1628] sm:text-3xl">
             {property?.name ?? "Book"} —{" "}
@@ -1182,7 +1182,7 @@ export default function BookWizardPage() {
                     <span className="text-rose-500"> *</span>
                   </span>
                   <span className="mt-1 block text-[#64748b]">
-                    I authorize Paddock Parking to automatically debit my
+                    I authorize Phoenix Storage Yards to automatically debit my
                     payment method on file for each billing cycle’s lot rent and
                     related lease charges until I revoke this authorization in
                     writing under my lease.

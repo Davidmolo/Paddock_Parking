@@ -1,4 +1,4 @@
-/** Paddock Parking domain — aligned to David’s ops needs (not Jazzmin clutter). */
+/** Phoenix Storage Yards domain — aligned to David’s ops needs (not Jazzmin clutter). */
 
 import { sitePlanLots } from "./site-plan-lots.js";
 
@@ -116,7 +116,7 @@ export type Payment = {
   customerId: string;
   amount: number;
   method: "ach" | "card" | "check" | "cash";
-  status: "cleared" | "pending";
+  status: "cleared" | "pending" | "failed";
   paidAt: string;
   reference?: string;
 };
@@ -1197,6 +1197,13 @@ export const bookings: Booking[] = [
     decision: "approved",
     decidedAt: "2026-05-22",
     portalStatus: "active",
+    lesseeName: "Pat Demo",
+    lesseeSignature:
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='80'%3E%3Cpath d='M8 52c28-40 48 28 72-8s40-36 68 4 36 24 60-12' fill='none' stroke='%230a1628' stroke-width='2'/%3E%3C/svg%3E",
+    guarantorName: "Pat Demo",
+    guarantorSignature:
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='80'%3E%3Cpath d='M12 46c22-28 40 22 58-6s34-30 62 8 30 18 52-10' fill='none' stroke='%230a1628' stroke-width='2'/%3E%3C/svg%3E",
+    signatureDate: "2026-05-20",
     docsSubmitLater: true,
     referredBy: "Website",
     vehicles: [

@@ -180,7 +180,7 @@ export function MarketingHome() {
             Phoenix&apos;s Most Trusted Storage Yard
           </p>
           <h2 className="mt-2 max-w-2xl font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0a1628]">
-            Why Contractors Switch to Paddock Parking
+            Why Contractors Switch to Phoenix Storage Yards
           </h2>
           <p className="mt-4 max-w-2xl text-[#64748b]">
             Most storage yards give you a gate code and a prayer. We give you

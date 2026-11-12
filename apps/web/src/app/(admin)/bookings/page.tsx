@@ -12,6 +12,7 @@ import {
   type BookingDecision,
   type LotType,
 } from "@/lib/api";
+import { text } from "@/constants/text";
 import { propertyParam, queryKeys } from "@/lib/prefetch";
 import { useApp } from "@/components/app-provider";
 import { PageHeader } from "@/components/page-header";
@@ -151,6 +152,7 @@ export default function BookingsPage() {
     mutationFn: (args: {
       id: string;
       decision: "approve" | "conditional" | "deny";
+      giveGateCode?: boolean;
     }) =>
       endpoints.decideBooking(args.id, {
         decision: args.decision,
@@ -158,6 +160,7 @@ export default function BookingsPage() {
         conditions:
           args.decision === "conditional" ? conditions : undefined,
         notes: decisionNotes || undefined,
+        giveGateCode: args.decision === "deny" ? undefined : args.giveGateCode,
       }),
     onSuccess: (res, vars) => {
       invalidateRelated();
@@ -206,21 +209,23 @@ export default function BookingsPage() {
     },
   });
 
-  const waive = useMutation({
-    mutationFn: (id: string) =>
-      endpoints.patchBooking(id, { autoPullWaived: true }),
-    onSuccess: () => {
+  const billing = useMutation({
+    mutationFn: (body: { id: string; autoPullWaived?: boolean; paymentMethod?: "card" | "ach" }) =>
+      endpoints.patchBooking(body.id, {
+        autoPullWaived: body.autoPullWaived,
+        paymentMethod: body.paymentMethod,
+      }),
+    onSuccess: (_booking, body) => {
       invalidateRelated();
-      setFlash("Auto-pull waived for this applicant.");
-    },
-  });
-
-  const restore = useMutation({
-    mutationFn: (id: string) =>
-      endpoints.patchBooking(id, { autoPullWaived: false }),
-    onSuccess: () => {
-      invalidateRelated();
-      setFlash("Auto-pull requirement restored.");
+      setFlash(
+        body.paymentMethod === "card"
+          ? text.admin.switchedCard
+          : body.paymentMethod === "ach"
+            ? text.admin.switchedAch
+            : body.autoPullWaived
+              ? text.admin.autopullOffFlash
+              : text.admin.autopullOnFlash,
+      );
     },
   });
 
@@ -522,12 +527,16 @@ export default function BookingsPage() {
                 setDecisionNotes={setDecisionNotes}
                 formError={formError}
                 deciding={decide.isPending}
-                onDecide={(decision) => {
+                onDecide={(decision, giveGateCode) => {
                   setFormError("");
-                  decide.mutate({ id: profile.id, decision });
+                  decide.mutate({ id: profile.id, decision, giveGateCode });
                 }}
-                onWaive={() => waive.mutate(profile.id)}
-                onRestore={() => restore.mutate(profile.id)}
+                onAutopull={(off) =>
+                  billing.mutate({ id: profile.id, autoPullWaived: off })
+                }
+                onMethod={(paymentMethod) =>
+                  billing.mutate({ id: profile.id, paymentMethod })
+                }
                 onInvite={() => invite.mutate(profile.id)}
                 inviting={invite.isPending}
                 onClose={() => setSelectedId(null)}
@@ -553,8 +562,8 @@ function ProfileDetail({
   formError,
   deciding,
   onDecide,
-  onWaive,
-  onRestore,
+  onAutopull,
+  onMethod,
   onInvite,
   inviting,
   onClose,
@@ -574,9 +583,9 @@ function ProfileDetail({
   setDecisionNotes: (v: string) => void;
   formError: string;
   deciding: boolean;
-  onDecide: (d: "approve" | "conditional" | "deny") => void;
-  onWaive: () => void;
-  onRestore: () => void;
+  onDecide: (d: "approve" | "conditional" | "deny", giveGateCode: boolean) => void;
+  onAutopull: (off: boolean) => void;
+  onMethod: (method: "card" | "ach") => void;
   onInvite: () => void;
   inviting: boolean;
   onClose: () => void;
@@ -584,6 +593,7 @@ function ProfileDetail({
   const pending = (booking.decision ?? "pending") === "pending";
   const approved =
     booking.decision === "approved" || booking.decision === "conditional";
+  const [giveGateCode, setGiveGateCode] = useState(true);
 
   return (
     <div className="flex max-h-[calc(100vh-8rem)] flex-col">
@@ -633,9 +643,8 @@ function ProfileDetail({
           <Meta
             label="Payment"
             value={[
-              booking.paymentMethod ?? "—",
-              booking.autoPullAgreed ? "auto-pull" : null,
-              booking.autoPullWaived ? "waived" : null,
+              booking.paymentMethod === "card" ? text.portal.card : booking.paymentMethod === "ach" ? text.portal.ach : "—",
+              booking.autoPullWaived ? text.admin.autopullOff : text.admin.autopullOn,
             ]
               .filter(Boolean)
               .join(" · ")}
@@ -739,43 +748,39 @@ function ProfileDetail({
               </p>
             )}
 
+            <label className="flex items-center gap-2 text-sm text-[var(--ink)]">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={giveGateCode}
+                onChange={(event) => setGiveGateCode(event.target.checked)}
+              />
+              {text.admin.giveGateCode}
+            </label>
+
             <div className="flex flex-col gap-2">
               <Button
                 disabled={deciding || !lotId}
-                onClick={() => onDecide("approve")}
+                onClick={() => onDecide("approve", giveGateCode)}
               >
                 Approve
               </Button>
               <Button
                 variant="secondary"
                 disabled={deciding || !lotId}
-                onClick={() => onDecide("conditional")}
+                onClick={() => onDecide("conditional", giveGateCode)}
               >
                 Conditionally approve
               </Button>
               <Button
                 variant="danger"
                 disabled={deciding}
-                onClick={() => onDecide("deny")}
+                onClick={() => onDecide("deny", false)}
               >
                 Deny
               </Button>
             </div>
 
-            <div className="border-t border-[var(--border)] pt-3">
-              <p className="mb-1.5 text-xs text-[var(--muted)]">
-                Admin — auto-pull exception
-              </p>
-              {booking.autoPullWaived ? (
-                <Button size="sm" variant="secondary" onClick={onRestore}>
-                  Restore auto-pull
-                </Button>
-              ) : (
-                <Button size="sm" variant="secondary" onClick={onWaive}>
-                  Waive auto-pull
-                </Button>
-              )}
-            </div>
           </div>
         ) : (
           <div className="space-y-3 border-t border-[var(--border)] pt-3">
@@ -787,7 +792,7 @@ function ProfileDetail({
                 </span>
               </p>
             )}
-            {booking.gateCode && (
+            {booking.gateCode ? (
               <div className="rounded-lg bg-[var(--ink)] px-3 py-3 text-center text-white">
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--accent)]">
                   Gate code
@@ -796,7 +801,9 @@ function ProfileDetail({
                   {booking.gateCode}
                 </p>
               </div>
-            )}
+            ) : approved ? (
+              <p className="text-sm text-[var(--muted)]">{text.admin.noGateCode}</p>
+            ) : null}
             {booking.customerId && (
               <Link
                 href={`/customers/${booking.customerId}`}
@@ -825,6 +832,33 @@ function ProfileDetail({
             )}
           </div>
         )}
+
+        <div className="space-y-2 border-t border-[var(--border)] pt-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
+            {text.admin.autopull}
+          </p>
+          <p className="text-xs leading-relaxed text-[var(--muted)]">
+            {text.admin.autopullHint}
+          </p>
+          <p className="text-sm font-medium text-[var(--ink)]">
+            {text.admin.chargeWith}:{" "}
+            {booking.paymentMethod === "card" ? text.portal.card : text.portal.ach}
+            {" · "}
+            {booking.autoPullWaived ? text.admin.autopullOff : text.admin.autopullOn}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" onClick={() => onAutopull(!booking.autoPullWaived)}>
+              {booking.autoPullWaived ? text.admin.turnAutopullOn : text.admin.turnAutopullOff}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => onMethod(booking.paymentMethod === "card" ? "ach" : "card")}
+            >
+              {booking.paymentMethod === "card" ? text.admin.switchToAch : text.admin.switchToCard}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

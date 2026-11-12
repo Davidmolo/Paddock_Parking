@@ -15,6 +15,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: "4040",
+        APP_URL: "https://www.phoenixstorageyards.com",
       },
       max_memory_restart: "400M",
       time: true,

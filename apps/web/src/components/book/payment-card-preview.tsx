@@ -199,7 +199,7 @@ export function PaymentCardPreview({
                 </span>
               </div>
               <p className="mt-4 text-[11px] leading-relaxed text-white/45">
-                Authorize.net checkout · Paddock Parking
+                Authorize.net checkout · Phoenix Storage Yards
               </p>
             </div>
           </div>

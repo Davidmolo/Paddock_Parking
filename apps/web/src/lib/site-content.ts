@@ -140,7 +140,7 @@ export const LOCATIONS = [
 
 export const FAQS = [
   {
-    q: "What can I store at Paddock Parking?",
+    q: "What can I store at Phoenix Storage Yards?",
     a: "Heavy equipment, semi trucks and trailers, contractor gear, industrial machinery, shipping containers, RVs, and more — if it has wheels or tracks, we park it.",
   },
   {
@@ -156,7 +156,7 @@ export const FAQS = [
     a: "Month-to-month terms let you add spots or acreage as your fleet grows — no long lock-in.",
   },
   {
-    q: "Why do Phoenix businesses choose Paddock?",
+    q: "Why do Phoenix businesses choose Phoenix Storage Yards?",
     a: "Zero theft track record since 2022, live camera feeds, true 24/7 gate access, and yards across Phoenix so you're near the job.",
   },
   {

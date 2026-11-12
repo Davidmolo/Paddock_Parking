@@ -63,6 +63,8 @@ export type PortalPayFieldProps = {
   value: string;
   onChange: (value: string) => void;
   inputMode?: "numeric" | "decimal" | "text";
+  onFocus?: () => void;
+  onBlur?: () => void;
 };
 
 export type PortalBookingCardProps = {
@@ -139,7 +141,7 @@ export type PortalPayment = {
   id: string;
   amount: number;
   method: "ach" | "card" | "check" | "cash";
-  status: "cleared" | "pending";
+  status: "cleared" | "pending" | "failed";
   paidAt: string;
   reference: string;
 };

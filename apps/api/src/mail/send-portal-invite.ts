@@ -42,11 +42,11 @@ export async function sendPortalInviteEmail(opts: {
   }).sendMail({
     from,
     to: opts.to,
-    subject: 'Set your Paddock Parking portal password',
+    subject: 'Set your Phoenix Storage Yards portal password',
     text: [
       `Hi ${contact},`,
       '',
-      'You have been invited to the Paddock Parking customer portal.',
+      'You have been invited to the Phoenix Storage Yards customer portal.',
       'Open this link to set your password (expires in 7 days):',
       opts.inviteUrl,
       '',
@@ -56,7 +56,7 @@ export async function sendPortalInviteEmail(opts: {
     ].join('\n'),
     html: `
       <p>Hi ${escapeHtml(contact)},</p>
-      <p>You have been invited to the <strong>Paddock Parking</strong> customer portal.</p>
+      <p>You have been invited to the <strong>Phoenix Storage Yards</strong> customer portal.</p>
       <p><a href="${opts.inviteUrl}" style="display:inline-block;padding:10px 16px;background:#F5D04A;color:#0a1628;text-decoration:none;border-radius:8px;font-weight:700">Set your password</a></p>
       <p style="color:#555;font-size:13px">Or paste this link into your browser:<br/><a href="${opts.inviteUrl}">${escapeHtml(opts.inviteUrl)}</a></p>
       <p style="color:#555;font-size:13px">This link expires ${escapeHtml(expiresLabel)} (Phoenix time).</p>
@@ -85,7 +85,7 @@ export async function sendManualInvoiceEmail(opts: {
   }).sendMail({
     from,
     to: opts.to,
-    subject: 'Your Paddock Parking invoice',
+    subject: 'Your Phoenix Storage Yards invoice',
     text: [
       `Hi ${contact},`,
       '',

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Paddock Parking — Module walkthrough for David</title>
+    <title>Phoenix Storage Yards — Module walkthrough for David</title>
     <style>
       :root {
         --bg: #0f1419;
@@ -435,7 +435,7 @@
   <body>
     <header class="top">
       <div>
-        <p class="eyebrow" id="eyebrow">Paddock Parking · Demo for David</p>
+        <p class="eyebrow" id="eyebrow">Phoenix Storage Yards · Demo for David</p>
         <h1 id="title">Loading…</h1>
         <p class="subtitle" id="subtitle"></p>
       </div>
@@ -458,7 +458,7 @@
     <script>
       const slides = [
         {
-          title: "Paddock Parking Ops — for David",
+          title: "Phoenix Storage Yards Ops — for David",
           subtitle: "Brief module walkthrough of the new backend",
           html: `
             <p class="lead">
@@ -660,7 +660,7 @@
           html: `
             <div class="callout">
               <strong><span class="tag mod">Say</span> to David</strong>
-              “COI must list the right Paddock LLC for that yard — 16 vs 325 vs 51 — not a generic ‘Paddock Parking’.”
+              “COI must list the right Paddock LLC for that yard — 16 vs 325 vs 51 — not a generic ‘Phoenix Storage Yards’.”
             </div>
             <table>
               <thead><tr><th>Yard</th><th>Must appear as additional insured</th></tr></thead>
@@ -837,7 +837,7 @@
         titleEl.textContent = s.title;
         subtitleEl.textContent = s.subtitle || "";
         subtitleEl.style.display = s.subtitle ? "block" : "none";
-        eyebrowEl.textContent = `Paddock Parking · David walkthrough · ${index + 1} / ${slides.length}`;
+        eyebrowEl.textContent = `Phoenix Storage Yards · David walkthrough · ${index + 1} / ${slides.length}`;
         deck.innerHTML = `<section class="slide active">${s.html}</section>`;
         prevBtn.disabled = index === 0;
         nextBtn.disabled = index === slides.length - 1;

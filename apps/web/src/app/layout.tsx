@@ -15,7 +15,7 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "Paddock Parking | Property Management",
+  title: "Phoenix Storage Yards | Property Management",
   description:
     "Long-term parking ops — yards, lots, tenants, collections, and Book Now.",
 };

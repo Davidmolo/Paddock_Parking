@@ -19,6 +19,7 @@ import {
 } from '../leases/lease-helpers.js';
 import type { UpsertCoiDto } from './dto/upsert-coi.dto.js';
 import type { UploadDocumentDto } from './dto/upload-document.dto.js';
+import { readCoiPdf, type ReadCoi } from './read-coi.js';
 
 @Injectable()
 export class CustomersService {
@@ -320,23 +321,36 @@ export class CustomersService {
     if (amount <= 0 || amount > balance) {
       throw new BadRequestException('Enter an amount up to the balance.');
     }
-    invoice.balance = (balance - amount) / 100;
-    invoice.status = invoice.balance === 0 ? 'paid' : 'partial';
+    const today = new Date().toISOString().slice(0, 10);
+    const declined = body.last4 === '9995';
     this.store.payments.unshift({
       id: `pay${Date.now()}`,
       customerId: customer.id,
       amount: amount / 100,
       method: body.method,
-      status: 'cleared',
-      paidAt: new Date().toISOString().slice(0, 10),
+      status: declined ? 'failed' : 'cleared',
+      paidAt: today,
       reference: invoice.id,
     });
+    if (!declined) {
+      invoice.balance = (balance - amount) / 100;
+      invoice.status = invoice.balance === 0
+        ? 'paid'
+        : invoice.dueDate < today
+          ? 'overdue'
+          : 'partial';
+    }
     const rows = this.store.invoices.filter((item) => item.customerId === customer.id);
     customer.balanceDue = rows.reduce((sum, item) => sum + item.balance, 0);
     customer.paymentStatus = rows.some((item) => item.status === 'overdue' && item.balance > 0)
       ? 'past_due'
       : 'current';
-    return this.portalHome(customer.email);
+    return {
+      result: declined ? 'declined' as const : invoice.balance === 0 ? 'paid' as const : 'partial' as const,
+      paid: declined ? 0 : amount / 100,
+      stillDue: invoice.balance,
+      home: this.portalHome(customer.email),
+    };
   }
 
   portalUploadDocument(body: {
@@ -361,12 +375,15 @@ export class CustomersService {
   setBilling(id: string, body: { autoPull?: boolean; payMethod?: 'card' | 'ach' }) {
     const customer = this.store.customers.find((item) => item.id === id);
     if (!customer) throw new NotFoundException(`Customer ${id} not found`);
+    const booking = this.store.bookings.find((item) => item.customerId === customer.id);
     if (body.payMethod) {
       customer.payMethod = body.payMethod;
       customer.achEnabled = body.payMethod === 'ach';
+      if (booking) booking.paymentMethod = body.payMethod;
     }
     if (body.autoPull != null) {
       customer.autoPull = body.autoPull;
+      if (booking) booking.autoPullWaived = !body.autoPull;
       this.markInvoices(customer, body.autoPull ? 'ach_debit' : 'send_invoice');
     }
     return this.detail(customer);
@@ -459,7 +476,7 @@ export class CustomersService {
     customer.portalPassword = undefined;
 
     const appUrl = (
-      process.env.APP_URL || 'https://pms.paddockparking.com'
+      process.env.APP_URL || 'https://www.phoenixstorageyards.com'
     ).replace(/\/$/, '');
     try {
       await sendPortalInviteEmail({
@@ -546,6 +563,13 @@ export class CustomersService {
         (c) => c.customerId === customerId,
       );
       if (coi) coi.documentId = doc.id;
+      if (buffer.subarray(0, 5).toString() === '%PDF-') {
+        try {
+          this.mergeCoi(customer, doc.id, await readCoiPdf(buffer));
+        } catch {
+          // The file is saved. Staff type whatever the PDF did not yield.
+        }
+      }
     }
     if (dto.kind === 'lease') {
       const lease = this.store.leases.find(
@@ -555,6 +579,33 @@ export class CustomersService {
     }
 
     return doc;
+  }
+
+  private mergeCoi(customer: Customer, documentId: string, read: ReadCoi) {
+    const fields = Object.entries(read).filter((entry) => entry[1]);
+    if (fields.length === 0) return;
+    let coi = this.store.certificates.find((item) => item.customerId === customer.id);
+    if (!coi) {
+      coi = {
+        id: `coi${Date.now()}`,
+        customerId: customer.id,
+        propertyId: customer.propertyId,
+        carrier: '',
+        policyNumber: '',
+        effectiveDate: '',
+        expirationDate: '',
+        additionalInsuredName: '',
+        documentId,
+      };
+      this.store.certificates.unshift(coi);
+    }
+    if (read.carrier) coi.carrier = read.carrier;
+    if (read.policyNumber) coi.policyNumber = read.policyNumber;
+    if (read.effectiveDate) coi.effectiveDate = read.effectiveDate;
+    if (read.expirationDate) coi.expirationDate = read.expirationDate;
+    if (read.additionalInsuredName) coi.additionalInsuredName = read.additionalInsuredName;
+    coi.documentId = documentId;
+    coi.propertyId = customer.propertyId;
   }
 
   private detail(customer: (typeof this.store.customers)[number]) {

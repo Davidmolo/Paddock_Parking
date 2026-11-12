@@ -23,7 +23,7 @@ export default function AboutPage() {
       <section className="bg-white py-16">
         <div className={`${BOOK_SHELL} max-w-3xl space-y-6 text-[#64748b]`}>
           <p>
-            Paddock Parking is more than a parking lot. Our yards are designed
+            Phoenix Storage Yards is more than a parking lot. Our yards are designed
             for commercial assets: wide lanes, perimeter security, automated
             gates, and the ability to check your equipment from your phone.
           </p>

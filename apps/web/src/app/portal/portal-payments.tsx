@@ -49,8 +49,12 @@ export function PortalPayments({ home }: PortalPaymentsProps) {
                     </td>
                     <td className="px-4 py-3 text-[var(--ink)]">{payment.reference || text.portal.notSet}</td>
                     <td className="px-4 py-3">
-                      <Badge tone={payment.status === "cleared" ? "success" : "warning"}>
-                        {payment.status === "cleared" ? text.portal.cleared : text.portal.paymentPending}
+                      <Badge tone={payment.status === "cleared" ? "success" : payment.status === "failed" ? "danger" : "warning"}>
+                        {payment.status === "cleared"
+                          ? text.portal.cleared
+                          : payment.status === "failed"
+                            ? text.portal.declined
+                            : text.portal.paymentPending}
                       </Badge>
                     </td>
                   </tr>

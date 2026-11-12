@@ -16,7 +16,7 @@ export default function ContactPage() {
             Contact
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-sora)] text-4xl font-semibold tracking-tight sm:text-5xl">
-            Talk to Paddock Parking
+            Talk to Phoenix Storage Yards
           </h1>
           <p className="mt-4 max-w-2xl text-white/70">
             Call, email, or book online — we&apos;ll get you into a yard fast.

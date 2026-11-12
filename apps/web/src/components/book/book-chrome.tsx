@@ -43,11 +43,11 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
         <div className={`${BOOK_SHELL} py-3.5 lg:py-4`}>
           <div className="flex items-center justify-between gap-4">
             <Link href="/book" className="flex shrink-0 items-center gap-2.5">
-              <span className="grid h-9 w-9 place-items-center rounded-md bg-[#E8C547] text-sm font-black text-[#0a1628]">
-                P
+              <span className="grid h-9 w-9 place-items-center rounded-md bg-[#E8C547] text-[11px] font-black text-[#0a1628]">
+                PS
               </span>
-              <span className="max-w-[38vw] truncate font-[family-name:var(--font-sora)] text-[11px] font-semibold tracking-[0.08em] sm:max-w-none sm:text-[13px] sm:tracking-[0.16em]">
-                PADDOCK PARKING
+              <span className="max-w-[38vw] truncate font-[family-name:var(--font-sora)] text-[11px] font-semibold tracking-[0.08em] sm:max-w-none sm:text-[13px] sm:tracking-[0.12em]">
+                PHOENIX STORAGE YARDS
               </span>
             </Link>
 
@@ -250,7 +250,7 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
         >
           <div>
             <p className="font-[family-name:var(--font-sora)] text-sm font-semibold tracking-[0.14em] text-white">
-              PADDOCK PARKING
+              PHOENIX STORAGE YARDS
             </p>
             <p className="mt-3 max-w-xs text-sm leading-relaxed">
               Phoenix&apos;s premier heavy equipment &amp; commercial vehicle
@@ -341,7 +341,7 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
         <div
           className={`${BOOK_SHELL} mt-10 border-t border-white/10 pt-6 text-center text-xs text-white/40`}
         >
-          © {new Date().getFullYear()} Paddock Parking. All rights reserved.
+          © {new Date().getFullYear()} Phoenix Storage Yards. All rights reserved.
         </div>
       </footer>
     </div>

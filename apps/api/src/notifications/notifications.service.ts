@@ -97,7 +97,7 @@ export class NotificationsService {
               `Current renewal status: ${lease.stage ?? 'not_contacted'}`,
               '',
               'Status stays manual after this — update it on the customer/lease screen.',
-              '— Paddock Parking automation',
+              '— Phoenix Storage Yards automation',
             ].join('\n'),
             createdAt: now,
           });
@@ -125,9 +125,9 @@ export class NotificationsService {
             `Renewal date: ${lease.renewalDate}`,
             `Contract requires notice ${lease.notificationLeadDays} days before renewal.`,
             '',
-            'Please confirm renewal terms with Paddock Parking.',
+            'Please confirm renewal terms with Phoenix Storage Yards.',
             '',
-            '— Paddock Parking ops',
+            '— Phoenix Storage Yards ops',
           ].join('\n'),
           createdAt: now,
         });
@@ -163,9 +163,9 @@ export class NotificationsService {
                     '',
                     'Reply to confirm renewal or discuss changes.',
                     '',
-                    '— Paddock Parking',
+                    '— Phoenix Storage Yards',
                   ].join('\n')
-                : `Paddock Parking: lease renewal notice for ${property?.name}. Renewal ${lease.renewalDate}. Reply to confirm.`,
+                : `Phoenix Storage Yards: lease renewal notice for ${property?.name}. Renewal ${lease.renewalDate}. Reply to confirm.`,
             createdAt: now,
           });
           existing.add(dedupeKey);
@@ -208,7 +208,7 @@ export class NotificationsService {
           customerId: customer.id,
           toName: customer.name,
           toAddress: addr,
-          subject: `COI required — ${property?.name ?? 'Paddock Parking'}`,
+          subject: `COI required — ${property?.name ?? 'Phoenix Storage Yards'}`,
           body:
             channel === 'email'
               ? [
@@ -218,9 +218,9 @@ export class NotificationsService {
                   '',
                   `Please send an updated Certificate of Insurance listing ${evald.requiredAdditionalInsured} as additional insured.`,
                   '',
-                  '— Paddock Parking',
+                  '— Phoenix Storage Yards',
                 ].join('\n')
-              : `Paddock Parking: ${reason} COI must list ${evald.requiredAdditionalInsured}.`,
+              : `Phoenix Storage Yards: ${reason} COI must list ${evald.requiredAdditionalInsured}.`,
           createdAt: now,
         });
         existing.add(dedupeKey);

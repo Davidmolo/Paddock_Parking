@@ -143,14 +143,36 @@ export class BookingsService {
 
   patch(
     id: string,
-    body: { autoPullWaived?: boolean },
+    body: { autoPullWaived?: boolean; paymentMethod?: 'card' | 'ach' },
   ) {
     const booking = this.store.bookings.find((b) => b.id === id);
     if (!booking) throw new NotFoundException(`Booking ${id} not found`);
+    const customer = booking.customerId
+      ? this.store.customers.find((item) => item.id === booking.customerId)
+      : undefined;
     if (body.autoPullWaived != null) {
       booking.autoPullWaived = body.autoPullWaived;
+      if (customer) {
+        customer.autoPull = !body.autoPullWaived;
+        this.markCustomerInvoices(customer.id, body.autoPullWaived ? 'send_invoice' : 'ach_debit');
+      }
+    }
+    if (body.paymentMethod) {
+      booking.paymentMethod = body.paymentMethod;
+      if (customer) {
+        customer.payMethod = body.paymentMethod;
+        customer.achEnabled = body.paymentMethod === 'ach';
+      }
     }
     return this.enrich(booking);
+  }
+
+  private markCustomerInvoices(customerId: string, method: 'ach_debit' | 'send_invoice') {
+    for (const invoice of this.store.invoices) {
+      if (invoice.customerId === customerId && invoice.balance > 0) {
+        invoice.collectionMethod = method;
+      }
+    }
   }
 
   /**
@@ -164,6 +186,7 @@ export class BookingsService {
       lotId?: string;
       conditions?: BookingCondition[];
       notes?: string;
+      giveGateCode?: boolean;
     },
   ) {
     const booking = this.store.bookings.find((b) => b.id === id);
@@ -217,7 +240,7 @@ export class BookingsService {
       conditions = ['prepaid', 'coi_pending', 'deposit_hold'];
     }
 
-    const converted = this.convert(id, body.lotId);
+    const converted = this.convert(id, body.lotId, body.giveGateCode !== false);
     const updated = this.store.bookings.find((b) => b.id === id)!;
     updated.decision =
       body.decision === 'conditional' ? 'conditional' : 'approved';
@@ -282,7 +305,7 @@ export class BookingsService {
     customer.portalInviteExpiresAt = expires.toISOString();
 
     const appUrl = (
-      process.env.APP_URL || 'https://pms.paddockparking.com'
+      process.env.APP_URL || 'https://www.phoenixstorageyards.com'
     ).replace(/\/$/, '');
     const inviteUrl = `${appUrl}/portal?token=${encodeURIComponent(token)}&email=${encodeURIComponent(customer.email)}`;
 
@@ -313,7 +336,7 @@ export class BookingsService {
     return this.enrich(booking);
   }
 
-  convert(id: string, lotId: string) {
+  convert(id: string, lotId: string, giveGateCode = true) {
     const booking = this.store.bookings.find((b) => b.id === id);
     if (!booking) throw new NotFoundException(`Booking ${id} not found`);
     const lot = this.store.lots.find((l) => l.id === lotId);
@@ -338,14 +361,16 @@ export class BookingsService {
           ? false
           : Boolean(booking.autoPullAgreed) ||
             booking.paymentMethod === 'ach',
-      gateCode: String(Math.floor(1000 + Math.random() * 9000)),
+      gateCode: giveGateCode
+        ? String(Math.floor(1000 + Math.random() * 9000))
+        : '',
       isActive: true,
       lotIds: [lot.id],
       leaseStart: booking.leaseStart ?? new Date().toISOString().slice(0, 10),
       createdAt: new Date().toISOString().slice(0, 10),
       documents: [],
       notes: booking.autoPullWaived
-        ? 'Approved from onboarding — auto-pull waived by staff'
+        ? 'Approved from onboarding — autopull turned off by staff'
         : 'Approved from onboarding application',
     });
 

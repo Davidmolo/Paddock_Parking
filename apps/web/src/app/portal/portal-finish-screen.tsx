@@ -111,15 +111,29 @@ export function PortalFinishScreen() {
               </CardBody>
             </Card>
           ) : null}
-          {data.docsOwed ? (
-            <Card interactive={false}>
+          <Card interactive={false}>
               <CardHeader>
                 <h2 className="text-base font-semibold text-[var(--ink)]">
                   {text.portal.uploadCoi}
                 </h2>
               </CardHeader>
               <CardBody className="grid gap-3">
-                <p className="text-sm text-[var(--muted)]">{text.portal.coiHint}</p>
+                <details className="w-fit justify-self-start">
+                  <summary className="inline-flex h-9 cursor-pointer list-none items-center rounded-lg border border-[var(--ink)] bg-[var(--ink)] px-3 text-[13px] font-medium text-[var(--accent)] [&::-webkit-details-marker]:hidden">
+                    {text.portal.coiExampleAlt}
+                  </summary>
+                  <a href="/coi-example.png" target="_blank" rel="noreferrer" className="mt-3 block w-fit">
+                    <img
+                      src="/coi-example.png"
+                      alt={text.portal.coiExampleAlt}
+                      className="block max-h-96 max-w-sm cursor-pointer rounded-md border border-[var(--border)] object-contain object-left object-top"
+                    />
+                  </a>
+                </details>
+                <p className="text-sm text-[var(--ink)]">{text.portal.coiHint}</p>
+                {data.yardAddress ? (
+                  <p className="text-sm text-[var(--muted)]">{data.yardAddress}</p>
+                ) : null}
                 <input
                   ref={fileRef}
                   type="file"
@@ -151,7 +165,6 @@ export function PortalFinishScreen() {
                 </Button>
               </CardBody>
             </Card>
-          ) : null}
           <Card interactive={false}>
             <CardHeader>
               <h2 className="text-base font-semibold text-[var(--ink)]">
@@ -162,7 +175,7 @@ export function PortalFinishScreen() {
               {data.documents.length === 0 ? (
                 <p className="p-4 text-sm text-[var(--muted)]">{text.portal.noDocuments}</p>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="max-h-72 overflow-auto">
                   <table className="w-full min-w-[32rem] text-left text-sm">
                     <thead>
                       <tr className="border-b border-[var(--border)] text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
@@ -173,27 +186,32 @@ export function PortalFinishScreen() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.documents.map((doc) => (
-                        <tr key={doc.id} className="border-b border-[var(--border)] last:border-0">
-                          <td className="px-4 py-3 font-semibold text-[var(--ink)]">{doc.name}</td>
-                          <td className="px-4 py-3 text-[var(--muted)]">{kindLabel[doc.kind]}</td>
-                          <td className="px-4 py-3 text-[var(--muted)]">
-                            {formatPortalDate(doc.uploadedAt)}
-                          </td>
-                          <td className="px-4 py-3">
-                            {doc.storagePath ? (
-                              <a
-                                className="font-semibold text-[var(--accent-ink)]"
-                                href={`${apiUrl}/uploads/${doc.storagePath}`}
-                              >
-                                {text.portal.openFile}
-                              </a>
-                            ) : (
-                              <span className="text-[var(--muted)]">{text.portal.notSet}</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                      {data.documents.map((doc) => {
+                        const src = doc.storagePath ? `${apiUrl}/uploads/${doc.storagePath}` : "";
+                        return (
+                          <tr key={doc.id} className="border-b border-[var(--border)] last:border-0">
+                            <td className="px-4 py-3 font-semibold text-[var(--ink)]">{doc.name}</td>
+                            <td className="px-4 py-3 text-[var(--muted)]">{kindLabel[doc.kind]}</td>
+                            <td className="px-4 py-3 text-[var(--muted)]">
+                              {formatPortalDate(doc.uploadedAt)}
+                            </td>
+                            <td className="px-4 py-3">
+                              {src ? (
+                                <a
+                                  className="font-semibold text-[var(--accent-ink)]"
+                                  href={src}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {text.portal.openFile}
+                                </a>
+                              ) : (
+                                <span className="text-[var(--muted)]">{text.portal.notSet}</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
