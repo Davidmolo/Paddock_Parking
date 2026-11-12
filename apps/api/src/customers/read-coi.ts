@@ -1,4 +1,6 @@
-import { extractText, getDocumentProxy } from 'unpdf';
+import { definePDFJSModule, extractText, getDocumentProxy } from 'unpdf';
+
+definePDFJSModule(() => import('pdfjs-dist/legacy/build/pdf.mjs'));
 
 export type ReadCoi = {
   carrier?: string;
