@@ -40,6 +40,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      tesseract.js:
+        specifier: 7.0.0
+        version: 7.0.0
       unpdf:
         specifier: ^2.1.0
         version: 2.1.0(@napi-rs/canvas@0.1.100)

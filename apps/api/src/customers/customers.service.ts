@@ -19,7 +19,7 @@ import {
 } from '../leases/lease-helpers.js';
 import type { UpsertCoiDto } from './dto/upsert-coi.dto.js';
 import type { UploadDocumentDto } from './dto/upload-document.dto.js';
-import { readCoiPdf, type ReadCoi } from './read-coi.js';
+import { readCoi, type ReadCoi } from './read-coi.js';
 
 @Injectable()
 export class CustomersService {
@@ -563,12 +563,10 @@ export class CustomersService {
         (c) => c.customerId === customerId,
       );
       if (coi) coi.documentId = doc.id;
-      if (buffer.subarray(0, 5).toString() === '%PDF-') {
-        try {
-          this.mergeCoi(customer, doc.id, await readCoiPdf(buffer));
-        } catch {
-          // The file is saved. Staff type whatever the PDF did not yield.
-        }
+      try {
+        this.mergeCoi(customer, doc.id, await readCoi(buffer));
+      } catch {
+        // The file is saved. Staff type whatever the file did not yield.
       }
     }
     if (dto.kind === 'lease') {

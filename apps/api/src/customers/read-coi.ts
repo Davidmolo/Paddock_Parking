@@ -1,3 +1,4 @@
+import { createWorker } from 'tesseract.js';
 import { definePDFJSModule, extractText, getDocumentProxy } from 'unpdf';
 
 definePDFJSModule(() => import('pdfjs-dist/legacy/build/pdf.mjs'));
@@ -25,6 +26,13 @@ function policyBefore(lines: string[], index: number) {
     if (/^\d[\d,]*$/.test(line)) continue;
     if (/\d/.test(line) && /[A-Za-z]/.test(line) && line.length <= 40) return line;
   }
+}
+
+function entityName(name: string) {
+  const match = name.match(
+    /^(.+?\b(?:LLC|L\.L\.C\.|Inc\.?|Ltd\.?|Corp\.?)\.?)/i,
+  );
+  return (match?.[1] ?? name).trim();
 }
 
 export function parseCoiText(text: string): ReadCoi {
@@ -65,7 +73,9 @@ export function parseCoiText(text: string): ReadCoi {
         line.length < 80,
     )
     .at(-1);
-  if (holder && holder !== found.carrier) found.additionalInsuredName = holder;
+  if (holder && holder !== found.carrier) {
+    found.additionalInsuredName = entityName(holder);
+  }
   const compact = parseCompact(text);
   if (compact.policyNumber) {
     found.policyNumber = compact.policyNumber;
@@ -80,7 +90,9 @@ export function parseCoiText(text: string): ReadCoi {
 function parseCompact(text: string): ReadCoi {
   const flat = text.replace(/\s*\n\s*/g, ' ');
   const found: ReadCoi = {};
-  for (const match of flat.matchAll(/(\d{2}\/\d{2}\/\d{4})\s*(\d{2}\/\d{2}\/\d{4})/g)) {
+  for (const match of flat.matchAll(
+    /(\d{2}\/\d{2}\/\d{4})\D{1,8}(\d{2}\/\d{2}\/\d{4})/g,
+  )) {
     const index = match.index ?? 0;
     const before = flat.slice(Math.max(0, index - 80), index).trimEnd();
     const marked = before.match(/\d[A-Z]([A-Z]{2,6})\s+([A-Z0-9]+-\d{2})$/);
@@ -102,12 +114,28 @@ function parseCompact(text: string): ReadCoi {
   }
   const carrier = flat.match(/([A-Za-z][A-Za-z .,&']{2,40}?Insurance)(?=\d{5})/)?.[1];
   if (carrier) found.carrier = carrier.trim();
-  const companies = [...flat.matchAll(/[A-Z0-9][A-Za-z0-9 .,&'-]{2,60}?(?:LLC|Ltd\.?|Inc\.?|Corp\.?)(?=[^A-Za-z]|$)/g)]
+  const companies = [
+    ...flat.matchAll(
+      /[A-Z0-9][A-Za-z0-9 .,&'-]{2,60}?(?:LLC|Ltd\.?|Inc\.?|Corp\.?)(?=[^A-Za-z]|$)/g,
+    ),
+  ]
     .map((item) => item[0])
     .filter((name) => !/insurance agency/i.test(name));
   const holder = companies.at(-1);
-  if (holder && holder !== found.carrier) found.additionalInsuredName = holder;
+  if (holder && holder !== found.carrier) {
+    found.additionalInsuredName = entityName(holder);
+  }
   return found;
+}
+
+function isImage(bytes: Buffer) {
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) return true;
+  if (bytes[0] === 0x89 && bytes.subarray(1, 4).toString() === 'PNG') return true;
+  if (bytes.subarray(0, 3).toString() === 'GIF') return true;
+  return (
+    bytes.subarray(0, 4).toString() === 'RIFF' &&
+    bytes.subarray(8, 12).toString() === 'WEBP'
+  );
 }
 
 export async function readCoiPdf(bytes: Buffer): Promise<ReadCoi> {
@@ -115,4 +143,20 @@ export async function readCoiPdf(bytes: Buffer): Promise<ReadCoi> {
   const { text } = await extractText(pdf, { mergePages: true });
   const body = Array.isArray(text) ? text.join('\n') : text;
   return parseCoiText(body);
+}
+
+export async function readCoiImage(bytes: Buffer): Promise<ReadCoi> {
+  const worker = await createWorker('eng');
+  try {
+    const { data } = await worker.recognize(bytes);
+    return parseCoiText(data.text);
+  } finally {
+    await worker.terminate();
+  }
+}
+
+export async function readCoi(bytes: Buffer): Promise<ReadCoi> {
+  if (bytes.subarray(0, 5).toString() === '%PDF-') return readCoiPdf(bytes);
+  if (isImage(bytes)) return readCoiImage(bytes);
+  return {};
 }
