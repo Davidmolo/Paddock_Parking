@@ -71,6 +71,7 @@ export default function CustomerDetailPage() {
   const [coiError, setCoiError] = useState("");
   const [uploadMsg, setUploadMsg] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [coiUploading, setCoiUploading] = useState(false);
   const [leaseStage, setLeaseStage] = useState<LeaseStage>("not_contacted");
   const [notifyMsg, setNotifyMsg] = useState("");
   const [notifyError, setNotifyError] = useState("");
@@ -213,6 +214,7 @@ export default function CustomerDetailPage() {
   ) {
     setUploadMsg("");
     setUploadError("");
+    if (kind === "insurance") setCoiUploading(true);
     try {
       const buffer = await file.arrayBuffer();
       const bytes = new Uint8Array(buffer);
@@ -225,12 +227,14 @@ export default function CustomerDetailPage() {
         kind,
         contentBase64,
       });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.customer(id) });
       setUploadMsg(`${file.name} uploaded.`);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.customer(id) });
     } catch (err) {
       setUploadError(
         err instanceof ApiError ? err.message : "Upload failed",
       );
+    } finally {
+      if (kind === "insurance") setCoiUploading(false);
     }
   }
 
@@ -759,15 +763,17 @@ export default function CustomerDetailPage() {
                   size="sm"
                   variant="secondary"
                   type="button"
+                  disabled={coiUploading}
                   onClick={() => coiFileRef.current?.click()}
                 >
-                  {text.admin.uploadCoi}
+                  {coiUploading ? text.admin.readingCoi : text.admin.uploadCoi}
                 </Button>
                 <input
                   ref={coiFileRef}
                   type="file"
                   accept=".pdf,image/*"
                   className="hidden"
+                  disabled={coiUploading}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) void onUpload(file, "insurance");
@@ -775,6 +781,12 @@ export default function CustomerDetailPage() {
                   }}
                 />
               </div>
+              {coiUploading && (
+                <p className="inline-flex items-center gap-2 text-sm text-[var(--muted)]">
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
+                  {text.admin.readingCoi}
+                </p>
+              )}
               {coiMsg && (
                 <p className="text-sm text-emerald-700">{coiMsg}</p>
               )}

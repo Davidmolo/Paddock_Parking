@@ -201,3 +201,15 @@ When staff or the customer upload a certificate PDF, the system stores every val
 
 **Where to see the outcome:**  
 http://localhost:3000/customers/c-portal-demo. Policy # is GL 100200-01, Effective is 2026-03-01, Expires is 2027-03-01, and Additional insured is Phoenix Storage Yards, LLC. Those four are already stored. Carrier is blank because that sample has no insurer name. The same upload is Choose file on http://localhost:3000/portal/finish as Demo Tenant. Do not upload coi-sample-upload.png if you want those fields to stay.
+
+---
+
+## 17
+
+**Title:** Sites: staff use pms, customers use www, and the old paddockparking.com addresses redirect
+
+**Description:**
+Staff sign in on the Phoenix Storage Yards admin site. Customers open the website and the portal on www. The old pms.paddockparking.com addresses send the browser to those sites. The staff login is served over HTTPS, and the browser tab says Phoenix Storage Yards.
+
+**Where to see the outcome:**
+https://pms.phoenixstorageyards.com/login. The tab says Phoenix Storage Yards, and the page says Admin Portal. Sign in as admin / paddockparking only to open the workspace. Do not approve a booking. https://pms.paddockparking.com/ opens that same staff site. https://pms.paddockparking.com/book opens https://www.phoenixstorageyards.com/book. https://pms.paddockparking.com/portal/finish opens the customer portal on www. Customer sign-in is demo.portal@paddockparking.com / Portal123. Do not turn Demo Tenant autopull on, and do not pay the $100 balance.

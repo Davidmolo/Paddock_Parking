@@ -35,6 +35,7 @@ export const text = {
     kind: "Type",
     openFile: "Open",
     chooseFile: "Choose file",
+    readingCoi: "Reading certificate and filling fields…",
     cleared: "Cleared",
     toFinish: "To finish",
     toFinishSubtitle: "Plates and insurance you left for later.",
@@ -189,5 +190,6 @@ export const text = {
     certificate: "Certificate of insurance",
     uploadLease: "Upload lease PDF",
     uploadCoi: "Upload COI",
+    readingCoi: "Reading certificate and filling fields…",
   },
 };

@@ -161,8 +161,14 @@ export function PortalFinishScreen() {
                   disabled={upload.isPending}
                   onClick={() => fileRef.current?.click()}
                 >
-                  {upload.isPending ? text.portal.pleaseWait : text.portal.chooseFile}
+                  {upload.isPending ? text.portal.readingCoi : text.portal.chooseFile}
                 </Button>
+                {upload.isPending ? (
+                  <p className="inline-flex items-center gap-2 text-sm text-[var(--muted)]">
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
+                    {text.portal.readingCoi}
+                  </p>
+                ) : null}
               </CardBody>
             </Card>
           <Card interactive={false}>
