@@ -49,7 +49,7 @@ export function BookChrome({ children }: { children: React.ReactNode }) {
                 alt=""
                 className="block h-9! w-9! rounded bg-white object-cover object-top"
               />
-              <span className="font-[family-name:var(--font-sora)] text-[13px] font-semibold tracking-[0.06em] text-white">
+              <span className="font-[family-name:var(--font-sora)] text-[13px] font-semibold tracking-[0.06em] text-[var(--accent)]">
                 {text.brand.logoAlt}
               </span>
             </Link>

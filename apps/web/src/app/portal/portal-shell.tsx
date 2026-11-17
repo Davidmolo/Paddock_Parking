@@ -66,7 +66,7 @@ export function PortalShell({ session, onSignOut, children }: PortalShellProps) 
                   collapsed ? "h-8! w-8!" : "h-9! w-9!",
                 )}
               />
-              <span className={cn("min-w-0 text-[13px] font-semibold leading-tight", collapsed && "sr-only")}>
+              <span className={cn("min-w-0 text-[13px] font-semibold leading-tight text-[var(--accent)]", collapsed && "sr-only")}>
                 {text.brand.logoAlt}
               </span>
             </Link>
@@ -140,7 +140,7 @@ export function PortalShell({ session, onSignOut, children }: PortalShellProps) 
                     alt=""
                     className="h-9! w-9! shrink-0 rounded-md bg-white object-cover object-top"
                   />
-                  <span className="text-sm font-semibold">{text.brand.logoAlt}</span>
+                  <span className="text-sm font-semibold text-[var(--accent)]">{text.brand.logoAlt}</span>
                 </Link>
                 <p className="text-sm font-semibold">{session.name}</p>
                 <nav className="mt-2 grid gap-0.5">

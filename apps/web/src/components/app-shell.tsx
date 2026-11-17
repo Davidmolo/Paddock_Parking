@@ -235,7 +235,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       alt=""
                       className="h-9! w-9! rounded bg-white object-cover object-top"
                     />
-                    <span className="truncate text-sm font-semibold">{text.brand.logoAlt}</span>
+                    <span className="truncate text-sm font-semibold text-[var(--accent)]">{text.brand.logoAlt}</span>
                   </Link>
                   <button
                     type="button"
@@ -391,7 +391,7 @@ function Brand({ compact }: { compact?: boolean }) {
           compact ? "h-8! w-8!" : "h-9! w-9!",
         )}
       />
-      <span className={cn("min-w-0 text-[13px] font-semibold leading-tight", compact && "sr-only")}>
+      <span className={cn("min-w-0 text-[13px] font-semibold leading-tight text-[var(--accent)]", compact && "sr-only")}>
         {text.brand.logoAlt}
       </span>
     </Link>
