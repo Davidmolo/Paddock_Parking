@@ -57,15 +57,18 @@ export function PortalShell({ session, onSignOut, children }: PortalShellProps) 
               collapsed ? "w-[4.25rem]" : "w-56",
             )}
           >
-            <Link href="/portal" className="block px-1" title={text.brand.logoAlt}>
+            <Link href="/portal" className="flex items-center gap-2 px-1" title={text.brand.logoAlt}>
               <img
                 src="/phoenix-logo.png"
-                alt={text.brand.logoAlt}
+                alt=""
                 className={cn(
-                  "rounded-md bg-white",
-                  collapsed ? "h-8! w-8! object-cover object-top" : "h-9! w-auto",
+                  "shrink-0 rounded-md bg-white object-cover object-top",
+                  collapsed ? "h-8! w-8!" : "h-9! w-9!",
                 )}
               />
+              <span className={cn("min-w-0 text-[13px] font-semibold leading-tight", collapsed && "sr-only")}>
+                {text.brand.logoAlt}
+              </span>
             </Link>
             <p className={cn("mt-3 px-2.5 text-sm font-semibold", collapsed && "sr-only")}>
               {session.name}
@@ -131,6 +134,14 @@ export function PortalShell({ session, onSignOut, children }: PortalShellProps) 
             </header>
             {open && (
               <div className="border-b border-[var(--ink)] bg-[var(--ink)] px-4 py-3 text-white lg:hidden">
+                <Link href="/portal" className="mb-3 flex items-center gap-2.5">
+                  <img
+                    src="/phoenix-logo.png"
+                    alt=""
+                    className="h-9! w-9! shrink-0 rounded-md bg-white object-cover object-top"
+                  />
+                  <span className="text-sm font-semibold">{text.brand.logoAlt}</span>
+                </Link>
                 <p className="text-sm font-semibold">{session.name}</p>
                 <nav className="mt-2 grid gap-0.5">
                   {portalNav.map((item) => {

@@ -382,15 +382,18 @@ function NavBlock({
 
 function Brand({ compact }: { compact?: boolean }) {
   return (
-    <Link href="/dashboard" className="flex items-center overflow-hidden" prefetch>
+    <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden" prefetch title={text.brand.logoAlt}>
       <img
         src="/phoenix-logo.png"
-        alt={text.brand.logoAlt}
+        alt=""
         className={cn(
-          "rounded-md bg-white",
-          compact ? "h-8! w-8! object-cover object-top" : "h-9! w-auto",
+          "shrink-0 rounded-md bg-white object-cover object-top",
+          compact ? "h-8! w-8!" : "h-9! w-9!",
         )}
       />
+      <span className={cn("min-w-0 text-[13px] font-semibold leading-tight", compact && "sr-only")}>
+        {text.brand.logoAlt}
+      </span>
     </Link>
   );
 }
