@@ -213,3 +213,99 @@ Staff sign in on the Phoenix Storage Yards admin site. Customers open the websit
 
 **Where to see the outcome:**
 https://pms.phoenixstorageyards.com/login. The tab says Phoenix Storage Yards, and the page says Admin Portal. Sign in as admin / paddockparking only to open the workspace. Do not approve a booking. https://pms.paddockparking.com/ opens that same staff site. https://pms.paddockparking.com/book opens https://www.phoenixstorageyards.com/book. https://pms.paddockparking.com/portal/finish opens the customer portal on www. Customer sign-in is demo.portal@paddockparking.com / Portal123. Do not turn Demo Tenant autopull on, and do not pay the $100 balance.
+
+---
+
+## 18
+
+**Title:** Sites: the Phoenix addresses ask for an access code before any page
+
+**Description:**
+Staff and customers see an access-code page before the admin site, the website, or the portal. One code opens both Phoenix addresses. After that, staff still sign in, and customers still use the portal.
+
+**Where to see the outcome:**
+https://pms.phoenixstorageyards.com/login. The page says Phoenix Storage Yards and “This site is private. Enter the access code once.” The code is FDi5vB9f5Dni2FkaL1x5. Continue opens Admin Portal. Sign in as admin / paddockparking only to open the workspace. Do not approve a booking. https://www.phoenixstorageyards.com/book shows the same code page. After the code, the booking site opens. Do not submit a booking.
+
+---
+
+## 19
+
+**Title:** Portal: the set-password screen has one icon on the password field
+
+**Description:**
+A customer opening an invite sets a password on one screen. The password field shows an eye so they can reveal what they typed. The lock icon is not on that field.
+
+**Where to see the outcome:**
+http://localhost:3000/portal?token=preview&email=demo.portal@paddockparking.com. The heading says “Set your password.” The password field has an eye on the right and no lock on the left. Do not click Save password.
+
+---
+
+## 20
+
+**Title:** Portal: a late customer sees the amount and how many days late
+
+**Description:**
+When a customer is past due, the portal dashboard says how many days late they are and the dollar amount still past due. The amount is the overdue invoice balance. The days are counted from that invoice’s due date.
+
+**Where to see the outcome:**
+http://localhost:3000/portal. Sign in as demo.portal@paddockparking.com / Portal123. The notice says “You are 47 days late. $100 is past due.” That $100 is the overdue invoice due October 1, 2026, so the day count moves forward each day. Do not pay the balance, and do not turn Demo Tenant autopull on.
+
+---
+
+## 21
+
+**Title:** COI: the sample shows one million dollars on commercial general liability
+
+**Description:**
+The certificate sample shows $1,000,000 on the commercial general liability each-occurrence limit. The other rows stay, including commercial auto and umbrella liability, and those limits stay blank.
+
+**Where to see the outcome:**
+http://localhost:3000/portal/finish. Sign in as demo.portal@paddockparking.com / Portal123. Open the certificate sample. On the right, Each occurrence under commercial general liability says $1,000,000. Umbrella liability and the rows below it still show a blank $. Do not upload a file. The same sample is on http://localhost:3000/customers/c-portal-demo under Upload COI.
+
+---
+
+## 22
+
+**Title:** Admin: the workspace fits a tablet and a narrow window
+
+**Description:**
+On a tablet or a narrowed browser, staff open the menu as a full-height panel. The panel shows the Phoenix Storage Yards logo and name, and the page behind it stays put. Customer and billing lists show as cards. Wide tables stay on a desktop and scroll inside the page.
+
+**Where to see the outcome:**
+http://localhost:3000/dashboard. Sign in as admin / paddockparking. Narrow the window, or open it on a tablet. The header says Dashboard, with All yards beside it. The menu button opens a panel titled Phoenix Storage Yards. http://localhost:3000/customers lists Desert Line Logistics as a card. http://localhost:3000/invoices lists charges as cards under Billing. Do not approve a booking, do not send a collections email, and do not turn Demo Tenant autopull on.
+
+---
+
+## 23
+
+**Title:** Brand: the draft logo and navy and orange replace the old gold
+
+**Description:**
+Staff and customers see the draft logo, small enough to sit in a header. Sign-in pages center that logo. Navy and orange from the logo replace the old gold on the portal, the website header, and the admin buttons.
+
+**Where to see the outcome:**
+http://localhost:3000/login. The logo sits centered above Admin Portal. Sign in as admin / paddockparking only to open the workspace. The same centered logo is above Welcome on http://localhost:3000/portal. The button is orange and says Sign in. Do not set a password. After staff sign-in, the sidebar logo is on http://localhost:3000/dashboard.
+
+---
+
+## 24
+
+**Title:** Website: the customer header shows the name beside the logo
+
+**Description:**
+On the booking site, the header shows the draft logo and the words Phoenix Storage Yards on one line. The header is navy. The name is on this customer site only.
+
+**Where to see the outcome:**
+http://localhost:3000/book. The top left link reads Phoenix Storage Yards next to the logo. Do not submit a booking.
+
+---
+
+## 25
+
+**Title:** Email: portal invites and invoices use the logo, name, and navy and orange
+
+**Description:**
+A portal invite and a manual invoice email show the draft logo, the name Phoenix Storage Yards, a navy background, and an orange button. The invite button says Set your password. The invoice button says Open the portal.
+
+**Where to see the outcome:**
+The invite subject is “Set your Phoenix Storage Yards portal password.” The invoice subject is “Your Phoenix Storage Yards invoice.” Staff reach those sends from an approved profile on http://localhost:3000/bookings, on the button Send portal invitation, and from a customer profile, on the button Send invoice. Do not click either button. Do not approve a booking.

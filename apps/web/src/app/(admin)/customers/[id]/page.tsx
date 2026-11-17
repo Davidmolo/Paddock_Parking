@@ -510,7 +510,7 @@ export default function CustomerDetailPage() {
               ))}
             </ul>
             <div className="flex flex-wrap items-end gap-3">
-              <label className="block min-w-[200px] space-y-1.5">
+              <label className="block w-full min-w-0 space-y-1.5 sm:w-auto sm:min-w-[200px]">
                 <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
                   Renewal status
                 </span>

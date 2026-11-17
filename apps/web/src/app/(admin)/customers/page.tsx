@@ -342,7 +342,7 @@ export default function CustomersPage() {
           </p>
 
           <div className="min-w-0">
-          <Stagger className="grid gap-3 md:hidden">
+          <Stagger className="grid gap-3 lg:hidden">
             {filtered.map(({ customer, gaps }) => {
               const yard = properties.find((p) => p.id === customer.propertyId);
               return (
@@ -404,7 +404,7 @@ export default function CustomersPage() {
             })}
           </Stagger>
 
-          <div className="hidden md:block">
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[860px] border-collapse rounded-xl border border-[var(--border)] bg-[var(--surface)] text-left text-[13px]">
               <thead>
                 <tr className="border-b border-[var(--border)] bg-[var(--surface-muted)] text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">

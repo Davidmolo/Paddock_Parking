@@ -160,7 +160,7 @@ function LocationCard({
     <article className="flex min-h-[360px] flex-col rounded-2xl border border-black/[0.04] bg-white p-6 shadow-[0_18px_48px_rgba(10,22,40,0.12)] sm:p-7">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[1.35rem] font-bold leading-snug text-[#0a1628]">
+          <h2 className="text-[1.35rem] font-bold leading-snug text-[#0b1846]">
             {property.name}
           </h2>
           <p className="mt-1.5 flex items-start gap-1.5 text-sm text-[#6b7280]">
@@ -195,7 +195,7 @@ function LocationCard({
           href={mapsUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 rounded-full bg-[#e8eef5] px-3 py-1.5 text-xs font-semibold text-[#0a1628]"
+          className="inline-flex items-center gap-1 rounded-full bg-[#e8eef5] px-3 py-1.5 text-xs font-semibold text-[#0b1846]"
         >
           Directions <ExternalLink className="h-3 w-3" />
         </a>
@@ -210,7 +210,7 @@ function LocationCard({
           </p>
         ) : (
           <>
-            <p className="text-[15px] font-medium leading-relaxed text-[#0a1628]">
+            <p className="text-[15px] font-medium leading-relaxed text-[#0b1846]">
               {inventory.summary}
             </p>
             {inventory.fromRate != null && (
@@ -224,7 +224,7 @@ function LocationCard({
                   key={line.label}
                   className="flex items-center justify-between gap-3 rounded-lg bg-emerald-50/80 px-3 py-2"
                 >
-                  <span className="text-sm font-medium text-[#0a1628]">
+                  <span className="text-sm font-medium text-[#0b1846]">
                     {line.label}
                   </span>
                   <span className="shrink-0 rounded-md bg-[#c8edc8] px-2.5 py-1 text-xs font-semibold text-[#1f6b3a]">
@@ -241,7 +241,7 @@ function LocationCard({
         {waitlist ? (
           <a
             href="tel:6029223737"
-            className="inline-flex w-full items-center justify-center whitespace-nowrap rounded-xl bg-[#0a1628] px-4 py-3.5 text-[15px] font-bold !text-white"
+            className="inline-flex w-full items-center justify-center whitespace-nowrap rounded-xl bg-[#0b1846] px-4 py-3.5 text-[15px] font-bold !text-white"
             style={{ color: "#ffffff" }}
           >
             Join Waitlist
@@ -249,7 +249,7 @@ function LocationCard({
         ) : (
           <Link
             href={`/book/${property.id}`}
-            className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#E8C547] px-4 py-3.5 text-[15px] font-bold !text-[#0a1628]"
+            className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#f39a2c] px-4 py-3.5 text-[15px] font-bold !text-[#0b1846]"
           >
             Book Now
             <ArrowRight className="h-4 w-4 shrink-0" />
@@ -303,7 +303,7 @@ export default function BookLandingPage() {
 
   return (
     <BookChrome>
-      <section className="relative overflow-hidden bg-[#0a1628] pb-28 pt-12 text-white sm:pb-32 sm:pt-14">
+      <section className="relative overflow-hidden bg-[#0b1846] pb-28 pt-12 text-white sm:pb-32 sm:pt-14">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.16]"
           style={{
@@ -314,7 +314,7 @@ export default function BookLandingPage() {
         />
         <div className={`relative ${BOOK_SHELL} text-center`}>
           <h1 className="font-[family-name:var(--font-sora)] text-[2.5rem] font-semibold tracking-tight sm:text-5xl">
-            Find Your <span className="text-[#E8C547]">Spot</span>
+            Find Your <span className="text-[#f39a2c]">Spot</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/75 sm:text-base">
             Live availability at Paddock 16, Paddock 325, and Paddock 6060 —
@@ -359,25 +359,25 @@ export default function BookLandingPage() {
         )}
 
         <div className="mt-12 rounded-2xl border border-black/5 bg-white px-6 py-9 text-center shadow-sm sm:px-8">
-          <p className="text-lg font-semibold text-[#0a1628] sm:text-xl">
+          <p className="text-lg font-semibold text-[#0b1846] sm:text-xl">
             Need a custom solution or have questions?
           </p>
           <div className="mt-5 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
             <Link
               href="/book/contact"
-              className="inline-flex items-center justify-center rounded-xl bg-[#E8C547] px-6 py-3 text-sm font-bold text-[#0a1628]"
+              className="inline-flex items-center justify-center rounded-xl bg-[#f39a2c] px-6 py-3 text-sm font-bold text-[#0b1846]"
             >
               Get a Personalized Quote
             </Link>
             <a
               href="tel:6029223737"
-              className="inline-flex items-center justify-center rounded-xl border border-[#0a1628]/15 px-6 py-3 text-sm font-bold text-[#0a1628]"
+              className="inline-flex items-center justify-center rounded-xl border border-[#0b1846]/15 px-6 py-3 text-sm font-bold text-[#0b1846]"
             >
               Call 602-922-3737
             </a>
             <Link
               href="/book"
-              className="inline-flex items-center justify-center rounded-xl border border-[#0a1628]/15 px-6 py-3 text-sm font-bold text-[#0a1628]"
+              className="inline-flex items-center justify-center rounded-xl border border-[#0b1846]/15 px-6 py-3 text-sm font-bold text-[#0b1846]"
             >
               Back to Home
             </Link>

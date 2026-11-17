@@ -162,7 +162,7 @@ function Field({
 }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-sm font-semibold text-[#0a1628]">
+      <span className="text-sm font-semibold text-[#0b1846]">
         {label}
         {required ? <span className="text-rose-500"> *</span> : null}
       </span>
@@ -173,7 +173,7 @@ function Field({
 }
 
 const inputClass =
-  "box-border h-11 w-full max-w-full rounded-xl border border-[#0b1524]/15 bg-white px-3 text-sm outline-none ring-[#E8C547] focus:ring-2";
+  "box-border h-11 w-full max-w-full rounded-xl border border-[#0b1524]/15 bg-white px-3 text-sm outline-none ring-[#f39a2c] focus:ring-2";
 
 export default function BookWizardPage() {
   const params = useParams<{ propertyId: string }>();
@@ -595,19 +595,19 @@ export default function BookWizardPage() {
               </motion.span>
             </motion.div>
 
-            <h1 className="mt-6 font-[family-name:var(--font-sora)] text-3xl font-semibold tracking-tight text-[#0a1628] sm:text-4xl">
+            <h1 className="mt-6 font-[family-name:var(--font-sora)] text-3xl font-semibold tracking-tight text-[#0b1846] sm:text-4xl">
               {form.productType === "storage_acre"
                 ? text.book.confirmedAcre
                 : text.book.confirmedSpot}
             </h1>
             <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed text-[#64748b]">
               {text.book.confirmedLead}{" "}
-              <span className="font-medium text-[#0a1628]">{form.email}</span>{" "}
+              <span className="font-medium text-[#0b1846]">{form.email}</span>{" "}
               {text.book.confirmedNext}
             </p>
             <p className="mt-3 text-sm text-[#94a3b8]">
               Reference{" "}
-              <span className="font-mono font-semibold text-[#0a1628]">
+              <span className="font-mono font-semibold text-[#0b1846]">
                 {doneId}
               </span>
             </p>
@@ -620,13 +620,13 @@ export default function BookWizardPage() {
             >
               <Link
                 href="/book/spots"
-                className="inline-flex items-center justify-center rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
+                className="inline-flex items-center justify-center rounded-xl bg-[#f39a2c] px-5 py-3 text-sm font-bold text-[#0b1846]"
               >
                 Back to spots
               </Link>
               <Link
                 href="/book"
-                className="inline-flex items-center justify-center rounded-xl border border-[#0a1628]/15 px-5 py-3 text-sm font-bold text-[#0a1628]"
+                className="inline-flex items-center justify-center rounded-xl border border-[#0b1846]/15 px-5 py-3 text-sm font-bold text-[#0b1846]"
               >
                 Home
               </Link>
@@ -641,10 +641,10 @@ export default function BookWizardPage() {
     <BookChrome>
       <section className="border-b border-[#e8ecf0] bg-white py-8">
         <div className={BOOK_SHELL}>
-          <p className="text-center text-sm font-semibold tracking-wide text-[#0a1628]">
+          <p className="text-center text-sm font-semibold tracking-wide text-[#0b1846]">
             Phoenix Storage Yards
           </p>
-          <h1 className="mt-2 text-center text-2xl font-bold text-[#0a1628] sm:text-3xl">
+          <h1 className="mt-2 text-center text-2xl font-bold text-[#0b1846] sm:text-3xl">
             {property?.name ?? "Book"} —{" "}
             {property?.address ?? "Contractor & Equipment Storage"}
           </h1>
@@ -659,9 +659,9 @@ export default function BookWizardPage() {
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold",
                     i === step
-                      ? "bg-[#0a1628] text-white"
+                      ? "bg-[#0b1846] text-white"
                       : i < step
-                        ? "bg-[#E8C547] text-[#0a1628]"
+                        ? "bg-[#f39a2c] text-[#0b1846]"
                         : "bg-[#e8ecf0] text-[#94a3b8]",
                   )}
                 >
@@ -670,7 +670,7 @@ export default function BookWizardPage() {
                 <span
                   className={cn(
                     "hidden text-xs font-semibold sm:inline",
-                    i === step ? "text-[#0a1628]" : "text-[#94a3b8]",
+                    i === step ? "text-[#0b1846]" : "text-[#94a3b8]",
                   )}
                 >
                   {label}
@@ -685,7 +685,7 @@ export default function BookWizardPage() {
         <div className="mx-auto max-w-4xl space-y-5 rounded-2xl border border-black/5 bg-white p-6 shadow-sm sm:p-8">
           {step === 0 && (
             <>
-              <h2 className="text-lg font-semibold text-[#0a1628]">
+              <h2 className="text-lg font-semibold text-[#0b1846]">
                 Step 1 — Contact Info
               </h2>
               <Field label="Company Name" required>
@@ -760,7 +760,7 @@ export default function BookWizardPage() {
 
           {step === 1 && (
             <>
-              <h2 className="text-lg font-semibold text-[#0a1628]">
+              <h2 className="text-lg font-semibold text-[#0b1846]">
                 Step 2 — Lease Details
               </h2>
               <Field
@@ -864,7 +864,7 @@ export default function BookWizardPage() {
                           />
                         </Field>
                       </div>
-                      <label className="flex items-center gap-2 text-sm text-[#0a1628]">
+                      <label className="flex items-center gap-2 text-sm text-[#0b1846]">
                         <input
                           type="checkbox"
                           checked={v.submitLater}
@@ -953,12 +953,12 @@ export default function BookWizardPage() {
 
           {step === 3 && (
             <>
-              <h2 className="text-lg font-semibold text-[#0a1628]">
+              <h2 className="text-lg font-semibold text-[#0b1846]">
                 Step 4 — Review Your Booking
               </h2>
               <div className="space-y-2 rounded-xl border border-[#e8ecf0] bg-[#f8fafc] p-4 text-sm">
                 <p className="font-semibold">Your request</p>
-                <p className="font-medium text-[#0a1628]">
+                <p className="font-medium text-[#0b1846]">
                   {form.productType === "storage_acre"
                     ? `Storage · ${form.acreSize} acre`
                     : `Parking · ${form.spotCount} spot${form.spotCount === 1 ? "" : "s"}`}
@@ -1023,7 +1023,7 @@ export default function BookWizardPage() {
                     <span>Tax:</span>
                     <span>{formatCurrency(pricing.tax)}</span>
                   </div>
-                  <div className="flex justify-between border-t border-[#e8ecf0] pt-2 text-base font-bold text-[#0a1628]">
+                  <div className="flex justify-between border-t border-[#e8ecf0] pt-2 text-base font-bold text-[#0b1846]">
                     <span>Total Due:</span>
                     <span>{formatCurrency(pricing.total)}</span>
                   </div>
@@ -1052,7 +1052,7 @@ export default function BookWizardPage() {
                     className={cn(
                       "flex-1 rounded-xl border px-3 py-3 text-sm font-bold",
                       form.paymentMethod === id
-                        ? "border-[#E8C547] bg-[#E8C547]/12 text-[#0a1628]"
+                        ? "border-[#f39a2c] bg-[#f39a2c]/12 text-[#0b1846]"
                         : "border-[#e2e8f0] text-[#64748b]",
                     )}
                   >
@@ -1169,7 +1169,7 @@ export default function BookWizardPage() {
                 </div>
               )}
 
-              <label className="flex items-start gap-2.5 rounded-xl border border-[#E8C547]/45 bg-[#E8C547]/10 px-3.5 py-3 text-sm text-[#0a1628]">
+              <label className="flex items-start gap-2.5 rounded-xl border border-[#f39a2c]/45 bg-[#f39a2c]/10 px-3.5 py-3 text-sm text-[#0b1846]">
                 <input
                   type="checkbox"
                   className="mt-0.5 h-4 w-4 rounded border-[#cbd5e1]"
@@ -1209,14 +1209,14 @@ export default function BookWizardPage() {
                 type="button"
                 disabled={step === 0}
                 onClick={() => setStep((s) => Math.max(0, s - 1))}
-                className="rounded-xl border border-[#0a1628]/15 px-4 py-2.5 text-sm font-bold disabled:opacity-40"
+                className="rounded-xl border border-[#0b1846]/15 px-4 py-2.5 text-sm font-bold disabled:opacity-40"
               >
                 Back
               </button>
               <button
                 type="button"
                 onClick={saveDraft}
-                className="rounded-xl border border-[#0a1628]/15 px-4 py-2.5 text-sm font-bold"
+                className="rounded-xl border border-[#0b1846]/15 px-4 py-2.5 text-sm font-bold"
               >
                 Save Draft
               </button>
@@ -1227,7 +1227,7 @@ export default function BookWizardPage() {
                 onClick={() => {
                   if (validateStep()) setStep((s) => s + 1);
                 }}
-                className="rounded-xl bg-[#0a1628] px-5 py-2.5 text-sm font-bold text-white"
+                className="rounded-xl bg-[#0b1846] px-5 py-2.5 text-sm font-bold text-white"
               >
                 Next
               </button>
@@ -1238,7 +1238,7 @@ export default function BookWizardPage() {
                 onClick={() => {
                   if (validateStep()) submit.mutate();
                 }}
-                className="rounded-xl bg-[#E8C547] px-5 py-2.5 text-sm font-bold text-[#0a1628] disabled:opacity-60"
+                className="rounded-xl bg-[#f39a2c] px-5 py-2.5 text-sm font-bold text-[#0b1846] disabled:opacity-60"
               >
                 {submit.isPending ? "Submitting…" : "Pay & complete"}
               </button>

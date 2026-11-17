@@ -10,9 +10,9 @@ import {
 export default function ContactPage() {
   return (
     <BookChrome>
-      <section className="bg-[#0a1628] py-16 text-white">
+      <section className="bg-[#0b1846] py-16 text-white">
         <div className={BOOK_SHELL}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#f39a2c]">
             Contact
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-sora)] text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -32,7 +32,7 @@ export default function ContactPage() {
               </span>
               <a
                 href={SITE_PHONE_TEL}
-                className="text-xl font-semibold text-[#0a1628]"
+                className="text-xl font-semibold text-[#0b1846]"
               >
                 {SITE_PHONE}
               </a>
@@ -43,24 +43,24 @@ export default function ContactPage() {
               </span>
               <a
                 href={`mailto:${SITE_EMAIL}`}
-                className="text-xl font-semibold text-[#0a1628]"
+                className="text-xl font-semibold text-[#0b1846]"
               >
                 {SITE_EMAIL}
               </a>
             </p>
             <Link
               href="/book/spots"
-              className="inline-flex rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
+              className="inline-flex rounded-xl bg-[#f39a2c] px-5 py-3 text-sm font-bold text-[#0b1846]"
             >
               Book Now
             </Link>
           </div>
           <div>
-            <h2 className="font-semibold text-[#0a1628]">Yards</h2>
+            <h2 className="font-semibold text-[#0b1846]">Yards</h2>
             <ul className="mt-4 space-y-3 text-sm text-[#64748b]">
               {LOCATIONS.map((loc) => (
                 <li key={loc.name}>
-                  <span className="font-semibold text-[#0a1628]">
+                  <span className="font-semibold text-[#0b1846]">
                     {loc.name}
                   </span>
                   <br />

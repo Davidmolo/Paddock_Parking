@@ -54,7 +54,7 @@ export function ProfileMenu() {
         <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--ink)] text-[11px] font-semibold text-[#5eead4]">
           {initials || "PP"}
         </span>
-        <span className="hidden max-w-[120px] truncate font-medium sm:inline">
+        <span className="hidden max-w-[120px] truncate font-medium lg:inline">
           {user.name}
         </span>
         <ChevronDown

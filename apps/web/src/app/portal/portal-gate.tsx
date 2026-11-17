@@ -38,7 +38,7 @@ export function PortalGate({ children }: PortalGateProps) {
     setReady(true);
   }, []);
 
-  if (!ready) return <div className="min-h-dvh bg-[#0a1628]" />;
+  if (!ready) return <div className="min-h-dvh bg-[#0b1846]" />;
 
   if (!session) {
     return (

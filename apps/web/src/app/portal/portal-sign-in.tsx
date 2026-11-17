@@ -37,8 +37,8 @@ export function PortalSignIn({ onSignedIn }: PortalSignInProps) {
       rootOverflow: root.style.overflow,
       bodyOverflow: body.style.overflow,
     };
-    root.style.background = "#0a1628";
-    body.style.background = "#0a1628";
+    root.style.background = "#0b1846";
+    body.style.background = "#0b1846";
     root.style.overflow = "auto";
     body.style.overflow = "auto";
     return () => {
@@ -95,11 +95,16 @@ export function PortalSignIn({ onSignedIn }: PortalSignInProps) {
       : text.portal.welcome;
 
   return (
-    <div className="flex h-dvh flex-col overflow-y-auto overscroll-none bg-[#0a1628] px-4 py-6">
+    <div className="flex h-dvh flex-col overflow-y-auto overscroll-none bg-[#0b1846] px-4 py-6">
       <div className="m-auto w-full max-w-[450px]">
         <div className="rounded-xl bg-white p-5 shadow-[0_24px_38px_rgba(10,22,40,0.14)] sm:p-6">
           <div className="mb-5 text-center">
-            <h1 className="font-[family-name:var(--font-sora)] text-2xl font-medium text-[#0a1628] sm:text-3xl">
+            <img
+              src="/phoenix-logo.png"
+              alt={text.brand.logoAlt}
+              className="mx-auto mb-4 block h-14! w-auto"
+            />
+            <h1 className="font-[family-name:var(--font-sora)] text-2xl font-medium text-[#0b1846] sm:text-3xl">
               {title}
             </h1>
             <p className="mt-2 text-[#5b6b7c]">
@@ -132,12 +137,14 @@ export function PortalSignIn({ onSignedIn }: PortalSignInProps) {
                 autoComplete="off"
                 placeholder={text.portal.email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 w-full rounded border border-[#ddd] bg-white pl-12 pr-4 text-base outline-none focus:border-[#0a1628]"
+                className="h-12 w-full rounded border border-[#ddd] bg-white pl-12 pr-4 text-base outline-none focus:border-[#0b1846]"
               />
             </label>
             {!forgot && (
               <label className="relative block">
-                <Lock className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#5b6b7c]" />
+                {fromInvite ? null : (
+                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#5b6b7c]" />
+                )}
                 <input
                   type={showPassword ? "text" : "password"}
                   name="portal-password"
@@ -147,7 +154,7 @@ export function PortalSignIn({ onSignedIn }: PortalSignInProps) {
                   autoComplete="new-password"
                   placeholder={text.portal.password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 w-full rounded border border-[#ddd] bg-white pl-12 pr-12 text-base outline-none focus:border-[#0a1628]"
+                  className={`h-12 w-full rounded border border-[#ddd] bg-white pr-12 text-base outline-none focus:border-[#0b1846] ${fromInvite ? "pl-4" : "pl-12"}`}
                 />
                 <button
                   type="button"
@@ -164,7 +171,7 @@ export function PortalSignIn({ onSignedIn }: PortalSignInProps) {
             <button
               type="submit"
               disabled={busy}
-              className="mt-1 w-full rounded bg-[#0a1628] py-3 text-base font-semibold text-[#F5D04A] disabled:opacity-60"
+              className="mt-1 w-full rounded bg-[#0b1846] py-3 text-base font-semibold text-[#f39a2c] disabled:opacity-60"
             >
               {busy
                 ? text.portal.pleaseWait
@@ -185,7 +192,7 @@ export function PortalSignIn({ onSignedIn }: PortalSignInProps) {
               <div className="text-center text-sm text-[#5b6b7c]">
                 <button
                   type="button"
-                  className="font-medium text-[#0a1628] underline"
+                  className="font-medium text-[#0b1846] underline"
                   onClick={() => {
                     setForgot((value) => !value);
                     setError("");
@@ -199,14 +206,14 @@ export function PortalSignIn({ onSignedIn }: PortalSignInProps) {
                   {text.portal.noAccount}{" "}
                   <a
                     href="mailto:info@paddockparking.com"
-                    className="font-medium text-[#0a1628] underline"
+                    className="font-medium text-[#0b1846] underline"
                   >
                     {text.portal.contact}
                   </a>
                 </p>
                 <Link
                   href="/book/spots"
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-[#F5D04A] px-4 py-2.5 text-sm font-bold text-[#0a1628]"
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-[#f39a2c] px-4 py-2.5 text-sm font-bold text-[#0b1846]"
                 >
                   {text.portal.bookNow}
                 </Link>

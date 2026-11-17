@@ -12,10 +12,10 @@ export default function MiniTrendChart({
   dark?: boolean;
 }) {
   const chartData = data.map((value, index) => ({ index, value }));
-  const stroke = dark ? "#f5d04a" : "#0a1628";
-  const tipBg = dark ? "#0a1628" : "#f8fafc";
+  const stroke = dark ? "#f39a2c" : "#0b1846";
+  const tipBg = dark ? "#0b1846" : "#f8fafc";
   const tipBorder = dark ? "#1e2d45" : "#d5dee8";
-  const tipColor = dark ? "#f5d04a" : "#0a1628";
+  const tipColor = dark ? "#f39a2c" : "#0b1846";
   const fillId = useId().replace(/:/g, "");
   const frame = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);

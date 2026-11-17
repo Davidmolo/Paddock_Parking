@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Menu, X, Building2, ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { text } from "@/constants/text";
 import { NAV_GROUPS, NAV_ITEMS, type NavGroup } from "@/lib/nav";
 import { useApp } from "@/components/app-provider";
 import { ProfileMenu } from "@/components/profile-menu";
@@ -180,9 +181,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <header className="z-30 flex shrink-0 items-center gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 sm:px-5">
+          <header className="z-30 flex shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 sm:gap-3 sm:px-5">
             <button
-              className="rounded-xl border border-[var(--border)] p-2 lg:hidden"
+              className="shrink-0 rounded-xl border border-[var(--border)] p-2 lg:hidden"
               onClick={() => setOpen((v) => !v)}
               aria-label="Toggle menu"
             >
@@ -195,7 +196,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {screenTitle}
             </h1>
             <div className="flex shrink-0 items-center gap-2">
-                <div className="relative w-40 sm:w-52">
+                <div className="relative w-28 sm:w-40 lg:w-52">
                   <Building2 className="pointer-events-none absolute left-3 top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
                   <SelectMenu
                     ariaLabel="Filter by yard"
@@ -218,25 +219,51 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          {open && (
-            <div className="max-h-[40vh] shrink-0 overflow-y-auto overscroll-none border-b border-[var(--ink)] bg-[var(--ink)] px-4 py-3 text-white lg:hidden">
-              <nav className="grid gap-0.5">
-                {NAV_GROUPS.map((group, gi) => (
-                  <NavBlock
-                    key={group.label ?? `m-group-${gi}`}
-                    group={group}
-                    gi={gi}
-                    pathname={pathname}
-                    expanded={expanded}
-                    onToggle={toggleGroup}
-                    warmRoute={warmRoute}
-                    startTransition={startTransition}
-                    mobile
-                  />
-                ))}
-              </nav>
+          {open ? (
+            <div className="fixed inset-0 z-40 lg:hidden">
+              <button
+                type="button"
+                className="absolute inset-0 bg-black/45"
+                aria-label="Close menu"
+                onClick={() => setOpen(false)}
+              />
+              <aside className="absolute inset-y-0 left-0 flex w-[min(18rem,85vw)] flex-col bg-[var(--ink)] px-3 py-4 text-white shadow-2xl">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5" prefetch>
+                    <img
+                      src="/phoenix-logo.png"
+                      alt=""
+                      className="h-9! w-9! rounded bg-white object-cover object-top"
+                    />
+                    <span className="truncate text-sm font-semibold">{text.brand.logoAlt}</span>
+                  </Link>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded-lg p-2 hover:bg-white/10"
+                    aria-label="Close menu"
+                    onClick={() => setOpen(false)}
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <nav className="min-h-0 flex-1 overflow-y-auto overscroll-none">
+                  {NAV_GROUPS.map((group, gi) => (
+                    <NavBlock
+                      key={group.label ?? `m-group-${gi}`}
+                      group={group}
+                      gi={gi}
+                      pathname={pathname}
+                      expanded={expanded}
+                      onToggle={toggleGroup}
+                      warmRoute={warmRoute}
+                      startTransition={startTransition}
+                      mobile
+                    />
+                  ))}
+                </nav>
+              </aside>
             </div>
-          )}
+          ) : null}
 
           <main className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden px-4 py-4 sm:px-5">
             {children}
@@ -355,21 +382,15 @@ function NavBlock({
 
 function Brand({ compact }: { compact?: boolean }) {
   return (
-    <Link href="/dashboard" className="flex items-center gap-3 overflow-hidden" prefetch>
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[var(--accent)] text-sm font-bold tracking-wider text-[var(--accent-ink)]">
-        PS
-      </span>
-      <span
+    <Link href="/dashboard" className="flex items-center overflow-hidden" prefetch>
+      <img
+        src="/phoenix-logo.png"
+        alt={text.brand.logoAlt}
         className={cn(
-          "min-w-0 overflow-hidden whitespace-nowrap transition-opacity duration-150",
-          compact ? "w-0 opacity-0" : "opacity-100",
+          "rounded-md bg-white",
+          compact ? "h-8! w-8! object-cover object-top" : "h-9! w-auto",
         )}
-      >
-        <span className="block text-base font-semibold tracking-tight text-white">
-          Phoenix Storage Yards
-        </span>
-        <span className="block text-xs text-white/55">Property management</span>
-      </span>
+      />
     </Link>
   );
 }

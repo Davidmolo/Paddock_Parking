@@ -57,7 +57,17 @@ export function PortalShell({ session, onSignOut, children }: PortalShellProps) 
               collapsed ? "w-[4.25rem]" : "w-56",
             )}
           >
-            <p className={cn("px-2.5 text-sm font-semibold", collapsed && "sr-only")}>
+            <Link href="/portal" className="block px-1" title={text.brand.logoAlt}>
+              <img
+                src="/phoenix-logo.png"
+                alt={text.brand.logoAlt}
+                className={cn(
+                  "rounded-md bg-white",
+                  collapsed ? "h-8! w-8! object-cover object-top" : "h-9! w-auto",
+                )}
+              />
+            </Link>
+            <p className={cn("mt-3 px-2.5 text-sm font-semibold", collapsed && "sr-only")}>
               {session.name}
             </p>
             <nav className="mt-6 grid gap-0.5">

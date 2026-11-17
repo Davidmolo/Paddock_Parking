@@ -76,7 +76,7 @@ export function YardMap2D({
             height={depth}
             rx={0.15}
             fill="#c5ced8"
-            stroke="#0a1628"
+            stroke="#0b1846"
             strokeWidth={0.08}
           />
           {/* Light blueprint grid */}
@@ -87,7 +87,7 @@ export function YardMap2D({
               y1={0}
               x2={i}
               y2={depth}
-              stroke="#0a1628"
+              stroke="#0b1846"
               strokeOpacity={0.06}
               strokeWidth={0.03}
             />
@@ -99,7 +99,7 @@ export function YardMap2D({
               y1={i}
               x2={width}
               y2={i}
-              stroke="#0a1628"
+              stroke="#0b1846"
               strokeOpacity={0.06}
               strokeWidth={0.03}
             />
@@ -141,7 +141,7 @@ export function YardMap2D({
                   rx={0.08}
                   fill={fill}
                   fillOpacity={hovered || selected ? 0.95 : 0.82}
-                  stroke={selected ? "#0a1628" : "#0f172a"}
+                  stroke={selected ? "#0b1846" : "#0f172a"}
                   strokeWidth={selected ? 0.12 : hovered ? 0.1 : 0.05}
                   className="cursor-pointer"
                   onMouseEnter={() => setHoverId(fp.lotId)}
@@ -156,7 +156,7 @@ export function YardMap2D({
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize={Math.min(0.35, fp.w * 0.22)}
-                  fill="#0a1628"
+                  fill="#0b1846"
                   fontWeight={600}
                   className="pointer-events-none select-none"
                 >

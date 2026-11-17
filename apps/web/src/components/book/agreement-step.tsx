@@ -46,7 +46,7 @@ type Props = {
 const labelClass = "mb-1.5 block text-sm font-medium text-[#1e293b]";
 const required = <span className="text-[#e11d48]"> *</span>;
 const inputClass =
-  "h-11 w-full rounded-md border border-[#cbd5e1] bg-white px-3 text-sm text-[#0f172a] outline-none focus:border-[#0a1628] focus:ring-1 focus:ring-[#0a1628]";
+  "h-11 w-full rounded-md border border-[#cbd5e1] bg-white px-3 text-sm text-[#0f172a] outline-none focus:border-[#0b1846] focus:ring-1 focus:ring-[#0b1846]";
 
 function FileUpload({
   label,
@@ -78,7 +78,7 @@ function FileUpload({
           disabled && "pointer-events-none",
         )}
       >
-        <span className="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-[#0a1628] shadow-sm ring-1 ring-[#e2e8f0]">
+        <span className="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-[#0b1846] shadow-sm ring-1 ring-[#e2e8f0]">
           {fileName ? "Replace file" : "Choose File"}
         </span>
         <span className="text-sm text-[#64748b]">
@@ -370,7 +370,7 @@ export function AgreementStep({ value, idFile, onIdFile, onChange }: Props) {
           required={!value.docsSubmitLater}
           onPick={(file) => onChange("coiFileName", file?.name ?? "")}
         />
-        <label className="flex items-start gap-2.5 rounded-md border border-[#E8C547]/40 bg-[#E8C547]/10 px-3 py-3 text-sm text-[#0f172a]">
+        <label className="flex items-start gap-2.5 rounded-md border border-[#f39a2c]/40 bg-[#f39a2c]/10 px-3 py-3 text-sm text-[#0f172a]">
           <input
             type="checkbox"
             className="mt-0.5 h-4 w-4 rounded border-[#cbd5e1]"

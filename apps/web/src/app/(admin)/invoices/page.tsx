@@ -213,7 +213,7 @@ export default function InvoicesPage() {
             </Card>
           ) : (
             <>
-              <Stagger className="grid gap-3 md:hidden">
+              <Stagger className="grid gap-3 lg:hidden">
                 {rows.map((invoice) => (
                   <StaggerItem key={invoice.id}>
                     <InvoiceMobileCard
@@ -227,7 +227,7 @@ export default function InvoicesPage() {
                 ))}
               </Stagger>
 
-              <div className="hidden overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] md:block">
+              <div className="hidden overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] lg:block">
                 <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_7.5rem_6.5rem_6.5rem_5.5rem] gap-3 border-b border-[var(--border)] bg-[var(--surface-muted)] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
                   <div>Customer</div>
                   <div>Yard</div>

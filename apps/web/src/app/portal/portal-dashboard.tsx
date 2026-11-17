@@ -3,7 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarClock, Hourglass, KeyRound, MapPin } from "lucide-react";
 import { endpoints } from "@/lib/api";
+import type { PortalInvoice } from "@/app/portal/types";
 import { text } from "@/constants/text";
+import { formatCurrency } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
 import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,6 +25,8 @@ export function PortalDashboard() {
         .map((plot) => (plot.size ? `${plot.number} · ${plot.size}` : plot.number))
         .join(", ")
     : text.portal.notAssigned;
+  const late =
+    data?.paymentStatus === "past_due" ? lateBalance(data.invoices) : null;
 
   return (
     <PageTransition>
@@ -38,11 +42,11 @@ export function PortalDashboard() {
         </div>
       ) : data ? (
         <div className="grid gap-4">
-          {data.paymentStatus === "past_due" && (
+          {late ? (
             <p className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-              {text.portal.lateNotice}
+              {text.portal.lateNotice(formatCurrency(late.amount), late.days)}
             </p>
-          )}
+          ) : null}
           <Stagger className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StaggerItem>
               <PortalStat label={text.portal.plot} value={space} icon={MapPin} />
@@ -69,6 +73,27 @@ export function PortalDashboard() {
       ) : null}
     </PageTransition>
   );
+}
+
+function lateBalance(invoices: PortalInvoice[]) {
+  const late = invoices.filter(
+    (invoice) => invoice.status === "overdue" && invoice.balance > 0,
+  );
+  if (late.length === 0) return null;
+  const amount = late.reduce((sum, invoice) => sum + invoice.balance, 0);
+  const oldest = late.reduce(
+    (min, invoice) => (invoice.dueDate < min ? invoice.dueDate : min),
+    late[0].dueDate,
+  );
+  return { amount, days: daysSince(oldest) };
+}
+
+function daysSince(dueDate: string) {
+  const [year, month, day] = dueDate.split("-").map(Number);
+  const due = Date.UTC(year, month - 1, day);
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.max(0, Math.round((today - due) / 86400000));
 }
 
 function dayCount(value: number | null) {

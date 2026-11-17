@@ -80,7 +80,7 @@ export function Segmented<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "relative inline-flex max-w-full items-center",
+        "relative inline-flex max-w-full items-center overflow-x-auto",
         pill
           ? cn(
               "rounded-xl border border-[var(--border)] p-1",

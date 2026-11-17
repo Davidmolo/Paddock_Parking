@@ -22,9 +22,9 @@ const POSTS = [
 export default function BlogPage() {
   return (
     <BookChrome>
-      <section className="bg-[#0a1628] py-16 text-white">
+      <section className="bg-[#0b1846] py-16 text-white">
         <div className={BOOK_SHELL}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#f39a2c]">
             Blog
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-sora)] text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -39,7 +39,7 @@ export default function BlogPage() {
               key={post.title}
               className="rounded-2xl border border-[#e8ecf0] p-6"
             >
-              <h2 className="font-semibold text-[#0a1628]">{post.title}</h2>
+              <h2 className="font-semibold text-[#0b1846]">{post.title}</h2>
               <p className="mt-2 text-sm text-[#64748b]">{post.blurb}</p>
               <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
                 Coming soon
@@ -50,7 +50,7 @@ export default function BlogPage() {
         <div className={`${BOOK_SHELL} mt-10`}>
           <Link
             href="/book/spots"
-            className="inline-flex rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
+            className="inline-flex rounded-xl bg-[#f39a2c] px-5 py-3 text-sm font-bold text-[#0b1846]"
           >
             Book a yard
           </Link>

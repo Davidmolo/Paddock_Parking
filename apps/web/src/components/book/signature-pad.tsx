@@ -51,7 +51,7 @@ export function SignaturePad({ label, value, onChange, className }: Props) {
       ctx.lineWidth = 2.25;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = "#0a1628";
+      ctx.strokeStyle = "#0b1846";
       ctxRef.current = ctx;
       cssSize.current = { w: rect.width, h: rect.height };
       if (snapshot && snapshot.length > 100) {
@@ -71,7 +71,7 @@ export function SignaturePad({ label, value, onChange, className }: Props) {
       ctx.lineWidth = 2.25;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = "#0a1628";
+      ctx.strokeStyle = "#0b1846";
       ctxRef.current = ctx;
       cssSize.current = { w: rect.width, h: rect.height };
     }
@@ -190,9 +190,9 @@ export function SignaturePad({ label, value, onChange, className }: Props) {
   return (
     <div className={cn("space-y-2", className)}>
       {label ? (
-        <p className="text-sm font-semibold text-[#0a1628]">{label}</p>
+        <p className="text-sm font-semibold text-[#0b1846]">{label}</p>
       ) : null}
-      <div className="overflow-hidden rounded-xl border border-[#0a1628]/20 bg-white">
+      <div className="overflow-hidden rounded-xl border border-[#0b1846]/20 bg-white">
         <canvas
           ref={canvasRef}
           className="h-36 w-full touch-none cursor-crosshair select-none"
@@ -212,7 +212,7 @@ export function SignaturePad({ label, value, onChange, className }: Props) {
         <button
           type="button"
           onClick={clear}
-          className="text-xs font-semibold text-[#0a1628] underline-offset-2 hover:underline"
+          className="text-xs font-semibold text-[#0b1846] underline-offset-2 hover:underline"
         >
           Clear
         </button>

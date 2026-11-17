@@ -21,7 +21,7 @@ export function MarketingHome() {
 
   return (
     <BookChrome>
-      <section className="relative overflow-hidden bg-[#0a1628] text-white">
+      <section className="relative overflow-hidden bg-[#0b1846] text-white">
         {/* Yard photo plane like live site */}
         <div
           className="absolute inset-0 scale-105 bg-cover bg-center"
@@ -30,15 +30,15 @@ export function MarketingHome() {
               "url(https://paddockparking.com/og-image.jpg)",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628] via-[#0a1628]/92 to-[#0a1628]/55" />
-        <div className="absolute inset-0 bg-[#0a1628]/35" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0b1846] via-[#0b1846]/92 to-[#0b1846]/55" />
+        <div className="absolute inset-0 bg-[#0b1846]/35" />
 
         <div
           className={`${BOOK_SHELL} relative grid gap-10 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:py-24`}
         >
           <div>
             <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-[#E8C547]/40 bg-[#E8C547]/10 px-3 py-1 text-xs font-semibold text-[#E8C547]">
+              <span className="rounded-full border border-[#f39a2c]/40 bg-[#f39a2c]/10 px-3 py-1 text-xs font-semibold text-[#f39a2c]">
                 Watch Your Equipment 24/7
               </span>
               <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/90">
@@ -47,7 +47,7 @@ export function MarketingHome() {
             </div>
             <h1 className="mt-6 font-[family-name:var(--font-sora)] text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.25rem]">
               Secure Outdoor Storage Yard &{" "}
-              <span className="text-[#E8C547]">Outdoor Parking</span>
+              <span className="text-[#f39a2c]">Outdoor Parking</span>
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg">
               Gated outdoor storage in Phoenix for trucks, trailers, heavy
@@ -63,7 +63,7 @@ export function MarketingHome() {
                 "Live Cameras",
               ].map((t) => (
                 <span key={t} className="inline-flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5 text-[#E8C547]" />
+                  <Check className="h-3.5 w-3.5 text-[#f39a2c]" />
                   {t}
                 </span>
               ))}
@@ -71,7 +71,7 @@ export function MarketingHome() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/book/spots"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#E8C547] px-6 py-3.5 text-sm font-bold text-[#0a1628]"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#f39a2c] px-6 py-3.5 text-sm font-bold text-[#0b1846]"
               >
                 Book Now
                 <ArrowRight className="h-4 w-4" />
@@ -120,7 +120,7 @@ export function MarketingHome() {
                     key={s.l}
                     className="rounded-xl bg-white/95 px-2 py-3 text-center shadow"
                   >
-                    <p className="text-lg font-bold text-[#0a1628] sm:text-xl">
+                    <p className="text-lg font-bold text-[#0b1846] sm:text-xl">
                       {s.n}
                     </p>
                     <p className="text-[10px] font-medium text-[#64748b]">
@@ -131,7 +131,7 @@ export function MarketingHome() {
               </div>
             </div>
             <blockquote className="rounded-2xl border border-white/10 bg-[#132033]/95 p-5 backdrop-blur">
-              <div className="mb-2 flex gap-0.5 text-[#E8C547]">
+              <div className="mb-2 flex gap-0.5 text-[#f39a2c]">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="h-3.5 w-3.5 fill-current" />
                 ))}
@@ -150,7 +150,7 @@ export function MarketingHome() {
 
       <section className="bg-white py-16">
         <div className={BOOK_SHELL}>
-          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0a1628]">
+          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0b1846]">
             What Our Customers Say
           </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -159,12 +159,12 @@ export function MarketingHome() {
                 key={r.name}
                 className="rounded-2xl border border-[#e8ecf0] bg-[#f8fafc] p-5"
               >
-                <div className="mb-3 flex gap-0.5 text-[#E8C547]">
+                <div className="mb-3 flex gap-0.5 text-[#f39a2c]">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} className="h-3.5 w-3.5 fill-current" />
                   ))}
                 </div>
-                <h3 className="font-semibold text-[#0a1628]">{r.name}</h3>
+                <h3 className="font-semibold text-[#0b1846]">{r.name}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#64748b]">
                   {r.text}
                 </p>
@@ -176,10 +176,10 @@ export function MarketingHome() {
 
       <section className="bg-[#eef1f4] py-16">
         <div className={BOOK_SHELL}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#f39a2c]">
             Phoenix&apos;s Most Trusted Storage Yard
           </p>
-          <h2 className="mt-2 max-w-2xl font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0a1628]">
+          <h2 className="mt-2 max-w-2xl font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0b1846]">
             Why Contractors Switch to Phoenix Storage Yards
           </h2>
           <p className="mt-4 max-w-2xl text-[#64748b]">
@@ -205,7 +205,7 @@ export function MarketingHome() {
                 key={c.t}
                 className="rounded-2xl border border-[#e8ecf0] bg-white p-6"
               >
-                <h3 className="font-semibold text-[#0a1628]">{c.t}</h3>
+                <h3 className="font-semibold text-[#0b1846]">{c.t}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#64748b]">
                   {c.d}
                 </p>
@@ -217,7 +217,7 @@ export function MarketingHome() {
 
       <section className="bg-white py-16">
         <div className={BOOK_SHELL}>
-          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0a1628]">
+          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0b1846]">
             If It Has Wheels (Or Tracks), We Park It
           </h2>
           <p className="mt-3 max-w-2xl text-[#64748b]">
@@ -229,13 +229,13 @@ export function MarketingHome() {
               <Link
                 key={item.title}
                 href="/book/services"
-                className="group rounded-2xl border border-[#e8ecf0] bg-[#f8fafc] p-6 transition hover:border-[#E8C547]"
+                className="group rounded-2xl border border-[#e8ecf0] bg-[#f8fafc] p-6 transition hover:border-[#f39a2c]"
               >
-                <h3 className="font-semibold text-[#0a1628]">{item.title}</h3>
+                <h3 className="font-semibold text-[#0b1846]">{item.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#64748b]">
                   {item.blurb}
                 </p>
-                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#0a1628]">
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#0b1846]">
                   Learn More <ArrowRight className="h-3.5 w-3.5" />
                 </span>
               </Link>
@@ -246,7 +246,7 @@ export function MarketingHome() {
 
       <section className="bg-[#eef1f4] py-16">
         <div className={BOOK_SHELL}>
-          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0a1628]">
+          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0b1846]">
             Flexible Storage Solutions
           </h2>
           <p className="mt-3 text-[#64748b]">
@@ -259,28 +259,28 @@ export function MarketingHome() {
                 key={tier.title}
                 className="flex flex-col rounded-2xl border border-[#e8ecf0] bg-white p-6"
               >
-                <h3 className="font-semibold text-[#0a1628]">{tier.title}</h3>
+                <h3 className="font-semibold text-[#0b1846]">{tier.title}</h3>
                 <p className="mt-1 text-sm text-[#64748b]">{tier.size}</p>
                 {tier.price ? (
-                  <p className="mt-3 text-2xl font-bold text-[#0a1628]">
+                  <p className="mt-3 text-2xl font-bold text-[#0b1846]">
                     {tier.price}
                   </p>
                 ) : (
-                  <p className="mt-3 text-sm font-semibold text-[#E8C547]">
+                  <p className="mt-3 text-sm font-semibold text-[#f39a2c]">
                     Custom quote
                   </p>
                 )}
                 <ul className="mt-4 flex-1 space-y-2 text-sm text-[#64748b]">
                   {tier.items.map((item) => (
                     <li key={item} className="flex gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#E8C547]" />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#f39a2c]" />
                       {item}
                     </li>
                   ))}
                 </ul>
                 <Link
                   href="/book/spots"
-                  className="mt-6 inline-flex justify-center rounded-xl bg-[#0a1628] px-4 py-2.5 text-sm font-bold text-white"
+                  className="mt-6 inline-flex justify-center rounded-xl bg-[#0b1846] px-4 py-2.5 text-sm font-bold text-white"
                 >
                   Book Now
                 </Link>
@@ -292,7 +292,7 @@ export function MarketingHome() {
 
       <section className="bg-white py-16">
         <div className={BOOK_SHELL}>
-          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0a1628]">
+          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0b1846]">
             Wherever Your Jobs Are, We&apos;re Close
           </h2>
           <p className="mt-3 text-[#64748b]">
@@ -304,13 +304,13 @@ export function MarketingHome() {
                 key={loc.id}
                 className="rounded-2xl border border-[#e8ecf0] p-6"
               >
-                <h3 className="font-semibold text-[#0a1628]">{loc.name}</h3>
+                <h3 className="font-semibold text-[#0b1846]">{loc.name}</h3>
                 <p className="mt-2 text-sm text-[#64748b]">{loc.address}</p>
-                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
+                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#f39a2c]">
                   24/7 Access
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
-                  <a href={SITE_PHONE_TEL} className="text-[#0a1628]">
+                  <a href={SITE_PHONE_TEL} className="text-[#0b1846]">
                     {SITE_PHONE}
                   </a>
                   <a
@@ -321,7 +321,7 @@ export function MarketingHome() {
                   >
                     Get Directions
                   </a>
-                  <Link href={`/book/${loc.id}`} className="text-[#0a1628]">
+                  <Link href={`/book/${loc.id}`} className="text-[#0b1846]">
                     Book →
                   </Link>
                 </div>
@@ -331,7 +331,7 @@ export function MarketingHome() {
           <div className="mt-8">
             <Link
               href="/book/spots"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#f39a2c] px-5 py-3 text-sm font-bold text-[#0b1846]"
             >
               See live availability <ArrowRight className="h-4 w-4" />
             </Link>
@@ -341,7 +341,7 @@ export function MarketingHome() {
 
       <section className="bg-[#eef1f4] py-16">
         <div className={`${BOOK_SHELL} max-w-3xl`}>
-          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0a1628]">
+          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-semibold text-[#0b1846]">
             Common Questions
           </h2>
           <p className="mt-3 text-[#64748b]">
@@ -358,7 +358,7 @@ export function MarketingHome() {
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-[#0a1628]"
+                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-[#0b1846]"
                     onClick={() => setOpenFaq(open ? null : i)}
                   >
                     {faq.q}
@@ -381,13 +381,13 @@ export function MarketingHome() {
           <div className="mt-10 flex flex-wrap gap-3">
             <Link
               href="/book/spots"
-              className="inline-flex rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
+              className="inline-flex rounded-xl bg-[#f39a2c] px-5 py-3 text-sm font-bold text-[#0b1846]"
             >
               Get a Quote / Book Now
             </Link>
             <a
               href={SITE_PHONE_TEL}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#0a1628]/15 px-5 py-3 text-sm font-bold text-[#0a1628]"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#0b1846]/15 px-5 py-3 text-sm font-bold text-[#0b1846]"
             >
               Call {SITE_PHONE}
             </a>

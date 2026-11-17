@@ -5,9 +5,9 @@ import { SITE_EMAIL } from "@/lib/site-content";
 export default function PartnerPage() {
   return (
     <BookChrome>
-      <section className="bg-[#0a1628] py-16 text-white">
+      <section className="bg-[#0b1846] py-16 text-white">
         <div className={BOOK_SHELL}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#f39a2c]">
             Partner With Us
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-sora)] text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -26,13 +26,13 @@ export default function PartnerPage() {
           </p>
           <a
             href={`mailto:${SITE_EMAIL}?subject=Partner%20With%20Us`}
-            className="mt-6 inline-flex rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
+            className="mt-6 inline-flex rounded-xl bg-[#f39a2c] px-5 py-3 text-sm font-bold text-[#0b1846]"
           >
             Email {SITE_EMAIL}
           </a>
           <p className="mt-8 text-sm text-[#64748b]">
             Looking to store equipment instead?{" "}
-            <Link href="/book/spots" className="font-semibold text-[#0a1628] underline">
+            <Link href="/book/spots" className="font-semibold text-[#0b1846] underline">
               Book a spot
             </Link>
             .

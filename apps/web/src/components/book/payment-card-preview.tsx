@@ -55,9 +55,9 @@ export function PaymentCardPreview({
           )}
         >
           {/* Front */}
-          <div className="absolute inset-0 overflow-hidden rounded-2xl bg-gradient-to-br from-[#0a1628] via-[#152a45] to-[#0f766e] p-5 text-white shadow-[0_20px_40px_rgba(10,22,40,0.35)] [backface-visibility:hidden]">
+          <div className="absolute inset-0 overflow-hidden rounded-2xl bg-gradient-to-br from-[#0b1846] via-[#152a45] to-[#0f766e] p-5 text-white shadow-[0_20px_40px_rgba(10,22,40,0.35)] [backface-visibility:hidden]">
             <div className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-            <div className="pointer-events-none absolute -bottom-12 left-8 h-32 w-32 rounded-full bg-[#E8C547]/20 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-12 left-8 h-32 w-32 rounded-full bg-[#f39a2c]/20 blur-2xl" />
             <div className="relative flex h-full flex-col justify-between">
               <div className="flex items-start justify-between">
                 {/* Modern EMV chip + contactless */}
@@ -187,14 +187,14 @@ export function PaymentCardPreview({
           </div>
 
           {/* Back */}
-          <div className="absolute inset-0 overflow-hidden rounded-2xl bg-gradient-to-br from-[#152a45] to-[#0a1628] text-white shadow-[0_20px_40px_rgba(10,22,40,0.35)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
+          <div className="absolute inset-0 overflow-hidden rounded-2xl bg-gradient-to-br from-[#152a45] to-[#0b1846] text-white shadow-[0_20px_40px_rgba(10,22,40,0.35)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
             <div className="mt-6 h-10 w-full bg-black/50" />
             <div className="mt-5 px-5">
               <p className="text-[10px] uppercase tracking-[0.14em] text-white/50">
                 Security code
               </p>
               <div className="mt-1.5 flex items-center justify-end rounded-md bg-white px-3 py-2">
-                <span className="font-mono text-sm font-bold tracking-widest text-[#0a1628]">
+                <span className="font-mono text-sm font-bold tracking-widest text-[#0b1846]">
                   {digitsOnly(cvv).slice(0, 4) || "•••"}
                 </span>
               </div>

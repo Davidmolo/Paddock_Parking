@@ -9,7 +9,7 @@ Same pattern as Phoenix WMS / FMS: nginx + PM2 on EC2, GitHub Actions deploy.
 | Item | Value |
 | --- | --- |
 | Staff host | `pms.phoenixstorageyards.com` (admin: `/login`, `/dashboard`, …) |
-| Customer host | `www.phoenixstorageyards.com` (public site + `/portal`, `/book`, …) |
+| Customer host | `www.phoenixstorageyards.com` (`/portal`, `/book`, …) |
 | Legacy host | `pms.paddockparking.com` (older demo docs; same app pattern) |
 | App root | `/var/www/paddock-pms` |
 | PM2 apps | `paddock-pms-api` · `paddock-pms-web` |
@@ -25,6 +25,8 @@ Fuelcap (FMS) sign-in is `https://…/auth/signin`. This app does not use that p
 | `www.phoenixstorageyards.com` | Customer website | `/` and `/book` (locations, spots, about, contact, services) |
 | `www.phoenixstorageyards.com` | Customer portal | `/portal`, `/portal/invoices`, `/portal/lease`, `/portal/finish` |
 
+Both hosts ask for the site access code before any page, the same way `pms.paddockparking.com` did. The code page is `/paddock-gate`. One code opens both hosts. The staff sign-in is still the separate admin login after that.
+
 `/portal` and `/book` on the staff host send the browser to www. Staff paths on www send the browser to pms. FMS is a different app and is not changed by this file.
 
 ## DNS (Nadia — phoenixstorageyards.com)
@@ -34,7 +36,7 @@ Both names point at the **same** app server. Nginx uses `server_name` so staff a
 | Type | Host | Points to | Use |
 | --- | --- | --- | --- |
 | A | `pms` | `3.146.118.154` | Staff PMS — `https://pms.phoenixstorageyards.com` |
-| A | `www` | `3.146.118.154` | Public + portal — `https://www.phoenixstorageyards.com`, `/portal`, `/book` |
+| A | `www` | `3.146.118.154` | Customer site + portal — `https://www.phoenixstorageyards.com`, `/portal`, `/book` |
 
 Apex `phoenixstorageyards.com` stays on the main marketing site (unchanged).
 

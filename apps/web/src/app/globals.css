@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  /* Paddock brand: navy + gold */
+  /* Phoenix Storage Yards logo: navy + orange */
   --canvas: #eef1f5;
   --surface: #ffffff;
   --surface-elevated: #ffffff;
   --surface-muted: #f4f6f9;
-  --ink: #0a1628;
+  --ink: #0b1846;
   --muted: #5b6b7c;
   --border: #d7e0ea;
-  --primary: #0a1628;
-  --primary-hover: #142338;
-  --accent: #f5d04a;
-  --accent-ink: #0a1628;
+  --primary: #0b1846;
+  --primary-hover: #16245f;
+  --accent: #f39a2c;
+  --accent-ink: #0b1846;
   --accent-soft: rgba(10, 22, 40, 0.06);
   --danger: #e11d48;
   --shadow-card: 0 10px 28px rgba(10, 22, 40, 0.06);

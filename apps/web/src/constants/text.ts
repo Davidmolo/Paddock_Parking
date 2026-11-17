@@ -1,4 +1,7 @@
 export const text = {
+  brand: {
+    logoAlt: "Phoenix Storage Yards",
+  },
   portal: {
     dashboard: "Dashboard",
     welcome: "Welcome back",
@@ -99,7 +102,12 @@ export const text = {
     insufficient: "The bank declined this payment. There was not enough money on this account. Nothing was taken, and the invoice is still due.",
     declined: "Declined",
     payments: "Payments",
-    lateNotice: "You are late on payment.",
+    lateNotice: (amount: string, days: number) =>
+      days < 1
+        ? `${amount} is past due.`
+        : days === 1
+          ? `You are 1 day late. ${amount} is past due.`
+          : `You are ${days} days late. ${amount} is past due.`,
     paidOn: "Paid on",
     noPayments: "No payments on this account yet.",
     achDebit: "ACH debit",

@@ -6,9 +6,9 @@ import { LOCATIONS, SITE_PHONE, SITE_PHONE_TEL } from "@/lib/site-content";
 export default function LocationsPage() {
   return (
     <BookChrome>
-      <section className="bg-[#0a1628] py-16 text-white">
+      <section className="bg-[#0b1846] py-16 text-white">
         <div className={BOOK_SHELL}>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#f39a2c]">
             Locations
           </p>
           <h1 className="mt-2 font-[family-name:var(--font-sora)] text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -20,7 +20,7 @@ export default function LocationsPage() {
           </p>
           <Link
             href="/book/spots"
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#E8C547] px-5 py-3 text-sm font-bold text-[#0a1628]"
+            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#f39a2c] px-5 py-3 text-sm font-bold text-[#0b1846]"
           >
             Find Your Spot <ArrowRight className="h-4 w-4" />
           </Link>
@@ -35,19 +35,19 @@ export default function LocationsPage() {
               className="rounded-2xl border border-[#e8ecf0] p-6"
             >
               <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#E8C547]/15 text-[#0a1628]">
+                <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#f39a2c]/15 text-[#0b1846]">
                   <MapPin className="h-5 w-5" />
                 </span>
                 <div>
-                  <h2 className="text-lg font-semibold text-[#0a1628]">
+                  <h2 className="text-lg font-semibold text-[#0b1846]">
                     {loc.name}
                   </h2>
                   <p className="mt-1 text-sm text-[#64748b]">{loc.address}</p>
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#E8C547]">
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#f39a2c]">
                     24/7 Access
                   </p>
                   <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold">
-                    <a href={SITE_PHONE_TEL} className="text-[#0a1628]">
+                    <a href={SITE_PHONE_TEL} className="text-[#0b1846]">
                       {SITE_PHONE}
                     </a>
                     <a
@@ -60,7 +60,7 @@ export default function LocationsPage() {
                     </a>
                     <Link
                       href={`/book/${loc.id}`}
-                      className="text-[#0a1628]"
+                      className="text-[#0b1846]"
                     >
                       Book →
                     </Link>

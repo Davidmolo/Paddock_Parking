@@ -36,7 +36,7 @@ export function PageTransition({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-y-auto overscroll-none pb-6 [&>*]:min-h-min [&>*]:shrink-0",
+        "flex h-full min-h-0 w-full min-w-0 flex-col overflow-auto overscroll-none pb-6 [&>*]:min-h-min [&>*]:min-w-0 [&>*]:shrink-0",
         className,
       )}
     >

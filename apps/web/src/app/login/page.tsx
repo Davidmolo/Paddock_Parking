@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { text } from "@/constants/text";
 import { useApp } from "@/components/app-provider";
 import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -70,10 +71,12 @@ export default function LoginPage() {
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent" />
 
-        <div className="mb-8">
-          <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-[var(--ink)] text-sm font-bold text-[var(--accent)] shadow-[0_10px_30px_rgba(11,18,32,0.3)]">
-            PS
-          </div>
+        <div className="mb-8 text-center">
+          <img
+            src="/phoenix-logo.png"
+            alt={text.brand.logoAlt}
+            className="mx-auto mb-4 block h-14! w-auto"
+          />
           <h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)] sm:text-3xl">
             Admin Portal
           </h1>
