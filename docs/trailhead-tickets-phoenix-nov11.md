@@ -321,3 +321,135 @@ On Phoenix 925, staff see which yard a space belongs to, pick an acre size or ty
 
 **Where to see the outcome:**
 http://localhost:3000/lots. Sign in as admin / paddockparking. Choose Phoenix 925, then Grid. Edit sits beside Add land. The trash icon on P-1 asks “Remove this space?” Do not click Remove. http://localhost:3000/leases on the Landlord tab. Brow USA, Inc. shows $6,245/mo. Do not click Save changes, Save lease, or Delete lot.
+
+---
+
+## 27
+
+**Title:** Inventory: staff draw a yard from length and width
+
+**Description:**
+Staff add a yard as a rectangle from length and width in feet. They add parking, storage, or other spaces, set a monthly rate, a status, and a tenant, and drag a space on the site plan. An open space keeps its color. An occupied space turns grey.
+
+**Where to see the outcome:**
+http://localhost:3000/lots. Sign in as admin / paddockparking. Phoenix 925 is the yard. Add land opens the form with Length and Width. On the site plan, Add spaces and Move are beside the plan. Do not click Create yard, Save changes, or Move.
+
+---
+
+## 28
+
+**Title:** Inventory: acre sizes are buttons on a new space
+
+**Description:**
+On add space and edit space, staff pick 0.25, 0.5, 1, 2, 3, 4, or 5 acres. The click fills a square in feet. One acre is 209 by 209. Staff can still type length and width.
+
+**Where to see the outcome:**
+http://localhost:3000/lots. Sign in as admin / paddockparking. Open Phoenix 925 and click Add spaces. The buttons read 0.25 ac, 0.5 ac, 1 ac, 2 ac, 3 ac, 4 ac, and 5 ac. Do not click Add these spaces.
+
+---
+
+## 29
+
+**Title:** Inventory: staff name a space P57 or AC1
+
+**Description:**
+The Name box takes a name such as P57 or AC1. A blank name is assigned, parking as P-1, storage as S-1, and acres as AC-1. A name like P57 makes the next spaces P58 and P59. The same box renames a space later.
+
+**Where to see the outcome:**
+http://localhost:3000/lots. Sign in as admin / paddockparking. Open Phoenix 925, then Add spaces. The label is Name and the box says P57 or AC1. Above it, This space says “Name it first. P57 or AC1. A blank name is assigned for you.” Do not click Add these spaces.
+
+---
+
+## 30
+
+**Title:** Inventory: the space form names the yard
+
+**Description:**
+Before the acre buttons, add space and edit space show which yard the space belongs to. On Phoenix 925 the line reads This yard and Phoenix 925.
+
+**Where to see the outcome:**
+http://localhost:3000/lots. Sign in as admin / paddockparking. Open Phoenix 925, then Add spaces, or open P-1. The line above the acre buttons says This yard and Phoenix 925. Do not click Add these spaces or Save lot.
+
+---
+
+## 31
+
+**Title:** Inventory: removing a space asks first
+
+**Description:**
+The trash icon on a grid card asks before the space is removed. The prompt shows a trash icon, the space name, and the line “It comes off this yard. The land stays.” Cancel leaves the space.
+
+**Where to see the outcome:**
+http://localhost:3000/lots. Sign in as admin / paddockparking. Choose Phoenix 925, then Grid. The trash icon on P-1 is labeled Remove space. The prompt title is “Remove this space?” Do not click Remove.
+
+---
+
+## 32
+
+**Title:** Inventory: removing a yard uses the same prompt
+
+**Description:**
+Remove yard asks with the same prompt as removing a space: a trash icon, the yard name, and Cancel beside the confirm button. Cancel leaves the yard and its spaces.
+
+**Where to see the outcome:**
+http://localhost:3000/lots. Sign in as admin / paddockparking. Open Phoenix 925 and click Edit. At the bottom, Remove yard opens “Are you sure you want to delete this lot?” with Phoenix 925 under it. Do not click Delete lot or Save changes.
+
+---
+
+## 33
+
+**Title:** Inventory: the grid hides Move, and Edit stays
+
+**Description:**
+On the grid, Add spaces stays and Move is not shown. Edit stays beside Add land and opens the yard form. On the site plan, Move is still there.
+
+**Where to see the outcome:**
+http://localhost:3000/lots. Sign in as admin / paddockparking. Choose Phoenix 925, then Grid. Edit and Add spaces are on the page. Move is not. Click Edit and the button stays. On Site plan, Move is next to Add spaces. Do not click Save changes.
+
+---
+
+## 34
+
+**Title:** Inventory: Paddock open counts use the real stall list
+
+**Description:**
+Paddock 325, Paddock 16, and Paddock 6060 show open counts from their stall lists. The count stays correct when the header filter is still Phoenix 925. The drawings stay the existing site plans.
+
+**Where to see the outcome:**
+http://localhost:3000/lots. Sign in as admin / paddockparking. Click Paddock 325. The count reads 31% occupied · 22 open · 3 soon. Paddock 16 reads 15% occupied · 34 open · 2 soon. Paddock 6060 reads 4% occupied · 88 open · 2 soon. Do not change a stall.
+
+---
+
+## 35
+
+**Title:** Leases: the 925 landlord lease is its own card
+
+**Description:**
+The 925 landlord lease sits on the Landlord tab, separate from tenant leases. The card shows the landlord, the monthly rent as $6,245/mo, the term, the deposit, and the signed agreement. Staff open the PDF from the card.
+
+**Where to see the outcome:**
+http://localhost:3000/leases. Sign in as admin / paddockparking. Open the Landlord tab. Brow USA, Inc. has the Landlord badge and $6,245/mo. The link is “925 East Elwood Street - LAND LEASE-ADDENDUM (signed).pdf”. Do not click Save lease.
+
+---
+
+## 36
+
+**Title:** Leases: rent increase, extensions, and notice are their own fields
+
+**Description:**
+When the signed PDF has them, the increase date, the increase amount, the number of extensions, and the 30, 90, or 180 day notice show as their own fields. They also stay in the rent schedule and the option line. Staff can set the notice to 30 days, 90 days, or 180 days.
+
+**Where to see the outcome:**
+http://localhost:3000/leases. Sign in as admin / paddockparking. On the Landlord tab, Brow USA, Inc. shows Rent increase date January 15, 2028, Rent increase $187.00, Extensions 1, and Renewal notice 180 days. Do not click Save lease.
+
+---
+
+## 37
+
+**Title:** Leases: a blank landlord phone or email is left off the card
+
+**Description:**
+The landlord card shows contact, phone, and email only when the lease has them. Phoenix 925 has none of those, so that row is absent. Edit is where staff can type them.
+
+**Where to see the outcome:**
+http://localhost:3000/leases. Sign in as admin / paddockparking. On the Landlord tab, Brow USA, Inc. has no Contact, Phone, or Email line. Edit is on the card. The Paddock 16 landlord card shows “Diane Ortiz · diane@elwoodyard.example”. Do not click Save lease.

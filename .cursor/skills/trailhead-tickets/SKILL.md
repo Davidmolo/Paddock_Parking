@@ -15,6 +15,8 @@ Write every ticket as three parts only.
 
 Do not add acceptance criteria, steps, owners, or estimates.
 
+When the user asks for a Trailhead ticket, the chat reply is the template. Paste every ticket in full, one after another. Do not shorten a ticket into a title, a numbered list, or a one-line summary.
+
 Append the ticket to `docs/trailhead-tickets-phoenix-nov11.md`. Do not rewrite earlier tickets.
 
 Staff: http://localhost:3000/login — `admin` / `paddockparking`  
