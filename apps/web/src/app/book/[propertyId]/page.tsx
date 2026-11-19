@@ -18,7 +18,7 @@ import { isValidAbaRouting } from "@/lib/aba-routing";
 import { text } from "@/constants/text";
 import { formatCurrency, cn } from "@/lib/utils";
 import { SelectMenu } from "@/components/ui/select-menu";
-import { isLivePropertyId } from "@/lib/yards";
+import { isBookablePropertyId } from "@/lib/yards";
 
 /**
  * Book Now steps — David: drop Spot Selection (lease type lives in Lease Details;
@@ -199,11 +199,11 @@ export default function BookWizardPage() {
   });
 
   const property = properties?.find(
-    (p) => p.id === propertyId && isLivePropertyId(p.id),
+    (p) => p.id === propertyId && isBookablePropertyId(p.id),
   );
 
   useEffect(() => {
-    if (!propertyId || !isLivePropertyId(propertyId)) {
+    if (!propertyId || !isBookablePropertyId(propertyId)) {
       router.replace("/book/spots");
       return;
     }

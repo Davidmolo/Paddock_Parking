@@ -22,6 +22,9 @@ import { SelectMenu } from "@/components/ui/select-menu";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatCurrency } from "@/lib/utils";
+import { yardTitle } from "@/components/lots/blank-yard";
+import { blankLease, filledLease, type AddedYard } from "@/components/lots/types";
+import { text } from "@/constants/text";
 
 type Tab = "renewals" | "tenant" | "landlord" | "all";
 
@@ -37,6 +40,7 @@ export default function LeasesPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("renewals");
   const [editing, setEditing] = useState<LeaseRecord | null>(null);
+  const [editingYard, setEditingYard] = useState<AddedYard | null>(null);
   const leaseHold = useRef(editing);
   if (editing) leaseHold.current = editing;
   const editOn = usePresence(Boolean(editing), 180);
@@ -52,6 +56,13 @@ export default function LeasesPage() {
     queryFn: () =>
       endpoints.leases({ propertyId: propertyParam(propertyId) }),
   });
+  const { data: yards = [] } = useQuery({
+    queryKey: queryKeys.yards(),
+    queryFn: () => endpoints.yards(),
+  });
+  const yardLeases = yards.filter(
+    (yard) => yard.leaseName || Object.values(yard.lease ?? {}).some((line) => line.trim()),
+  );
 
   const visible = useMemo(() => {
     const list = leases ?? [];
@@ -83,7 +94,7 @@ export default function LeasesPage() {
       ) : summary ? (
         <Stagger className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Stat label="Tenant leases" value={String(summary.tenant)} />
-          <Stat label="Landlord leases" value={String(summary.landlord)} />
+          <Stat label="Landlord leases" value={String(summary.landlord + yardLeases.length)} />
           <Stat
             label="Renewals in notice window"
             value={String(summary.renewalsDue)}
@@ -105,8 +116,8 @@ export default function LeasesPage() {
         options={[
           { value: "renewals", label: "Renewals due", count: summary?.renewalsDue },
           { value: "tenant", label: "Tenant", count: summary?.tenant },
-          { value: "landlord", label: "Admin", count: summary?.landlord },
-          { value: "all", label: "All leases", count: summary?.total },
+          { value: "landlord", label: "Landlord", count: (summary?.landlord ?? 0) + yardLeases.length },
+          { value: "all", label: "All leases", count: (summary?.total ?? 0) + yardLeases.length },
         ]}
       />
 
@@ -116,7 +127,7 @@ export default function LeasesPage() {
             <Skeleton key={i} className="h-28" />
           ))}
         </div>
-      ) : visible.length === 0 ? (
+      ) : visible.length === 0 && (tab === "tenant" || tab === "renewals" || yardLeases.length === 0) ? (
         <Card interactive={false} className="p-10 text-center">
           <p className="text-[var(--muted)]">
             {tab === "renewals"
@@ -126,6 +137,12 @@ export default function LeasesPage() {
         </Card>
       ) : (
         <Stagger className="grid gap-3">
+          {(tab === "landlord" || tab === "all") &&
+            yardLeases.map((yard) => (
+              <StaggerItem key={yard.id}>
+                <YardLeaseCard yard={yard} onEdit={() => setEditingYard(yard)} />
+              </StaggerItem>
+            ))}
           {visible.map((lease) => (
             <StaggerItem key={lease.id}>
               <LeaseCard lease={lease} onEdit={() => setEditing(lease)} />
@@ -133,6 +150,17 @@ export default function LeasesPage() {
           ))}
         </Stagger>
       )}
+
+      {editingYard ? (
+        <YardLeaseEdit
+          yard={editingYard}
+          onClose={() => setEditingYard(null)}
+          onSaved={() => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.yards() });
+            setEditingYard(null);
+          }}
+        />
+      ) : null}
 
       {editOn.mounted && leaseShown && (
         <LeaseEditDrawer
@@ -153,6 +181,149 @@ export default function LeasesPage() {
         />
       )}
     </PageTransition>
+  );
+}
+
+function yardStanding(lease: AddedYard["lease"]) {
+  const full = lease ? filledLease({ ...blankLease(), ...lease }) : undefined;
+  const start = full?.start ? new Date(full.start) : null;
+  const end = full?.end ? new Date(full.end) : null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const lead = Number(full?.notice || 0);
+  if (!start || Number.isNaN(+start) || !end || Number.isNaN(+end) || today < start) {
+    return today < (start ?? today) ? "pending" : "active";
+  }
+  if (today > end) return "expired";
+  if (lead > 0) {
+    const notify = new Date(end);
+    notify.setDate(notify.getDate() - lead);
+    if (today >= notify) return "due";
+  }
+  return "active";
+}
+
+const yardFacts = ["start", "end", "term", "deposit", "increaseDate", "increaseAmount", "extensions"] as const;
+
+function YardLeaseCard({ yard, onEdit }: { yard: AddedYard; onEdit: () => void }) {
+  const lease = yard.lease ? filledLease({ ...blankLease(), ...yard.lease }) : undefined;
+  const standing = yardStanding(lease);
+  const notice =
+    lease?.notice === "30" || lease?.notice === "90" || lease?.notice === "180"
+      ? text.blankYard.leaseField.noticeChoice[lease.notice]
+      : "";
+  const reach = [lease?.contact, lease?.phone, lease?.email].filter(Boolean).join(" · ");
+  const facts = [
+    ...yardFacts.flatMap((key) => (lease?.[key] ? [[text.blankYard.leaseField[key], lease[key]] as const] : [])),
+    ...(notice ? [[text.blankYard.leaseField.notice, notice] as const] : []),
+  ];
+  return (
+    <Card>
+      <CardBody className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-semibold">{lease?.landlord || yardTitle(yard.name)}</p>
+              <Badge tone="accent">Landlord</Badge>
+              <Badge tone={standing === "due" || standing === "expired" ? "warning" : "neutral"}>
+                {standing === "due" ? "due" : standing === "expired" ? "expired" : standing === "pending" ? "pending" : "active"}
+              </Badge>
+              {standing === "active" ? <Badge tone="neutral">on track</Badge> : null}
+            </div>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              {yard.name}
+              {yard.leaseFile ? (
+                <>
+                  {" · "}
+                  <a href={yard.leaseFile} target="_blank" rel="noreferrer" className="font-semibold text-[var(--accent-ink)] underline-offset-2 hover:underline">
+                    {yard.leaseName || text.blankYard.openLease}
+                  </a>
+                </>
+              ) : yard.leaseName ? (
+                ` · ${yard.leaseName}`
+              ) : null}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {lease?.baseRent ? (
+              <p className="text-lg font-semibold">
+                {formatCurrency(Number(lease.baseRent.replace(/[^0-9.]/g, "")))}
+                <span className="text-sm font-normal text-[var(--muted)]">/mo</span>
+              </p>
+            ) : null}
+            <Button size="sm" variant="secondary" onClick={onEdit}>
+              {text.blankYard.edit}
+            </Button>
+          </div>
+        </div>
+        {standing === "active" ? <p className="text-sm text-[var(--muted)]">{text.blankYard.leaseCurrent}</p> : null}
+        {reach ? <p className="text-sm text-[var(--muted)]">{reach}</p> : null}
+        {facts.length ? (
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {facts.map(([label, value]) => (
+              <Meta key={label} label={label} value={value} />
+            ))}
+          </div>
+        ) : null}
+      </CardBody>
+    </Card>
+  );
+}
+
+function YardLeaseEdit({
+  yard,
+  onClose,
+  onSaved,
+}: {
+  yard: AddedYard;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const lease = filledLease({ ...blankLease(), ...yard.lease });
+  const [draft, setDraft] = useState(lease);
+  const save = useMutation({
+    mutationFn: () => endpoints.saveYard({ ...yard, lease: draft }),
+    onSuccess: onSaved,
+  });
+  const fields = ["contact", "phone", "email", "baseRent", "deposit", "term", "start", "end", "increaseDate", "increaseAmount", "extensions"] as const;
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/30 fade-in">
+      <div className="flex h-full w-full max-w-md flex-col bg-[var(--surface)] shadow-2xl drawer-in">
+        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">{text.blankYard.edit}</p>
+            <h2 className="text-lg font-semibold">{draft.landlord || yardTitle(yard.name)}</h2>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex-1 space-y-3 overflow-y-auto p-5">
+          {fields.map((key) => (
+            <Field key={key} label={text.blankYard.leaseField[key]}>
+              <Input value={draft[key]} onChange={(e) => setDraft((current) => ({ ...current, [key]: e.target.value }))} />
+            </Field>
+          ))}
+          <Field label={text.blankYard.leaseField.notice}>
+            <SelectMenu
+              ariaLabel={text.blankYard.leaseField.notice}
+              value={draft.notice}
+              placeholder={text.blankYard.leaseField.noticeUnset}
+              onChange={(value) => setDraft((current) => ({ ...current, notice: value }))}
+              options={(["30", "90", "180"] as const).map((days) => ({
+                value: days,
+                label: text.blankYard.leaseField.noticeChoice[days],
+              }))}
+            />
+          </Field>
+        </div>
+        <div className="border-t border-[var(--border)] p-5">
+          <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>
+            {save.isPending ? "Saving…" : "Save lease"}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -200,35 +371,26 @@ function LeaseCard({
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          <Meta label="Term start" value={lease.startDate} />
-          <Meta
-            label="Renewal"
-            value={lease.renewalDate ?? lease.endDate ?? "—"}
-          />
-          <Meta
-            label="Notice required"
-            value={`${lease.notificationLeadDays} days before`}
-          />
-          <Meta
-            label="Notify by"
-            value={
-              lease.notifyByDate
-                ? `${lease.notifyByDate}${
-                    lease.daysToRenewal != null
-                      ? ` · ${lease.daysToRenewal}d to renewal`
-                      : ""
-                  }`
-                : "—"
-            }
-          />
+          {lease.startDate ? <Meta label="Term start" value={lease.startDate} /> : null}
+          {lease.renewalDate || lease.endDate ? (
+            <Meta label="Renewal" value={lease.renewalDate ?? lease.endDate ?? ""} />
+          ) : null}
+          {lease.notificationLeadDays ? (
+            <Meta label="Notice required" value={`${lease.notificationLeadDays} days before`} />
+          ) : null}
+          {lease.notifyByDate ? (
+            <Meta
+              label="Notify by"
+              value={`${lease.notifyByDate}${lease.daysToRenewal != null ? ` · ${lease.daysToRenewal}d to renewal` : ""}`}
+            />
+          ) : null}
         </div>
 
-        {lease.direction === "landlord" && lease.landlordContact && (
+        {lease.direction === "landlord" && (lease.landlordContact || lease.landlordEmail) ? (
           <p className="text-sm text-[var(--muted)]">
-            Admin / yard contact: {lease.landlordContact}
-            {lease.landlordEmail ? ` · ${lease.landlordEmail}` : ""}
+            {[lease.landlordContact, lease.landlordEmail].filter(Boolean).join(" · ")}
           </p>
-        )}
+        ) : null}
 
         {lease.direction === "tenant" && lease.customerId && (
           <Link

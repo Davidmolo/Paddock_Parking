@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { endpoints, type AuthUser, type Property } from "@/lib/api";
-import { isLivePropertyId, LIVE_PROPERTY_ORDER } from "@/lib/yards";
+import { isBookablePropertyId, LIVE_PROPERTY_ORDER } from "@/lib/yards";
 
 type AppContextValue = {
   user: AuthUser | null;
@@ -20,24 +20,21 @@ type AppContextValue = {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  refreshProperties: () => Promise<void>;
   setUser: (user: AuthUser) => void;
   ready: boolean;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-function livePropertiesOnly(props: Property[]) {
+function listedProperties(props: Property[]) {
   return props
-    .filter((p) => isLivePropertyId(p.id))
-    .sort(
-      (a, b) =>
-        LIVE_PROPERTY_ORDER.indexOf(
-          a.id as (typeof LIVE_PROPERTY_ORDER)[number],
-        ) -
-        LIVE_PROPERTY_ORDER.indexOf(
-          b.id as (typeof LIVE_PROPERTY_ORDER)[number],
-        ),
-    );
+    .filter((p) => isBookablePropertyId(p.id))
+    .sort((a, b) => {
+      const ai = LIVE_PROPERTY_ORDER.indexOf(a.id as (typeof LIVE_PROPERTY_ORDER)[number]);
+      const bi = LIVE_PROPERTY_ORDER.indexOf(b.id as (typeof LIVE_PROPERTY_ORDER)[number]);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -67,11 +64,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           endpoints.properties(),
         ]);
         setUserState(me);
-        setProperties(livePropertiesOnly(props));
+        setProperties(listedProperties(props));
         if (
           savedProperty &&
           savedProperty !== "all" &&
-          !isLivePropertyId(savedProperty)
+          !isBookablePropertyId(savedProperty)
         ) {
           setPropertyIdState("all");
           localStorage.setItem("pp_property", "all");
@@ -101,13 +98,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUserState(me);
   }, []);
 
+  const refreshProperties = useCallback(async () => {
+    const props = await endpoints.properties();
+    setProperties(listedProperties(props));
+  }, []);
+
   const login = useCallback(async (username: string, password: string) => {
     const res = await endpoints.login({ username, password });
     localStorage.setItem("pp_token", res.token);
     setToken(res.token);
     setUserState(res.user);
     const props = await endpoints.properties();
-    setProperties(livePropertiesOnly(props));
+    setProperties(listedProperties(props));
   }, []);
 
   const logout = useCallback(() => {
@@ -126,6 +128,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       login,
       logout,
       refreshUser,
+      refreshProperties,
       setUser,
       ready,
     }),
@@ -138,6 +141,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       login,
       logout,
       refreshUser,
+      refreshProperties,
       setUser,
       ready,
     ],

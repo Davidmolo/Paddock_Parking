@@ -7,7 +7,7 @@ import { ArrowRight, ExternalLink, MapPin } from "lucide-react";
 import { BookChrome, BOOK_SHELL } from "@/components/book/book-chrome";
 import { endpoints, type Lot, type Property } from "@/lib/api";
 import { formatCurrency, cn } from "@/lib/utils";
-import { LIVE_PROPERTY_ORDER, isLivePropertyId } from "@/lib/yards";
+import { LIVE_PROPERTY_ORDER, isBookablePropertyId } from "@/lib/yards";
 
 const LOCATION_META: Record<string, { tags: string[] }> = {
   "prop-16": {
@@ -281,7 +281,7 @@ export default function BookLandingPage() {
   const byProp = useMemo(() => {
     const map = new Map<string, Lot[]>();
     for (const lot of lots ?? []) {
-      if (!isLivePropertyId(lot.propertyId)) continue;
+      if (!isBookablePropertyId(lot.propertyId)) continue;
       const list = map.get(lot.propertyId) ?? [];
       list.push(lot);
       map.set(lot.propertyId, list);
@@ -290,7 +290,7 @@ export default function BookLandingPage() {
   }, [lots]);
 
   const ordered = useMemo(() => {
-    const list = (properties ?? []).filter((p) => isLivePropertyId(p.id));
+    const list = (properties ?? []).filter((p) => isBookablePropertyId(p.id));
     return [...list].sort((a, b) => {
       const ai = LIVE_PROPERTY_ORDER.indexOf(a.id as (typeof LIVE_PROPERTY_ORDER)[number]);
       const bi = LIVE_PROPERTY_ORDER.indexOf(b.id as (typeof LIVE_PROPERTY_ORDER)[number]);
@@ -317,8 +317,8 @@ export default function BookLandingPage() {
             Find Your <span className="text-[#f39a2c]">Spot</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-white/75 sm:text-base">
-            Live availability at Paddock 16, Paddock 325, and Paddock 6060 —
-            inventory counts only (no yard maps). Book online in minutes.
+            Live availability at each yard — inventory counts only (no yard maps).
+            Book online in minutes.
           </p>
         </div>
       </section>

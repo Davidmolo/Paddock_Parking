@@ -11,6 +11,7 @@ import { LeasesModule } from './leases/leases.module.js';
 import { LotsModule } from './lots/lots.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { PropertiesModule } from './properties/properties.module.js';
+import { YardsModule } from './yards/yards.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PropertiesModule } from './properties/properties.module.js';
     AuthModule,
     DashboardModule,
     PropertiesModule,
+    YardsModule,
     LotsModule,
     CustomersModule,
     BookingsModule,

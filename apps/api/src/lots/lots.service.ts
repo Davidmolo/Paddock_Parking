@@ -3,6 +3,7 @@ import { DataStoreService } from '../data/data-store.service.js';
 import type { PatchLotDto } from './dto/patch-lot.dto.js';
 import { LOT_TYPE_LABELS } from '../data/seed.js';
 import { syncLotsFromLeaseNoticeWindows } from '../leases/lot-availability-sync.js';
+import { mirrorLot } from '../yards/yard-store.js';
 
 @Injectable()
 export class LotsService implements OnModuleInit {
@@ -113,6 +114,7 @@ export class LotsService implements OnModuleInit {
       lot.availableOn = d.toISOString().slice(0, 10);
     }
 
+    mirrorLot(this.store, lot);
     return this.enrich(lot);
   }
 

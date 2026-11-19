@@ -9,6 +9,7 @@ export const queryKeys = {
   dashboard: (propertyId: string | "all") =>
     ["dashboard", propertyId] as const,
   properties: () => ["properties"] as const,
+  yards: () => ["yards"] as const,
   lots: (propertyId: string | "all") => ["lots", propertyId] as const,
   customers: (propertyId: string | "all", q = "") =>
     ["customers", propertyId, q] as const,

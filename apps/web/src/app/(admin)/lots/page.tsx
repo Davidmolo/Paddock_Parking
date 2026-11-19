@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Grid3X3, Map, X } from "lucide-react";
+import { Grid3X3, Map, Trash2, X } from "lucide-react";
 import {
   endpoints,
   type Lot,
@@ -15,13 +15,17 @@ import { PageTransition, Stagger, StaggerItem, usePresence } from "@/components/
 import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Segmented } from "@/components/ui/segmented";
 import { formatCurrency, cn } from "@/lib/utils";
 import { ACRE_COLORS, effectiveAcres } from "@/lib/lot-layout";
+import { AddSpaces, AddYardForm, loadYards, saveYards, spaceTone, yardTitle, YardSolid } from "@/components/lots/blank-yard";
+import type { AddedYard, YardSpace } from "@/components/lots/types";
 import { YardSitePlanEmbed } from "@/components/lots/yard-site-plan-embed";
+import { text } from "@/constants/text";
 import {
   resolveSitePlan,
   SITE_PLAN_OPTIONS,
@@ -80,7 +84,7 @@ function lotVisible(lot: Lot, filter: LotStatus | "all", acreFilter: string) {
 }
 
 export default function LotsPage() {
-  const { propertyId, properties } = useApp();
+  const { propertyId, properties, refreshProperties } = useApp();
   const queryClient = useQueryClient();
   const [view, setView] = useState<"map" | "grid">("map");
   const [filter, setFilter] = useState<LotStatus | "all">("all");
@@ -90,6 +94,13 @@ export default function LotsPage() {
   const [mapYardId, setMapYardId] = useState<string>(
     SITE_PLAN_OPTIONS[0].propertyId,
   );
+  const [customId, setCustomId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [spacing, setSpacing] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const [spaceId, setSpaceId] = useState<string | null>(null);
+  const [dropSpace, setDropSpace] = useState<YardSpace | null>(null);
 
   const { data, isPending } = useQuery({
     queryKey: queryKeys.lots(propertyId),
@@ -120,14 +131,138 @@ export default function LotsPage() {
 
   useEffect(() => {
     if (propertyId === "all") return;
+    if (propertyId.startsWith("yard-")) {
+      setCustomId(propertyId);
+      setAdding(false);
+      setEditingId(null);
+      setSpacing(false);
+      setMoving(false);
+      return;
+    }
     const hit = SITE_PLAN_OPTIONS.find((o) => o.propertyId === propertyId);
-    if (hit) setMapYardId(hit.propertyId);
+    if (hit) {
+      setMapYardId(hit.propertyId);
+      setCustomId(null);
+      setAdding(false);
+      setEditingId(null);
+      setSpacing(false);
+      setMoving(false);
+    }
   }, [propertyId]);
 
-  const mapLots = useMemo(
-    () => lots.filter((l) => l.propertyId === activePlan.propertyId),
-    [lots, activePlan.propertyId],
-  );
+  const { data: yardRows } = useQuery({
+    queryKey: queryKeys.yards(),
+    queryFn: () => endpoints.yards(),
+  });
+  const yards = yardRows ?? [];
+  const moved = useRef(false);
+
+  useEffect(() => {
+    if (!yardRows || moved.current) return;
+    const local = loadYards();
+    const missing = local.filter((yard) => !yardRows.some((row) => row.id === yard.id));
+    if (!missing.length) {
+      moved.current = true;
+      if (local.length) saveYards([]);
+      return;
+    }
+    moved.current = true;
+    void (async () => {
+      for (const yard of missing) await endpoints.saveYard(yard);
+      saveYards([]);
+      await refreshProperties();
+      void queryClient.invalidateQueries({ queryKey: queryKeys.yards() });
+      void queryClient.invalidateQueries({ queryKey: ["lots"] });
+    })();
+  }, [yardRows, queryClient, refreshProperties]);
+
+  const customYard = yards.find((yard) => yard.id === customId) ?? null;
+  const editing = yards.find((yard) => yard.id === editingId) ?? null;
+  const people = (customers ?? []).map((item) => ({ id: item.id, name: item.name }));
+  const spaceOpen = Boolean(customYard && spacing);
+  const spaceOn = usePresence(spaceOpen, 180);
+  const openSpace = customYard?.spaces?.find((item) => item.id === spaceId) ?? null;
+
+  useEffect(() => {
+    if (!spacing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSpacing(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [spacing]);
+
+  useEffect(() => {
+    if (!spaceOn.mounted) setSpaceId(null);
+  }, [spaceOn.mounted]);
+
+  function yardActions(showMove = true) {
+    if (!customYard || adding || editing) return null;
+    return (
+      <span className="inline-flex items-center rounded-full border border-[var(--border)] bg-white p-0.5 shadow-sm">
+        <button
+          type="button"
+          className="h-7 rounded-full px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--accent-soft)]"
+          onClick={() => {
+            setMoving(false);
+            setSpaceId(null);
+            setSpacing(true);
+          }}
+        >
+          {text.blankYard.spaceTitle}
+        </button>
+        {showMove ? (
+          <button
+            type="button"
+            className={cn(
+              "h-7 rounded-full px-3 text-xs font-semibold",
+              moving ? "bg-[var(--ink)] text-white" : "text-[var(--muted)] hover:bg-[var(--surface-muted)]",
+            )}
+            onClick={() => {
+              setSpacing(false);
+              setSpaceId(null);
+              setMoving((on) => !on);
+            }}
+          >
+            {text.blankYard.move}
+          </button>
+        ) : null}
+      </span>
+    );
+  }
+
+  function remember(next: AddedYard[]) {
+    queryClient.setQueryData(queryKeys.yards(), next);
+  }
+
+  async function persistYard(yard: AddedYard, next: AddedYard[]) {
+    await queryClient.cancelQueries({ queryKey: queryKeys.yards() });
+    remember(next);
+    await endpoints.saveYard(yard);
+    await refreshProperties();
+    void queryClient.invalidateQueries({ queryKey: ["lots"] });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.yards() });
+  }
+
+  function saveSpaces(spaces: YardSpace[]) {
+    if (!customYard) return;
+    const yard = { ...customYard, spaces };
+    void persistYard(
+      yard,
+      yards.map((item) => (item.id === yard.id ? yard : item)),
+    );
+  }
+
+  const planScoped = !customId && propertyId !== "all" && propertyId !== activePlan.propertyId;
+  const { data: planRows } = useQuery({
+    queryKey: queryKeys.lots(activePlan.propertyId),
+    queryFn: () => endpoints.lots(activePlan.propertyId),
+    enabled: planScoped,
+  });
+  const mapLots = useMemo(() => {
+    const source = planScoped ? (planRows ?? []) : lots;
+    return source.filter((lot) => lot.propertyId === activePlan.propertyId);
+  }, [lots, planRows, planScoped, activePlan.propertyId]);
 
   const [draftStatus, setDraftStatus] = useState<LotStatus>("available");
   const [draftRate, setDraftRate] = useState("");
@@ -189,18 +324,28 @@ export default function LotsPage() {
   }, [lots]);
 
   const mapOccupancy = useMemo(() => {
-    const total = mapLots.length;
-    const rented = mapLots.filter(
-      (l) =>
-        l.status === "occupied" ||
-        l.status === "available_soon" ||
-        l.status === "reserved",
+    const statuses = mapLots.map((lot) => lot.status);
+    const total = statuses.length;
+    const rented = statuses.filter(
+      (status) => status === "occupied" || status === "available_soon" || status === "reserved",
     ).length;
-    const available = mapLots.filter((l) => l.status === "available").length;
-    const soon = mapLots.filter((l) => l.status === "available_soon").length;
+    const available = statuses.filter((status) => status === "available").length;
+    const soon = statuses.filter((status) => status === "available_soon").length;
     const rate = total ? Math.round((rented / total) * 100) : 0;
     return { total, rented, available, soon, rate };
   }, [mapLots]);
+
+  const customOpen = useMemo(() => {
+    const spaces = customYard?.spaces ?? [];
+    const rented = spaces.filter((space) => {
+      const status = space.status ?? "available";
+      return status === "occupied" || status === "available_soon" || status === "reserved";
+    }).length;
+    const available = spaces.filter((space) => (space.status ?? "available") === "available").length;
+    const soon = spaces.filter((space) => space.status === "available_soon").length;
+    const rate = spaces.length ? Math.round((rented / spaces.length) * 100) : 0;
+    return { total: spaces.length, available, soon, rate };
+  }, [customYard]);
 
   const visible = lots.filter((l) => lotVisible(l, filter, acreFilter));
 
@@ -245,16 +390,50 @@ export default function LotsPage() {
         title="Inventory"
         subtitle="Yard site plans with live occupancy — hover for details, click a space to update status, rate, or tenant."
         action={
-          <Segmented
-            ariaLabel="Inventory view"
-            thumb="elevated"
-            value={view}
-            onChange={setView}
-            options={[
-              { value: "map", label: "Site plan", icon: <Map className="h-4 w-4" aria-hidden /> },
-              { value: "grid", label: "Grid", icon: <Grid3X3 className="h-4 w-4" aria-hidden /> },
-            ]}
-          />
+          <>
+            <div className="inline-flex items-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-1">
+              <button
+                type="button"
+                className="inline-flex items-center rounded-lg px-3 py-1.5 text-[13px] font-medium text-[var(--muted)] hover:text-[var(--ink)]"
+                onClick={() => {
+                  setView("map");
+                  setCustomId(null);
+                  setEditingId(null);
+                  setSpacing(false);
+                  setMoving(false);
+                  setAdding(true);
+                }}
+              >
+                {text.blankYard.add}
+              </button>
+              {customYard && !adding ? (
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center rounded-lg px-3 py-1.5 text-[13px] font-medium",
+                    editing ? "bg-white text-[var(--ink)] shadow-sm" : "text-[var(--muted)] hover:text-[var(--ink)]",
+                  )}
+                  onClick={() => {
+                    setMoving(false);
+                    setSpacing(false);
+                    setEditingId(editing ? null : customYard.id);
+                  }}
+                >
+                  {text.blankYard.edit}
+                </button>
+              ) : null}
+            </div>
+            <Segmented
+              ariaLabel="Inventory view"
+              thumb="elevated"
+              value={view}
+              onChange={setView}
+              options={[
+                { value: "map", label: "Site plan", icon: <Map className="h-4 w-4" aria-hidden /> },
+                { value: "grid", label: "Grid", icon: <Grid3X3 className="h-4 w-4" aria-hidden /> },
+              ]}
+            />
+          </>
         }
       />
 
@@ -316,17 +495,23 @@ export default function LotsPage() {
         <Skeleton className="h-[min(62vh,560px)] min-h-[420px] w-full rounded-2xl" />
       ) : data ? (
         <>
-          <div className={cn("flex min-h-[520px] flex-1 flex-col gap-3", view !== "map" && "hidden")}>
+          <div className={cn("flex min-h-[520px] flex-1 flex-col gap-3", view !== "map" && !(adding || editing) && "hidden")}>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div className="flex flex-wrap gap-2">
                 {SITE_PLAN_OPTIONS.map((opt) => (
                   <button
                     key={opt.propertyId}
                     type="button"
-                    onClick={() => setMapYardId(opt.propertyId)}
+                    onClick={() => {
+                      setCustomId(null);
+                      setAdding(false);
+                      setEditingId(null);
+                      setSpacing(false);
+                      setMapYardId(opt.propertyId);
+                    }}
                     className={cn(
                       "h-9 rounded-xl border px-3 text-xs font-semibold transition",
-                      activePlan.propertyId === opt.propertyId
+                      !customId && !adding && activePlan.propertyId === opt.propertyId
                         ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
                         : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--accent)]",
                     )}
@@ -334,21 +519,110 @@ export default function LotsPage() {
                     {opt.label}
                   </button>
                 ))}
+                {yards.map((yard) => (
+                  <span key={yard.id} className="inline-flex">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdding(false);
+                        setEditingId(null);
+                        setSpacing(false);
+                        setCustomId(yard.id);
+                      }}
+                      title={yard.name}
+                      className={cn(
+                        "h-9 rounded-xl border px-3 text-xs font-semibold transition",
+                        customId === yard.id
+                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
+                          : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--accent)]",
+                      )}
+                    >
+                      {yardTitle(yard.name)}
+                    </button>
+                  </span>
+                ))}
               </div>
               <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2 text-sm">
-                <span className="font-semibold tabular-nums">
-                  {mapOccupancy.rate}%
-                </span>{" "}
-                <span className="text-[var(--muted)]">occupied</span>
-                <span className="mx-2 text-[var(--border)]">·</span>
-                <span className="text-[var(--muted)]">
-                  {mapOccupancy.available} open
-                  {mapOccupancy.soon > 0
-                    ? ` · ${mapOccupancy.soon} soon`
-                    : ""}
-                </span>
+                {customId || adding ? (
+                  customOpen.total ? (
+                    <>
+                      <span className="font-semibold tabular-nums">{customOpen.rate}%</span>{" "}
+                      <span className="text-[var(--muted)]">occupied</span>
+                      <span className="mx-2 text-[var(--border)]">·</span>
+                      <span className="text-[var(--muted)]">
+                        {customOpen.available} open
+                        {customOpen.soon > 0 ? ` · ${customOpen.soon} soon` : ""}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-[var(--muted)]">{text.blankYard.empty}</span>
+                  )
+                ) : (
+                  <>
+                    <span className="font-semibold tabular-nums">
+                      {mapOccupancy.rate}%
+                    </span>{" "}
+                    <span className="text-[var(--muted)]">occupied</span>
+                    <span className="mx-2 text-[var(--border)]">·</span>
+                    <span className="text-[var(--muted)]">
+                      {mapOccupancy.available} open
+                      {mapOccupancy.soon > 0
+                        ? ` · ${mapOccupancy.soon} soon`
+                        : ""}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
+            <div className="relative flex min-h-0 flex-1 flex-col">
+            {adding || editing ? (
+              <AddYardForm
+                key={editing?.id ?? "new"}
+                yard={editing ?? undefined}
+                onClose={() => {
+                  setAdding(false);
+                  setEditingId(null);
+                }}
+                onCreate={(yard) => {
+                  const next = editing
+                    ? yards.map((item) => (item.id === yard.id ? yard : item))
+                    : [...yards, yard];
+                  void persistYard(yard, next);
+                  setAdding(false);
+                  setEditingId(null);
+                  setCustomId(yard.id);
+                }}
+                onRemove={
+                  editing
+                    ? () => {
+                        const next = yards.filter((item) => item.id !== editing.id);
+                        remember(next);
+                        void endpoints.deleteYard(editing.id).then(() => refreshProperties());
+                        void queryClient.invalidateQueries({ queryKey: ["lots"] });
+                        setEditingId(null);
+                        setCustomId(null);
+                        setSpacing(false);
+                      }
+                    : undefined
+                }
+              />
+            ) : customYard ? (
+              <YardSolid
+                yard={customYard}
+                moving={moving}
+                actions={yardActions()}
+                onOpen={(id) => {
+                  setMoving(false);
+                  setSpaceId(id);
+                  setSpacing(true);
+                }}
+                onMove={(id, x, y) =>
+                  saveSpaces(
+                    (customYard.spaces ?? []).map((item) => (item.id === id ? { ...item, x, y } : item)),
+                  )
+                }
+              />
+            ) : (
             <YardSitePlanEmbed
               slug={activePlan.slug}
               lots={mapLots}
@@ -368,10 +642,57 @@ export default function LotsPage() {
                 if (lot) openLot(lot);
               }}
             />
+            )}
+            </div>
           </div>
-          <div className={cn(view !== "grid" && "hidden")}>
+          <div className={cn((view !== "grid" || adding || editing) && "hidden")}>
+          {customYard && !adding && !editing ? <div className="mb-3 flex justify-end">{yardActions(false)}</div> : null}
           <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
-            {visible.map((lot) => {
+            {customYard
+              ? (customYard.spaces ?? []).map((space) => (
+                  <StaggerItem key={space.id}>
+                    <Card>
+                      <CardBody className="space-y-2 !p-3.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-2 font-semibold"
+                            onClick={() => {
+                              setMoving(false);
+                              setSpacing(true);
+                              setSpaceId(space.id);
+                            }}
+                          >
+                            <i className="h-2.5 w-2.5 rounded-full" style={{ background: spaceTone(space).fill }} />
+                            {space.label}
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={text.blankYard.spaceRemove}
+                            className="grid h-7 w-7 place-items-center rounded-full text-[var(--muted)] hover:bg-rose-50 hover:text-rose-600"
+                            onClick={() => setDropSpace(space)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <p className="text-xs text-[var(--muted)]">
+                          {text.blankYard[space.use]} · {text.blankYard.spaceStatus[space.status ?? "available"]}
+                        </p>
+                        <p className="text-xs text-[var(--muted)]">
+                          {space.length} × {space.width} {text.blankYard.ft}
+                        </p>
+                        <p className="text-sm font-medium">
+                          {formatCurrency(space.monthlyRate ?? 0)}
+                          <span className="text-[var(--muted)]">/mo</span>
+                        </p>
+                        <p className="truncate text-[11px] text-[var(--muted)]">
+                          {space.customerName || text.blankYard.spaceUnassigned}
+                        </p>
+                      </CardBody>
+                    </Card>
+                  </StaggerItem>
+                ))
+              : visible.map((lot) => {
               const yard = properties.find((p) => p.id === lot.propertyId);
               const meta = statusMeta[lot.status];
               return (
@@ -415,6 +736,53 @@ export default function LotsPage() {
           </Stagger>
           </div>
         </>
+      ) : null}
+
+      {spaceOn.mounted && customYard ? (
+        <div
+          className={cn(
+            "fixed inset-0 z-50 flex justify-end bg-black/30",
+            spaceOn.leaving ? "fade-out" : "fade-in",
+          )}
+          role="presentation"
+          onClick={() => setSpacing(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={openSpace ? `${text.blankYard.manageLot} ${openSpace.label}` : text.blankYard.spaceTitle}
+            className={cn(
+              "flex h-full w-full max-w-md flex-col bg-[var(--surface)] shadow-2xl",
+              spaceOn.leaving ? "drawer-out pointer-events-none" : "drawer-in",
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted)]">{text.blankYard.manageLot}</p>
+                <h2 className="text-xl font-semibold">{openSpace?.label ?? text.blankYard.spaceTitle}</h2>
+                {openSpace ? (
+                  <p className="text-sm text-[var(--muted)]">
+                    {text.blankYard[openSpace.use]} · {openSpace.length} × {openSpace.width} {text.blankYard.ft}
+                  </p>
+                ) : null}
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setSpacing(false)} aria-label={text.blankYard.spaceDone}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <AddSpaces
+              yard={customYard}
+              space={openSpace}
+              customers={people}
+              onSave={(spaces) => {
+                saveSpaces(spaces);
+                setSpacing(false);
+              }}
+              onClear={() => setSpaceId(null)}
+            />
+          </div>
+        </div>
       ) : null}
 
       {lotOn.mounted && lot && (
@@ -595,6 +963,20 @@ export default function LotsPage() {
           </div>
         </div>
       )}
+      {dropSpace ? (
+        <ConfirmDialog
+          title={text.blankYard.spaceRemoveAsk}
+          name={dropSpace.label}
+          body={text.blankYard.spaceRemoveBody}
+          confirm={text.blankYard.spaceRemoveYes}
+          onCancel={() => setDropSpace(null)}
+          onConfirm={() => {
+            saveSpaces((customYard?.spaces ?? []).filter((item) => item.id !== dropSpace.id));
+            if (spaceId === dropSpace.id) setSpacing(false);
+            setDropSpace(null);
+          }}
+        />
+      ) : null}
     </PageTransition>
   );
 }

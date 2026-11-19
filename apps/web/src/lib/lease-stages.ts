@@ -2,7 +2,7 @@ import type { LeaseDirection, LeaseStage } from "@/lib/api";
 
 /** Who the lease is with — UI labels (API still tenant | landlord) */
 export function leaseDirectionLabel(direction: LeaseDirection) {
-  return direction === "landlord" ? "admin" : "tenant";
+  return direction === "landlord" ? "Landlord" : "Tenant";
 }
 
 /**

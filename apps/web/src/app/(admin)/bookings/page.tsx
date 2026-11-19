@@ -133,6 +133,7 @@ export default function BookingsPage() {
   function invalidateRelated() {
     void queryClient.invalidateQueries({ queryKey: ["bookings"] });
     void queryClient.invalidateQueries({ queryKey: ["lots"] });
+    void queryClient.invalidateQueries({ queryKey: ["yards"] });
     void queryClient.invalidateQueries({ queryKey: ["customers"] });
     void queryClient.invalidateQueries({ queryKey: ["leases"] });
     void queryClient.invalidateQueries({ queryKey: ["lease-summary"] });

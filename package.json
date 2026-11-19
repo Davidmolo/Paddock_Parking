@@ -2,7 +2,7 @@
   "name": "paddockparking",
   "private": true,
   "scripts": {
-    "dev": "pnpm -r --parallel run dev",
+    "dev": "pnpm run dev:web & pnpm run dev:api",
     "dev:web": "pnpm --filter @paddockparking/web dev",
     "dev:api": "pnpm --filter @paddockparking/api start:dev",
     "build": "pnpm -r run build"

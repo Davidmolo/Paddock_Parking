@@ -1,4 +1,5 @@
 import type { PortalHome } from "@/app/portal/types";
+import type { AddedYard } from "@/components/lots/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001";
 
@@ -479,6 +480,14 @@ export const endpoints = {
   properties: () => api<Property[]>("/properties"),
   lots: (propertyId?: string) =>
     api<Lot[]>(`/lots${propertyId ? `?propertyId=${propertyId}` : ""}`),
+  yards: () => api<AddedYard[]>("/yards"),
+  saveYard: (yard: AddedYard) =>
+    api<AddedYard>(`/yards/${yard.id}`, {
+      method: "PUT",
+      body: JSON.stringify(yard),
+    }),
+  deleteYard: (id: string) =>
+    api<{ ok: boolean }>(`/yards/${id}`, { method: "DELETE" }),
   patchLot: (
     id: string,
     body: {

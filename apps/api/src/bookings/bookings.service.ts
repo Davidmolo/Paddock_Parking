@@ -16,6 +16,7 @@ import type {
 } from '../data/seed.js';
 import { LOT_TYPE_LABELS } from '../data/seed.js';
 import { sendPortalInviteEmail } from '../mail/send-portal-invite.js';
+import { mirrorLot } from '../yards/yard-store.js';
 
 @Injectable()
 export class BookingsService {
@@ -377,6 +378,7 @@ export class BookingsService {
     lot.status = 'occupied';
     lot.customerId = customerId;
     if (booking.monthlyRate) lot.monthlyRate = booking.monthlyRate;
+    mirrorLot(this.store, lot);
 
     const start =
       booking.leaseStart ?? new Date().toISOString().slice(0, 10);

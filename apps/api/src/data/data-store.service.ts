@@ -18,9 +18,10 @@ import {
   lots as seedLots,
   notifications as seedNotifications,
   payments as seedPayments,
-  properties,
+  properties as seedProperties,
   propertyMetrics,
 } from './seed.js';
+import type { StoredYard } from '../yards/yard-store.js';
 import type {
   Booking,
   CertificateOfInsurance,
@@ -47,6 +48,7 @@ type RuntimeState = {
   bookings: Booking[];
   certificates: CertificateOfInsurance[];
   notifications: OpsNotification[];
+  yards: StoredYard[];
 };
 
 function runtimeFile() {
@@ -167,6 +169,7 @@ function readState(): { state: RuntimeState; write: boolean } {
         bookings: mergeById(seedBookings, legacy),
         certificates: mergeById(seedCertificates, []),
         notifications: mergeById(seedNotifications, []),
+        yards: [],
       },
     };
   }
@@ -191,6 +194,7 @@ function readState(): { state: RuntimeState; write: boolean } {
       bookings: mergeById(seedBookings, saved.bookings),
       certificates: mergeById(seedCertificates, saved.certificates),
       notifications: mergeById(seedNotifications, saved.notifications),
+      yards: asRows<StoredYard>(saved.yards),
     },
   };
 }
@@ -208,8 +212,20 @@ function atomicWrite(file: string, json: string) {
 
 @Injectable()
 export class DataStoreService {
-  readonly properties: Property[] = properties;
   readonly propertyMetrics = propertyMetrics;
+
+  get properties(): Property[] {
+    return [
+      ...seedProperties,
+      ...this.yards.map((yard) => ({
+        id: yard.id,
+        name: yard.name,
+        address: yard.name,
+        city: 'Phoenix, AZ',
+        legalEntityName: yard.lease?.lessee || yard.name,
+      })),
+    ];
+  }
 
   user!: DemoUser;
   customers!: Customer[];
@@ -221,6 +237,7 @@ export class DataStoreService {
   bookings!: Booking[];
   certificates!: CertificateOfInsurance[];
   notifications!: OpsNotification[];
+  yards!: StoredYard[];
 
   private readonly state: RuntimeState;
   private hydrating = true;
@@ -241,6 +258,7 @@ export class DataStoreService {
     this.bookings = track(this.state.bookings, save, seen);
     this.certificates = track(this.state.certificates, save, seen);
     this.notifications = track(this.state.notifications, save, seen);
+    this.yards = track(this.state.yards, save, seen);
     this.hydrating = false;
     if (loaded.write) this.flush();
     process.once('SIGTERM', () => this.flush());

@@ -309,3 +309,15 @@ A portal invite and a manual invoice email show the draft logo, the name Phoenix
 
 **Where to see the outcome:**
 The invite subject is “Set your Phoenix Storage Yards portal password.” The invoice subject is “Your Phoenix Storage Yards invoice.” Staff reach those sends from an approved profile on http://localhost:3000/bookings, on the button Send portal invitation, and from a customer profile, on the button Send invoice. Do not click either button. Do not approve a booking.
+
+---
+
+## 26
+
+**Title:** Inventory: staff name a space, confirm before it is removed, and read the 925 rent as a monthly figure
+
+**Description:**
+On Phoenix 925, staff see which yard a space belongs to, pick an acre size or type feet, and name it, such as P57 or AC1. The trash icon and Remove yard both ask before anything is deleted, and Edit on the grid stays open with the yard form. On Leases, the 925 landlord card shows $6,245/mo, the January 15, 2028 increase of $187, one extension, and 180 days notice, and the signed agreement opens from the card.
+
+**Where to see the outcome:**
+http://localhost:3000/lots. Sign in as admin / paddockparking. Choose Phoenix 925, then Grid. Edit sits beside Add land. The trash icon on P-1 asks “Remove this space?” Do not click Remove. http://localhost:3000/leases on the Landlord tab. Brow USA, Inc. shows $6,245/mo. Do not click Save changes, Save lease, or Delete lot.

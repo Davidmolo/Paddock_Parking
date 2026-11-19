@@ -21,3 +21,7 @@ export const LIVE_PROPERTY_ORDER: LivePropertyId[] = [
 export function isLivePropertyId(id: string): id is LivePropertyId {
   return (LIVE_PROPERTY_IDS as readonly string[]).includes(id);
 }
+
+export function isBookablePropertyId(id: string) {
+  return isLivePropertyId(id) || id.startsWith("yard-");
+}
