@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { Type } from 'class-transformer';
-import { IsArray, IsEmail, IsIn, IsInt, IsNumber, IsString, Min, MinLength, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsIn, IsInt, IsNumber, IsOptional, IsString, Min, MinLength, ValidateNested } from 'class-validator';
 import { CustomersService } from './customers.service.js';
 
 class PortalLoginDto {
@@ -69,6 +69,86 @@ class PortalPayDto {
   last4!: string;
 }
 
+class PortalVehiclePatchDto {
+  @IsInt()
+  @Min(0)
+  index!: number;
+
+  @IsOptional()
+  @IsString()
+  make?: string;
+
+  @IsOptional()
+  @IsString()
+  color?: string;
+
+  @IsOptional()
+  @IsString()
+  truckNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  licensePlate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  submitLater?: boolean;
+}
+
+class PortalEditBookingDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(1)
+  reference!: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  storageDescription?: string;
+
+  @IsOptional()
+  @IsString()
+  leaseStart?: string;
+
+  @IsOptional()
+  @IsIn(['card', 'ach'])
+  paymentMethod?: 'card' | 'ach';
+
+  @IsOptional()
+  @IsBoolean()
+  docsSubmitLater?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PortalVehiclePatchDto)
+  vehicles?: PortalVehiclePatchDto[];
+}
+
+class PortalAddSpaceDto {
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(1)
+  lotId!: string;
+
+  @IsOptional()
+  @IsString()
+  plate?: string;
+
+  @IsBoolean()
+  chargeOnFile!: boolean;
+
+  @IsBoolean()
+  agreed!: boolean;
+}
+
 class PortalDocumentDto {
   @IsEmail()
   email!: string;
@@ -88,6 +168,11 @@ class PortalDocumentDto {
 @Controller('portal')
 export class PortalController {
   constructor(private readonly customersService: CustomersService) {}
+
+  @Post('account')
+  account(@Body() dto: PortalResetDto) {
+    return this.customersService.accountState(dto.email);
+  }
 
   @Post('login')
   login(@Body() dto: PortalLoginDto) {
@@ -117,6 +202,16 @@ export class PortalController {
   @Post('pay')
   pay(@Body() dto: PortalPayDto) {
     return this.customersService.portalPay(dto);
+  }
+
+  @Post('add-space')
+  addSpace(@Body() dto: PortalAddSpaceDto) {
+    return this.customersService.addSpace(dto);
+  }
+
+  @Post('edit-booking')
+  editBooking(@Body() dto: PortalEditBookingDto) {
+    return this.customersService.portalEditBooking(dto);
   }
 
   @Post('documents')

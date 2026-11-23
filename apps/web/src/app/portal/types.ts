@@ -31,6 +31,8 @@ export type PortalBooking = {
   paymentMethod: "" | "card" | "ach" | "pending";
   decision: "" | "pending" | "approved" | "conditional" | "denied";
   vehicles: PortalVehicle[];
+  spaces: string[];
+  docsLater: boolean;
 };
 
 export type PortalStatProps = {
@@ -76,6 +78,7 @@ export type PortalHome = {
   email: string;
   phone: string;
   gateCode: string;
+  propertyId: string;
   yardName: string;
   yardAddress: string;
   monthlyRate: number | null;
@@ -85,6 +88,7 @@ export type PortalHome = {
   daysLeft: number | null;
   invoices: PortalInvoice[];
   booking: PortalBooking | null;
+  bookings: PortalBooking[];
   contactName: string;
   balanceDue: number;
   paymentStatus: "current" | "past_due" | "notice";
@@ -149,6 +153,7 @@ export type PortalPayment = {
 export type PortalPlot = {
   number: string;
   size: string;
+  monthlyRate: number;
 };
 
 export type PortalOwedPlate = {

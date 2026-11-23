@@ -21,6 +21,7 @@ import {
   properties as seedProperties,
   propertyMetrics,
 } from './seed.js';
+import { ensurePaddockLayouts } from '../yards/paddock-layout.js';
 import type { StoredYard } from '../yards/yard-store.js';
 import type {
   Booking,
@@ -49,6 +50,25 @@ type RuntimeState = {
   certificates: CertificateOfInsurance[];
   notifications: OpsNotification[];
   yards: StoredYard[];
+  vendors: Vendor[];
+};
+
+export type Vendor = {
+  id: string;
+  name: string;
+  trade: string;
+  phone: string;
+  propertyId: string;
+  job: string;
+};
+
+const PEDRO: Vendor = {
+  id: "vendor-pedro",
+  name: "Pedro",
+  trade: "Gates",
+  phone: "",
+  propertyId: "prop-325",
+  job: "Fixed the gates at Paddock 325",
 };
 
 function runtimeFile() {
@@ -170,6 +190,7 @@ function readState(): { state: RuntimeState; write: boolean } {
         certificates: mergeById(seedCertificates, []),
         notifications: mergeById(seedNotifications, []),
         yards: [],
+        vendors: [PEDRO],
       },
     };
   }
@@ -195,6 +216,7 @@ function readState(): { state: RuntimeState; write: boolean } {
       certificates: mergeById(seedCertificates, saved.certificates),
       notifications: mergeById(seedNotifications, saved.notifications),
       yards: asRows<StoredYard>(saved.yards),
+      vendors: Array.isArray(saved.vendors) ? asRows<Vendor>(saved.vendors) : [PEDRO],
     },
   };
 }
@@ -217,13 +239,15 @@ export class DataStoreService {
   get properties(): Property[] {
     return [
       ...seedProperties,
-      ...this.yards.map((yard) => ({
-        id: yard.id,
-        name: yard.name,
-        address: yard.name,
-        city: 'Phoenix, AZ',
-        legalEntityName: yard.lease?.lessee || yard.name,
-      })),
+      ...this.yards
+        .filter((yard) => !yard.archived && !seedProperties.some((property) => property.id === yard.id))
+        .map((yard) => ({
+          id: yard.id,
+          name: yard.name,
+          address: yard.name,
+          city: 'Phoenix, AZ',
+          legalEntityName: yard.lease?.lessee || yard.name,
+        })),
     ];
   }
 
@@ -238,6 +262,7 @@ export class DataStoreService {
   certificates!: CertificateOfInsurance[];
   notifications!: OpsNotification[];
   yards!: StoredYard[];
+  vendors!: Vendor[];
 
   private readonly state: RuntimeState;
   private hydrating = true;
@@ -259,8 +284,10 @@ export class DataStoreService {
     this.certificates = track(this.state.certificates, save, seen);
     this.notifications = track(this.state.notifications, save, seen);
     this.yards = track(this.state.yards, save, seen);
+    this.vendors = track(this.state.vendors, save, seen);
     this.hydrating = false;
-    if (loaded.write) this.flush();
+    const addedPaddock = ensurePaddockLayouts(this.state);
+    if (loaded.write || addedPaddock) this.flush();
     process.once('SIGTERM', () => this.flush());
     process.once('SIGINT', () => this.flush());
   }

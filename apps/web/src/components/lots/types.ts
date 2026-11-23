@@ -1,3 +1,5 @@
+import type { YardMark } from "./yard-design-types";
+
 export type YardKind = "square" | "radius" | "picture";
 
 export type YardFormKind = "square" | "radius" | "map";
@@ -185,6 +187,7 @@ export type YardSpace = {
   vacantSince?: string;
   customerId?: string;
   customerName?: string;
+  archived?: boolean;
 };
 
 export type AddedYard = {
@@ -200,4 +203,6 @@ export type AddedYard = {
   leaseName?: string;
   leaseFile?: string;
   spaces?: YardSpace[];
+  marks?: YardMark[];
+  archived?: boolean;
 };

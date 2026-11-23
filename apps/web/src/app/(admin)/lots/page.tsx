@@ -22,7 +22,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Segmented } from "@/components/ui/segmented";
 import { formatCurrency, cn } from "@/lib/utils";
 import { ACRE_COLORS, effectiveAcres } from "@/lib/lot-layout";
-import { AddSpaces, AddYardForm, loadYards, saveYards, spaceTone, yardTitle, YardSolid } from "@/components/lots/blank-yard";
+import { AddSpaces, AddYardForm, liveSpaces, loadYards, saveYards, spaceTone, yardTitle, YardSolid } from "@/components/lots/blank-yard";
+import { InventoryDrawLayout } from "@/components/lots/inventory-draw-layout";
 import type { AddedYard, YardSpace } from "@/components/lots/types";
 import { YardSitePlanEmbed } from "@/components/lots/yard-site-plan-embed";
 import { text } from "@/constants/text";
@@ -74,6 +75,9 @@ function statusLabel(s: LotStatus | "all") {
 
 const ACRE_FILTERS = ["all", "0.25", "0.5", "1", "2", "3", "4", "5", "stall"] as const;
 
+/** Paddock site plans. The same Add spaces, Move, and Redraw layout tools open the editable plan. */
+const PADDOCK_EDITOR = new Set(["prop-16", "prop-325", "prop-6060"]);
+
 function lotVisible(lot: Lot, filter: LotStatus | "all", acreFilter: string) {
   if (filter !== "all" && lot.status !== filter) return false;
   if (acreFilter === "all") return true;
@@ -99,6 +103,7 @@ export default function LotsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [spacing, setSpacing] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [redraw, setRedraw] = useState(false);
   const [spaceId, setSpaceId] = useState<string | null>(null);
   const [dropSpace, setDropSpace] = useState<YardSpace | null>(null);
 
@@ -137,6 +142,7 @@ export default function LotsPage() {
       setEditingId(null);
       setSpacing(false);
       setMoving(false);
+      setRedraw(false);
       return;
     }
     const hit = SITE_PLAN_OPTIONS.find((o) => o.propertyId === propertyId);
@@ -147,6 +153,7 @@ export default function LotsPage() {
       setEditingId(null);
       setSpacing(false);
       setMoving(false);
+      setRedraw(false);
     }
   }, [propertyId]);
 
@@ -184,49 +191,80 @@ export default function LotsPage() {
   const openSpace = customYard?.spaces?.find((item) => item.id === spaceId) ?? null;
 
   useEffect(() => {
-    if (!spacing) return;
+    if (!spacing && !redraw) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSpacing(false);
+      if (e.key !== "Escape") return;
+      if (spacing) setSpacing(false);
+      else if (redraw) setRedraw(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [spacing]);
+  }, [spacing, redraw]);
 
   useEffect(() => {
     if (!spaceOn.mounted) setSpaceId(null);
   }, [spaceOn.mounted]);
 
-  function yardActions(showMove = true) {
-    if (!customYard || adding || editing) return null;
+  function yardActions(inRedraw = false) {
+    const paddockId =
+      !customId && !adding && !editing && PADDOCK_EDITOR.has(activePlan.propertyId)
+        ? activePlan.propertyId
+        : null;
+    if ((!customYard && !paddockId) || adding || editing) return null;
+    const open = (mode: "add" | "move" | "draw") => {
+      setSpaceId(null);
+      if (paddockId) {
+        if (!yards.some((yard) => yard.id === paddockId)) return;
+        setView("map");
+        setEditingId(null);
+        setCustomId(paddockId);
+        setSpacing(mode === "add");
+        setMoving(mode === "move");
+        setRedraw(mode === "draw");
+        return;
+      }
+      if (mode === "add") {
+        setMoving(false);
+        setRedraw(false);
+        setSpacing(true);
+      } else if (mode === "move") {
+        setSpacing(false);
+        setMoving((on) => !on);
+      } else {
+        setSpacing(false);
+        setMoving(false);
+        setRedraw((on) => !on);
+      }
+    };
     return (
-      <span className="inline-flex items-center rounded-full border border-[var(--border)] bg-white p-0.5 shadow-sm">
+      <span className="inline-flex h-8 items-center rounded-full border border-[var(--border)] bg-white p-0.5 shadow-sm">
         <button
           type="button"
           className="h-7 rounded-full px-3 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--accent-soft)]"
-          onClick={() => {
-            setMoving(false);
-            setSpaceId(null);
-            setSpacing(true);
-          }}
+          onClick={() => open("add")}
         >
           {text.blankYard.spaceTitle}
         </button>
-        {showMove ? (
-          <button
-            type="button"
-            className={cn(
-              "h-7 rounded-full px-3 text-xs font-semibold",
-              moving ? "bg-[var(--ink)] text-white" : "text-[var(--muted)] hover:bg-[var(--surface-muted)]",
-            )}
-            onClick={() => {
-              setSpacing(false);
-              setSpaceId(null);
-              setMoving((on) => !on);
-            }}
-          >
-            {text.blankYard.move}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className={cn(
+            "h-7 rounded-full px-3 text-xs font-semibold",
+            moving ? "bg-[var(--ink)] text-white" : "text-[var(--muted)] hover:bg-[var(--surface-muted)]",
+          )}
+          onClick={() => open("move")}
+        >
+          {text.blankYard.move}
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "h-7 rounded-full px-3 text-xs font-semibold",
+            inRedraw ? "bg-[var(--ink)] text-white" : "text-[var(--muted)] hover:bg-[var(--surface-muted)]",
+          )}
+          onClick={() => open("draw")}
+        >
+          {inRedraw ? text.blankYard.redrawDone : text.blankYard.redraw}
+        </button>
       </span>
     );
   }
@@ -250,6 +288,20 @@ export default function LotsPage() {
     void persistYard(
       yard,
       yards.map((item) => (item.id === yard.id ? yard : item)),
+    );
+  }
+
+  function removeSpace(id: string) {
+    if (!customYard) return;
+    const spaces = (customYard.spaces ?? []).map((item) =>
+      item.id === id ? { ...item, archived: true } : item,
+    );
+    const yard = { ...customYard, spaces };
+    void endpoints.archiveYardSpace(customYard.id, id).then(() =>
+      persistYard(
+        yard,
+        yards.map((item) => (item.id === yard.id ? yard : item)),
+      ),
     );
   }
 
@@ -336,7 +388,7 @@ export default function LotsPage() {
   }, [mapLots]);
 
   const customOpen = useMemo(() => {
-    const spaces = customYard?.spaces ?? [];
+    const spaces = customYard ? liveSpaces(customYard) : [];
     const rented = spaces.filter((space) => {
       const status = space.status ?? "available";
       return status === "occupied" || status === "available_soon" || status === "reserved";
@@ -400,7 +452,6 @@ export default function LotsPage() {
                   setCustomId(null);
                   setEditingId(null);
                   setSpacing(false);
-                  setMoving(false);
                   setAdding(true);
                 }}
               >
@@ -414,9 +465,25 @@ export default function LotsPage() {
                     editing ? "bg-white text-[var(--ink)] shadow-sm" : "text-[var(--muted)] hover:text-[var(--ink)]",
                   )}
                   onClick={() => {
-                    setMoving(false);
                     setSpacing(false);
                     setEditingId(editing ? null : customYard.id);
+                  }}
+                >
+                  {text.blankYard.edit}
+                </button>
+              ) : !customId && !adding && PADDOCK_EDITOR.has(activePlan.propertyId) ? (
+                <button
+                  type="button"
+                  className="inline-flex items-center rounded-lg px-3 py-1.5 text-[13px] font-medium text-[var(--muted)] hover:text-[var(--ink)]"
+                  onClick={() => {
+                    const id = activePlan.propertyId;
+                    if (!yards.some((yard) => yard.id === id)) return;
+                    setView("map");
+                    setSpacing(false);
+                    setMoving(false);
+                    setRedraw(false);
+                    setEditingId(null);
+                    setCustomId(id);
                   }}
                 >
                   {text.blankYard.edit}
@@ -503,15 +570,18 @@ export default function LotsPage() {
                     key={opt.propertyId}
                     type="button"
                     onClick={() => {
-                      setCustomId(null);
                       setAdding(false);
                       setEditingId(null);
                       setSpacing(false);
+                      setMoving(false);
+                      setRedraw(false);
                       setMapYardId(opt.propertyId);
+                      setCustomId(null);
                     }}
                     className={cn(
                       "h-9 rounded-xl border px-3 text-xs font-semibold transition",
-                      !customId && !adding && activePlan.propertyId === opt.propertyId
+                      (customId === opt.propertyId ||
+                        (!customId && !adding && activePlan.propertyId === opt.propertyId))
                         ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
                         : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--accent)]",
                     )}
@@ -519,7 +589,7 @@ export default function LotsPage() {
                     {opt.label}
                   </button>
                 ))}
-                {yards.map((yard) => (
+                {yards.filter((yard) => yard.id.startsWith("yard-")).map((yard) => (
                   <span key={yard.id} className="inline-flex">
                     <button
                       type="button"
@@ -527,6 +597,8 @@ export default function LotsPage() {
                         setAdding(false);
                         setEditingId(null);
                         setSpacing(false);
+                        setMoving(false);
+                        setRedraw(false);
                         setCustomId(yard.id);
                       }}
                       title={yard.name}
@@ -593,11 +665,11 @@ export default function LotsPage() {
                   setCustomId(yard.id);
                 }}
                 onRemove={
-                  editing
+                  editing && editing.id.startsWith("yard-")
                     ? () => {
                         const next = yards.filter((item) => item.id !== editing.id);
                         remember(next);
-                        void endpoints.deleteYard(editing.id).then(() => refreshProperties());
+                        void endpoints.archiveYard(editing.id).then(() => refreshProperties());
                         void queryClient.invalidateQueries({ queryKey: ["lots"] });
                         setEditingId(null);
                         setCustomId(null);
@@ -607,24 +679,48 @@ export default function LotsPage() {
                 }
               />
             ) : customYard ? (
-              <YardSolid
-                yard={customYard}
-                moving={moving}
-                actions={yardActions()}
-                onOpen={(id) => {
-                  setMoving(false);
-                  setSpaceId(id);
-                  setSpacing(true);
-                }}
-                onMove={(id, x, y) =>
-                  saveSpaces(
-                    (customYard.spaces ?? []).map((item) => (item.id === id ? { ...item, x, y } : item)),
-                  )
-                }
-              />
+              redraw ? (
+                <InventoryDrawLayout
+                  yard={customYard}
+                  moving={moving}
+                  onMove={(id, x, y) =>
+                    saveSpaces(
+                      (customYard.spaces ?? []).map((item) => (item.id === id ? { ...item, x, y } : item)),
+                    )
+                  }
+                  onRemove={(id) => {
+                    if (!customYard) return;
+                    void endpoints.archiveYardSpace(customYard.id, id);
+                  }}
+                  actions={yardActions(true)}
+                  onYardChange={(next) => {
+                    const rolled = yards.map((item) => (item.id === next.id ? next : item));
+                    remember(rolled);
+                    void persistYard(next, rolled);
+                  }}
+                />
+              ) : (
+                <YardSolid
+                  yard={{ ...customYard, spaces: liveSpaces(customYard) }}
+                  moving={moving}
+                  actions={yardActions(false)}
+                  onOpen={(id) => {
+                    setMoving(false);
+                    setSpaceId(id);
+                    setSpacing(true);
+                  }}
+                  onMove={(id, x, y) =>
+                    saveSpaces(
+                      (customYard.spaces ?? []).map((item) => (item.id === id ? { ...item, x, y } : item)),
+                    )
+                  }
+                  onRemove={removeSpace}
+                />
+              )
             ) : (
             <YardSitePlanEmbed
               slug={activePlan.slug}
+              actions={yardActions(false)}
               lots={mapLots}
               dimmedSpaces={dimmedSpaces}
               tenantsByLotId={tenantsByLotId}
@@ -646,10 +742,12 @@ export default function LotsPage() {
             </div>
           </div>
           <div className={cn((view !== "grid" || adding || editing) && "hidden")}>
-          {customYard && !adding && !editing ? <div className="mb-3 flex justify-end">{yardActions(false)}</div> : null}
+          {customYard && !adding && !editing ? (
+            <div className="mb-3 flex justify-end">{yardActions(false)}</div>
+          ) : null}
           <Stagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
             {customYard
-              ? (customYard.spaces ?? []).map((space) => (
+              ? liveSpaces(customYard).map((space) => (
                   <StaggerItem key={space.id}>
                     <Card>
                       <CardBody className="space-y-2 !p-3.5">
@@ -658,7 +756,6 @@ export default function LotsPage() {
                             type="button"
                             className="inline-flex items-center gap-2 font-semibold"
                             onClick={() => {
-                              setMoving(false);
                               setSpacing(true);
                               setSpaceId(space.id);
                             }}
@@ -971,7 +1068,17 @@ export default function LotsPage() {
           confirm={text.blankYard.spaceRemoveYes}
           onCancel={() => setDropSpace(null)}
           onConfirm={() => {
-            saveSpaces((customYard?.spaces ?? []).filter((item) => item.id !== dropSpace.id));
+            if (!customYard) return;
+            const spaces = (customYard.spaces ?? []).map((item) =>
+              item.id === dropSpace.id ? { ...item, archived: true } : item,
+            );
+            const yard = { ...customYard, spaces };
+            void endpoints.archiveYardSpace(customYard.id, dropSpace.id).then(() =>
+              persistYard(
+                yard,
+                yards.map((item) => (item.id === yard.id ? yard : item)),
+              ),
+            );
             if (spaceId === dropSpace.id) setSpacing(false);
             setDropSpace(null);
           }}

@@ -9,6 +9,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatPercent } from "@/lib/utils";
+import { text } from "@/constants/text";
 import { MiniTrend } from "@/components/mini-trend";
 
 export default function PropertiesPage() {
@@ -16,6 +17,16 @@ export default function PropertiesPage() {
     queryKey: queryKeys.dashboard("all"),
     queryFn: () => endpoints.dashboard(),
   });
+  const qb = useQuery({
+    queryKey: ["quickbooks-status"],
+    queryFn: () => endpoints.quickBooksStatus(),
+  });
+  const qbLine =
+    qb.data?.connected
+      ? text.admin.quickBooksConnected
+      : qb.data?.ready
+        ? text.admin.quickBooksRealm
+        : text.admin.quickBooksWait;
 
   return (
     <PageTransition>
@@ -39,6 +50,9 @@ export default function PropertiesPage() {
                     <h2 className="text-lg font-semibold">{property.name}</h2>
                     <p className="text-sm text-[var(--muted)]">
                       {property.address}
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      {text.admin.quickBooks}: {qbLine}
                     </p>
                     {property.legalEntityName && (
                       <p className="mt-1 text-xs font-medium text-[var(--accent-ink)]">
@@ -110,9 +124,9 @@ export default function PropertiesPage() {
                       ) : (
                         property.inventory.availableSpots
                           .slice(0, 10)
-                          .map((s) => (
+                          .map((s, i) => (
                             <span
-                              key={s}
+                              key={`${property.id}-${s}-${i}`}
                               className="rounded-lg bg-[var(--accent-soft)] px-2 py-1 text-xs font-medium text-[var(--accent-ink)]"
                             >
                               {s}

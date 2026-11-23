@@ -11,6 +11,8 @@ import { LeasesModule } from './leases/leases.module.js';
 import { LotsModule } from './lots/lots.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { PropertiesModule } from './properties/properties.module.js';
+import { VendorsModule } from './vendors/vendors.module.js';
+import { QuickBooksModule } from './quickbooks/quickbooks.module.js';
 import { YardsModule } from './yards/yards.module.js';
 
 @Module({
@@ -20,6 +22,7 @@ import { YardsModule } from './yards/yards.module.js';
     DashboardModule,
     PropertiesModule,
     YardsModule,
+    VendorsModule,
     LotsModule,
     CustomersModule,
     BookingsModule,
@@ -27,6 +30,7 @@ import { YardsModule } from './yards/yards.module.js';
     InvoicesModule,
     LeasesModule,
     NotificationsModule,
+    QuickBooksModule,
   ],
   controllers: [AppController],
 })

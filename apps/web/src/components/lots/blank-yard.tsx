@@ -9,6 +9,11 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn, formatCurrency } from "@/lib/utils";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { blankLease, filledLease, leaseKeys, leaseNotes, type AddedYard, type YardFormKind, type YardGround, type YardLease, type YardShot, type YardSpace, type YardSpaceStatus, type YardSpaceUse } from "./types";
+import type { DrawStamp } from "./yard-design-types";
+import { snapSpaceTopLeft } from "./draw-snap";
+import { placementForStamp, type StampPlacement } from "./inventory-draw-actions";
+import { acreBox } from "./yard-plan-math";
+import { YardMarkGraphic } from "./yard-mark-svgs";
 
 const STORE = "yp-added-yards";
 const UPFT = 1.5;
@@ -163,6 +168,69 @@ export function clampSpace(yard: AddedYard, length: number, width: number, x: nu
   };
 }
 
+function insideLand(poly: Pt[], x: number, y: number) {
+  let hit = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) hit = !hit;
+  }
+  return hit;
+}
+
+/** Lot stays on the drawn land, including a picture outline that is not a rectangle. */
+export function spaceOnLand(yard: AddedYard, length: number, width: number, x: number, y: number) {
+  const at = clampSpace(yard, length, width, x, y);
+  if (Math.abs(at.x - x) > 0.05 || Math.abs(at.y - y) > 0.05) return false;
+  const poly = footprint(yard);
+  const corners = cornersAt(lotBox(yard), x, y, length, width);
+  const cx = corners.reduce((sum, p) => sum + p[0], 0) / corners.length;
+  const cy = corners.reduce((sum, p) => sum + p[1], 0) / corners.length;
+  return corners.every(([px, py]) => {
+    const dx = cx - px;
+    const dy = cy - py;
+    const len = Math.hypot(dx, dy) || 1;
+    return insideLand(poly, px + (dx / len) * 0.6, py + (dy / len) * 0.6);
+  });
+}
+
+export function yardFeetBox(yard: AddedYard) {
+  return lotBox(yard);
+}
+
+export function spaceRectsForPlacement(yard: AddedYard) {
+  const box = lotBox(yard);
+  return laidSpaces(yard).map(({ space, corners }) => ({
+    x: space.x ?? (corners[0][0] - box.left) / UPFT,
+    y: space.y ?? (corners[0][1] - box.top) / UPFT,
+    length: space.length,
+    width: space.width,
+  }));
+}
+
+export function liveSpaces(yard: AddedYard) {
+  return (yard.spaces ?? []).filter((space) => !space.archived);
+}
+
+/** Keep spaces when the land size changes; drop any that no longer fit. */
+export function refitSpaces(land: AddedYard, spaces: YardSpace[]) {
+  const box = lotBox(land);
+  return spaces.flatMap((space) => {
+    if (space.archived) return [space];
+    let long = space.length;
+    let wide = space.width;
+    if (long > box.wide + 0.5 || wide > box.tall + 0.5) return [];
+    const base = clampSpace(land, long, wide, space.x ?? 0, space.y ?? 0);
+    if (base.x + long > box.wide + 0.5 || base.y + wide > box.tall + 0.5) {
+      long = Math.min(long, box.wide);
+      wide = Math.min(wide, box.tall);
+    }
+    const at = clampSpace(land, long, wide, base.x, base.y);
+    if (at.x + long > box.wide + 0.5 || at.y + wide > box.tall + 0.5) return [];
+    return [{ ...space, length: long, width: wide, x: at.x, y: at.y }];
+  });
+}
+
 function laidSpaces(yard: AddedYard) {
   const box = lotBox(yard);
   const gap = 2;
@@ -226,62 +294,73 @@ function placeBatch(yard: AddedYard, made: YardSpace[]) {
   );
 }
 
-function overlaps(a: YardSpace, b: YardSpace) {
-  const gap = 2;
+function overlaps(a: YardSpace, b: YardSpace, gap = 2) {
+  if (gap <= 0) {
+    const ax = a.x ?? 0;
+    const ay = a.y ?? 0;
+    const bx = b.x ?? 0;
+    const by = b.y ?? 0;
+    const left = Math.max(ax, bx);
+    const top = Math.max(ay, by);
+    const right = Math.min(ax + a.length, bx + b.length);
+    const bottom = Math.min(ay + a.width, by + b.width);
+    return right - left > 0.35 && bottom - top > 0.35;
+  }
   return (a.x ?? 0) < (b.x ?? 0) + b.length + gap && (a.x ?? 0) + a.length + gap > (b.x ?? 0) && (a.y ?? 0) < (b.y ?? 0) + b.width + gap && (a.y ?? 0) + a.width + gap > (b.y ?? 0);
+}
+
+function spaceFitsOpen(yard: AddedYard, self: YardSpace, px: number, py: number, ignoreId = self.id, gap = 2) {
+  const at = clampSpace(yard, self.length, self.width, px, py);
+  const me = { ...self, x: at.x, y: at.y };
+  const box = lotBox(yard);
+  const others = laidSpaces(yard)
+    .filter((item) => item.space.id !== ignoreId)
+    .map(({ space, corners }) => ({
+      ...space,
+      x: space.x ?? (corners[0][0] - box.left) / UPFT,
+      y: space.y ?? (corners[0][1] - box.top) / UPFT,
+    }));
+  if (others.some((item) => overlaps(me, item, gap))) return null;
+  return at;
+}
+
+function peerRects(yard: AddedYard, ignoreId: string) {
+  const box = lotBox(yard);
+  return laidSpaces(yard)
+    .filter((item) => item.space.id !== ignoreId)
+    .map(({ space, corners }) => ({
+      x: space.x ?? (corners[0][0] - box.left) / UPFT,
+      y: space.y ?? (corners[0][1] - box.top) / UPFT,
+      length: space.length,
+      width: space.width,
+    }));
+}
+
+function alignSpace(yard: AddedYard, self: YardSpace, x: number, y: number) {
+  const box = lotBox(yard);
+  const stuck = snapSpaceTopLeft(x + self.length / 2, y + self.width / 2, self.length, self.width, box, peerRects(yard, self.id));
+  const open =
+    spaceOnLand(yard, self.length, self.width, stuck.x, stuck.y) &&
+    spaceFitsOpen(yard, self, stuck.x, stuck.y, self.id, 0);
+  return open ? stuck : null;
 }
 
 function settleSpace(yard: AddedYard, id: string, x: number, y: number) {
   const self = yard.spaces?.find((space) => space.id === id);
   if (!self) return { x, y };
   const box = lotBox(yard);
-  const others = laidSpaces(yard)
-    .filter((item) => item.space.id !== id)
-    .map(({ space, corners }) => ({
-      ...space,
-      x: space.x ?? (corners[0][0] - box.left) / UPFT,
-      y: space.y ?? (corners[0][1] - box.top) / UPFT,
-    }));
-  const open = (px: number, py: number) => {
-    const at = clampSpace(yard, self.length, self.width, px, py);
-    return others.some((item) => overlaps({ ...self, ...at }, item)) ? null : at;
-  };
-  if (!others.length) return open(x, y) ?? { x, y };
-  const gap = 2;
-  const pitchX = self.length + gap;
-  const pitchY = self.width + gap;
-  const snap = (value: number, anchors: number[], pitch: number) => {
-    let line = value;
-    let bestD = Infinity;
-    for (const anchor of anchors) {
-      const next = anchor + Math.round((value - anchor) / pitch) * pitch;
-      const d = Math.abs(next - value);
-      if (d < bestD) {
-        bestD = d;
-        line = next;
-      }
-    }
-    return line;
-  };
-  const gx = snap(x, others.map((item) => item.x ?? 0), pitchX);
-  const gy = snap(y, others.map((item) => item.y ?? 0), pitchY);
-  const onGrid = open(gx, gy);
-  if (onGrid) return onGrid;
-  let best: { x: number; y: number } | null = null;
-  let bestD = Infinity;
-  for (let r = 1; r <= 8 && !best; r += 1) {
-    for (let i = -r; i <= r; i += 1) {
-      for (const at of [open(gx + i * pitchX, gy - r * pitchY), open(gx + i * pitchX, gy + r * pitchY), open(gx - r * pitchX, gy + i * pitchY), open(gx + r * pitchX, gy + i * pitchY)]) {
-        if (!at) continue;
-        const d = Math.hypot(at.x - x, at.y - y);
-        if (d < bestD) {
-          best = at;
-          bestD = d;
-        }
-      }
-    }
+  const home = { x: self.x ?? 0, y: self.y ?? 0 };
+  for (const item of laidSpaces(yard)) {
+    if (item.space.id !== id) continue;
+    home.x = self.x ?? (item.corners[0][0] - box.left) / UPFT;
+    home.y = self.y ?? (item.corners[0][1] - box.top) / UPFT;
+    break;
   }
-  return best ?? { x, y };
+  const stuck = alignSpace(yard, self, x, y);
+  if (stuck) return stuck;
+  const raw = clampSpace(yard, self.length, self.width, x, y);
+  if (spaceOnLand(yard, self.length, self.width, raw.x, raw.y) && spaceFitsOpen(yard, self, raw.x, raw.y, id, 0)) return raw;
+  return home;
 }
 
 function placeAfter(yard: AddedYard, made: YardSpace[]) {
@@ -1142,7 +1221,8 @@ export function AddYardForm({
       lease,
       leaseName,
       leaseFile,
-      spaces: yard && !edited ? (yard.spaces ?? []) : [],
+      marks: row.marks ?? yard?.marks,
+      spaces: yard ? (edited ? refitSpaces(row, yard.spaces ?? []) : yard.spaces ?? []) : [],
     });
     if (kind === "map" && long > 0 && wide > 0 && (edited || outline.length < 3)) {
       onCreate(pack({ id, name: title, kind: "square", length: long, width: wide, radius: 0, span: 0, outline: [] }));
@@ -1494,10 +1574,6 @@ function SizeField({
 
 const ACRE_CHOICES = [0.25, 0.5, 1, 2, 3, 4, 5] as const;
 
-function acreFeet(acres: number) {
-  return String(Math.round(Math.sqrt(acres * 43560)));
-}
-
 function spaceLabel(spaces: YardSpace[], use: YardSpaceUse, index: number) {
   const n = spaces.filter((space) => space.use === use).length + index + 1;
   if (use === "parking") return `P-${n}`;
@@ -1667,7 +1743,14 @@ export function AddSpaces({
       setError(text.blankYard.spaceFit);
       return;
     }
-    onSave((yard.spaces ?? []).map((item) => (item.id === space.id ? { ...space, use, label: label.trim() || space.label, length: long, width: wide, ...details(), x: space.x, y: space.y } : item)));
+    const at = clampSpace(yard, long, wide, space.x ?? 0, space.y ?? 0);
+    onSave(
+      (yard.spaces ?? []).map((item) =>
+        item.id === space.id
+          ? { ...space, use, label: label.trim() || space.label, length: long, width: wide, ...details(), x: at.x, y: at.y }
+          : item,
+      ),
+    );
     setError("");
   }
 
@@ -1711,16 +1794,16 @@ export function AddSpaces({
       </div>
       <div className="flex flex-wrap gap-1.5">
         {ACRE_CHOICES.map((acres) => {
-          const feet = acreFeet(acres);
-          const on = length === feet && width === feet;
+          const span = acreBox(acres);
+          const on = length === String(span.length) && width === String(span.width);
           return (
             <button
               key={acres}
               type="button"
               onClick={() => {
                 setUse("other");
-                setLength(feet);
-                setWidth(feet);
+                setLength(String(span.length));
+                setWidth(String(span.width));
               }}
               className={cn(
                 "h-8 rounded-lg border px-2.5 text-xs font-semibold",
@@ -1796,16 +1879,61 @@ export function AddSpaces({
   );
 }
 
+function StampPlacementGhost({
+  box,
+  placement,
+}: {
+  box: { left: number; top: number };
+  placement: StampPlacement;
+}) {
+  const px = box.left + placement.x * UPFT;
+  const py = box.top + placement.y * UPFT;
+  const w = placement.length * UPFT;
+  const d = placement.width * UPFT;
+  const roadLike = placement.length > placement.width * 2.2 || placement.width > placement.length * 2.2;
+  const tops = iso(px, py, 34);
+  const topn = iso(px + w, py, 34);
+  const tope = iso(px + w, py + d, 34);
+  const topw = iso(px, py + d, 34);
+  const fill = placement.valid
+    ? roadLike
+      ? "rgba(92,95,102,0.55)"
+      : "rgba(34,197,94,0.42)"
+    : roadLike
+      ? "rgba(220,38,38,0.5)"
+      : "rgba(239,68,68,0.48)";
+  const stroke = placement.valid ? (roadLike ? "#3d4046" : "#15803d") : "#b91c1c";
+  return (
+    <polygon
+      points={`${tops[0]},${tops[1]} ${topn[0]},${topn[1]} ${tope[0]},${tope[1]} ${topw[0]},${topw[1]}`}
+      fill={fill}
+      stroke={stroke}
+      strokeWidth={1.2}
+      pointerEvents="none"
+    />
+  );
+}
+
 export function YardSolid({
   yard,
   moving,
+  layoutDraw,
+  stamp,
+  onStampAt,
+  onStampPick,
   onMove,
+  onRemove,
   onOpen,
   actions,
 }: {
   yard: AddedYard;
   moving?: boolean;
+  layoutDraw?: boolean;
+  stamp?: DrawStamp | null;
+  onStampAt?: (picked: DrawStamp, placement: StampPlacement) => void;
+  onStampPick?: (stamp: DrawStamp) => void;
   onMove?: (id: string, x: number, y: number) => void;
+  onRemove?: (id: string) => void;
   onOpen?: (id: string) => void;
   actions?: React.ReactNode;
 }) {
@@ -1831,6 +1959,7 @@ export function YardSolid({
     fromY: number;
     planX: number;
     planY: number;
+    trash: boolean;
   } | null>(null);
   const dragPaint = useRef<{ id: string; x: number; y: number; dx: number; dy: number } | null>(null);
   const raf = useRef(0);
@@ -1841,7 +1970,18 @@ export function YardSolid({
   const spot = useRef({ x: 0, y: 0 });
   const [tick, setTick] = useState(0);
   const [hoverId, setHoverId] = useState<string | null>(null);
+  const [stampPreview, setStampPreview] = useState<StampPlacement | null>(null);
+  const stampCarry = useRef(false);
   const scene = useMemo(() => drawYard(yard, Boolean(moving)), [yard, moving]);
+  const inspect = !moving && !layoutDraw;
+
+  useEffect(() => {
+    if (!inspect) setHoverId(null);
+  }, [inspect]);
+
+  useEffect(() => {
+    if (!layoutDraw || !stamp) setStampPreview(null);
+  }, [layoutDraw, stamp]);
 
   useLayoutEffect(() => {
     if (hold.current || gliding.current) return;
@@ -1901,14 +2041,51 @@ export function YardSolid({
     return uniso((spot.x - view.current.x) / view.current.k, (spot.y - view.current.y) / view.current.k, 0);
   }
 
+  function stampAtClient(clientX: number, clientY: number, tool?: DrawStamp) {
+    const picked = tool ?? stamp;
+    if (!picked) return null;
+    const plan = toPlan(clientX, clientY);
+    if (!plan) return null;
+    const box = lotBox(yard);
+    const clickX = (plan[0] - box.left) / UPFT;
+    const clickY = (plan[1] - box.top) / UPFT;
+    return placementForStamp(yard, picked, clickX, clickY);
+  }
+
+  function tryPlaceStamp(clientX: number, clientY: number, picked?: DrawStamp) {
+    const tool = picked ?? stamp;
+    if (!tool || !onStampAt) return;
+    let placement = stampPreview?.valid && (!picked || picked.shape === tool.shape) ? stampPreview : stampAtClient(clientX, clientY, tool);
+    if (!placement?.valid) placement = stampAtClient(clientX, clientY, tool);
+    if (!placement?.valid) return;
+    onStampPick?.(tool);
+    onStampAt(tool, placement);
+  }
+
   function paintHold() {
     const held = hold.current;
     if (!held?.moved) return;
+    const self = yard.spaces?.find((space) => space.id === held.id);
+    const ok = self
+      ? Boolean(spaceFitsOpen(yard, self, held.at.x, held.at.y, held.id, 0)) &&
+        spaceOnLand(yard, self.length, self.width, held.at.x, held.at.y)
+      : true;
     const to = iso(held.boxLeft + held.at.x * UPFT, held.boxTop + held.at.y * UPFT, 0);
     const dx = to[0] - held.fromX;
     const dy = to[1] - held.fromY;
     dragPaint.current = { id: held.id, x: held.at.x, y: held.at.y, dx, dy };
     held.node?.setAttribute("transform", `translate(${dx} ${dy})`);
+    const polys = held.node?.querySelectorAll("polygon");
+    const top = polys && polys.length > 1 ? polys[polys.length - 1] : null;
+    if (top) {
+      if (ok) {
+        top.removeAttribute("stroke");
+        top.setAttribute("stroke-width", "0.8");
+      } else {
+        top.setAttribute("stroke", "#dc2626");
+        top.setAttribute("stroke-width", "2.2");
+      }
+    }
   }
 
   function commitHold(id: string, at: { x: number; y: number }, dx: number, dy: number) {
@@ -1946,10 +2123,28 @@ export function YardSolid({
     point.y = clientY;
     const spot = point.matrixTransform(held.inv);
     const now = uniso((spot.x - view.current.x) / view.current.k, (spot.y - view.current.y) / view.current.k, 0);
-    held.at = {
+    const rawY = held.oy + (now[1] - held.planY) / UPFT;
+    const next = {
       x: Math.min(held.maxX, Math.max(0, held.ox + (now[0] - held.planX) / UPFT)),
-      y: Math.min(held.maxY, Math.max(0, held.oy + (now[1] - held.planY) / UPFT)),
+      y: Math.min(held.maxY, Math.max(0, rawY)),
     };
+    const host = svgRef.current?.parentElement?.getBoundingClientRect();
+    const atBottom = host ? clientY >= host.top + host.height * 0.86 : false;
+    if (atBottom && rawY > held.maxY + 6) {
+      held.trash = true;
+      held.at = { x: next.x, y: rawY };
+      return;
+    }
+    held.trash = false;
+    const self = yard.spaces?.find((space) => space.id === held.id);
+    const stuck = self ? alignSpace(yard, self, next.x, next.y) : null;
+    if (stuck) {
+      held.at = stuck;
+      return;
+    }
+    const onLand = self ? spaceOnLand(yard, self.length, self.width, next.x, next.y) : true;
+    const was = self ? spaceOnLand(yard, self.length, self.width, held.at.x, held.at.y) : true;
+    if (onLand || !was) held.at = next;
   }
 
   function endHold(e?: { clientX: number; clientY: number }) {
@@ -1961,26 +2156,41 @@ export function YardSolid({
     hold.current = null;
     drag.current = null;
     if (held && moving && held.moved) {
+      if (held.trash) {
+        held.node?.removeAttribute("transform");
+        dragPaint.current = null;
+        onRemove?.(held.id);
+        return;
+      }
       const at = settleSpace(yard, held.id, held.at.x, held.at.y);
-      const end = iso(held.boxLeft + at.x * UPFT, held.boxTop + at.y * UPFT, 0);
-      const dx = end[0] - held.fromX;
-      const dy = end[1] - held.fromY;
-      held.node?.setAttribute("transform", `translate(${dx} ${dy})`);
-      commitHold(held.id, at, dx, dy);
+      if (at.x !== held.ox || at.y !== held.oy) {
+        const end = iso(held.boxLeft + at.x * UPFT, held.boxTop + at.y * UPFT, 0);
+        const dx = end[0] - held.fromX;
+        const dy = end[1] - held.fromY;
+        commitHold(held.id, at, dx, dy);
+      } else {
+        held.node?.removeAttribute("transform");
+        dragPaint.current = null;
+      }
       return;
     }
     dragPaint.current = null;
     svgRef.current?.querySelectorAll("[data-space]").forEach((node) => node.removeAttribute("transform"));
-    if (pan?.id && !pan.moved && !moving) onOpen?.(pan.id);
+    if (pan?.id && !pan.moved && inspect) onOpen?.(pan.id);
   }
 
   const v = view.current;
   const sqft = feetArea(yard);
-  const hover = moving ? null : yard.spaces?.find((space) => space.id === hoverId) ?? null;
+  const hover = inspect ? yard.spaces?.find((space) => space.id === hoverId) ?? null : null;
   const hoverTone = hover ? spaceTone(hover) : null;
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[#dde7d0]">
+    <div
+      className={cn(
+        "flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#dde7d0]",
+        layoutDraw ? "rounded-none border-0" : "rounded-2xl border border-[var(--border)]",
+      )}
+    >
       <div className="relative z-10 flex shrink-0 items-center gap-3 border-b border-[var(--border)] bg-white/90 px-4 py-2 text-xs text-[var(--muted)]">
         <span className="font-medium text-[var(--ink)]">{text.blankYard.sitePlan}</span>
         {sqft > 0 ? (
@@ -1989,19 +2199,68 @@ export function YardSolid({
           </span>
         ) : null}
         <span className="hidden min-w-0 flex-1 truncate md:inline">
-          {moving ? text.blankYard.spaceMove : yard.spaces?.length ? text.blankYard.spaceClick : text.blankYard.zoom}
+          {layoutDraw
+            ? moving
+              ? text.blankYard.spaceMove
+              : stamp
+              ? stampPreview && !stampPreview.valid
+                ? (text.blankYard.drawInvalid ?? "Cannot place here — stays inside the yard with no overlap.")
+                : (text.blankYard.drawDragPlace ??
+                  "Drag the shape onto the land, or pick it up and release where it should go.")
+              : (text.blankYard.drawPan ?? "Drag the map. Pick a tool to stamp roads, gates, acres, and trees.")
+            : moving
+              ? text.blankYard.spaceMove
+              : yard.spaces?.length
+                ? text.blankYard.spaceClick
+                : text.blankYard.zoom}
         </span>
         {actions ? <span className="ml-auto shrink-0">{actions}</span> : null}
       </div>
-      <div className="relative min-h-0 flex-1 bg-[#dde7d0]">
+      <div
+        className="relative min-h-0 flex-1 bg-[#dde7d0]"
+        onDragOver={(e) => {
+          if (!layoutDraw) return;
+          e.preventDefault();
+          if (e.dataTransfer.types.includes("application/x-yard-stamp")) e.dataTransfer.dropEffect = "copy";
+          if (!stamp) return;
+          const plan = stampAtClient(e.clientX, e.clientY, stamp);
+          if (plan) setStampPreview(plan);
+        }}
+        onDragLeave={(e) => {
+          if (!layoutDraw || e.currentTarget.contains(e.relatedTarget as Node)) return;
+          if (!stampCarry.current) setStampPreview(null);
+        }}
+        onDrop={(e) => {
+          if (!layoutDraw) return;
+          e.preventDefault();
+          let picked = stamp;
+          const raw = e.dataTransfer.getData("application/x-yard-stamp");
+          if (raw) {
+            try {
+              picked = JSON.parse(raw) as DrawStamp;
+            } catch {
+              /* ignore */
+            }
+          }
+          if (picked) tryPlaceStamp(e.clientX, e.clientY, picked);
+          stampCarry.current = false;
+          setStampPreview(null);
+        }}
+      >
         <svg
           ref={svgRef}
           viewBox={scene.viewBox}
           preserveAspectRatio="xMidYMid meet"
-          className="absolute inset-0 h-full w-full cursor-grab active:cursor-grabbing touch-none select-none"
+          className={cn(
+            "absolute inset-0 h-full w-full touch-none select-none",
+            layoutDraw && stamp ? "cursor-copy" : "cursor-grab active:cursor-grabbing",
+          )}
           role="img"
           aria-label={yard.name}
-          onPointerLeave={() => setHoverId(null)}
+          onPointerLeave={() => {
+            setHoverId(null);
+            if (!stampCarry.current) setStampPreview(null);
+          }}
           onPointerDown={(e) => {
             pointing.current = true;
             drop.current += 1;
@@ -2009,6 +2268,15 @@ export function YardSolid({
             if (raf.current) cancelAnimationFrame(raf.current);
             raf.current = 0;
             setHoverId(null);
+            if (layoutDraw && stamp && !moving) {
+              stampCarry.current = true;
+              drag.current = null;
+              hold.current = null;
+              const plan = stampAtClient(e.clientX, e.clientY);
+              if (plan) setStampPreview(plan);
+              e.currentTarget.setPointerCapture(e.pointerId);
+              return;
+            }
             const id = (e.target as Element).closest?.("[data-space]")?.getAttribute("data-space") ?? "";
             if (id && moving) {
               const pad = laidSpaces(yard).find((item) => item.space.id === id);
@@ -2048,6 +2316,7 @@ export function YardSolid({
                 fromY: from[1],
                 planX,
                 planY,
+                trash: false,
               };
             } else {
               hold.current = null;
@@ -2056,6 +2325,11 @@ export function YardSolid({
             e.currentTarget.setPointerCapture(e.pointerId);
           }}
           onPointerMove={(e) => {
+            if (layoutDraw && stamp && !moving) {
+              const plan = stampAtClient(e.clientX, e.clientY);
+              if (plan) setStampPreview(plan);
+              return;
+            }
             const held = hold.current;
             if (held && moving) {
               if (Math.hypot(e.clientX - held.x, e.clientY - held.y) > 3) held.moved = true;
@@ -2074,7 +2348,7 @@ export function YardSolid({
               scheduleFrame();
               return;
             }
-            if (moving || held || start) return;
+            if (!inspect || held || start) return;
             const id = (e.target as Element).closest?.("[data-space]")?.getAttribute("data-space") ?? "";
             spot.current = { x: e.clientX, y: e.clientY };
             if ((id || null) !== hoverId) setHoverId(id || null);
@@ -2082,10 +2356,22 @@ export function YardSolid({
           }}
           onPointerUp={(e) => {
             pointing.current = false;
+            if (layoutDraw && stamp && stampCarry.current) {
+              tryPlaceStamp(e.clientX, e.clientY);
+              stampCarry.current = false;
+              setStampPreview(stamp ? stampAtClient(e.clientX, e.clientY) : null);
+              e.currentTarget.releasePointerCapture(e.pointerId);
+              return;
+            }
             endHold(e);
           }}
           onPointerCancel={(e) => {
             pointing.current = false;
+            if (layoutDraw && stampCarry.current) {
+              stampCarry.current = false;
+              setStampPreview(stamp ? stampAtClient(e.clientX, e.clientY) : null);
+              return;
+            }
             endHold(e);
           }}
         >
@@ -2096,7 +2382,16 @@ export function YardSolid({
             {scene.trees}
             {scene.lotWalls}
             <polygon points={scene.lotTop} fill="#57a5f5" stroke="#4a97ea" strokeWidth={0.8} />
+            {(yard.marks ?? [])
+              .filter((mark) => mark?.id && mark?.category)
+              .map((mark) => {
+                const box = lotBox(yard);
+                return <YardMarkGraphic key={mark.id} mark={mark} boxLeft={box.left} boxTop={box.top} upft={UPFT} />;
+              })}
             {scene.spaces}
+            {stampPreview && layoutDraw && stamp ? (
+              <StampPlacementGhost box={lotBox(yard)} placement={stampPreview} />
+            ) : null}
             {yard.spaces?.length ? null : (
               <text
                 x={scene.label[0]}

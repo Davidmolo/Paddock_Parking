@@ -6,11 +6,12 @@ import { endpoints } from "@/lib/api";
 import type { PortalInvoice } from "@/app/portal/types";
 import { text } from "@/constants/text";
 import { formatCurrency } from "@/lib/utils";
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { PageTransition, Stagger, StaggerItem } from "@/components/ui/motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PortalAccount } from "./portal-account";
-import { PortalBookingCard } from "./portal-booking";
+import { BookingRow, bookingTone } from "@/components/bookings/booking-row";
 import { usePortalEmail } from "./portal-email";
 import { PortalStat } from "./portal-stat";
 
@@ -30,7 +31,11 @@ export function PortalDashboard() {
 
   return (
     <PageTransition>
-      <PageHeader title={text.portal.dashboard} subtitle={text.portal.subtitle} />
+      <PageHeader
+        title={text.portal.dashboard}
+        subtitle={text.portal.subtitle}
+        action={<Link href="/portal/add" className="text-sm font-semibold text-[var(--accent-ink)]">{text.portal.addSpace}</Link>}
+      />
       {isPending && !data ? (
         <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
           <Skeleton className="h-56" />
@@ -65,10 +70,18 @@ export function PortalDashboard() {
               <PortalStat label={text.portal.gateCode} value={data.gateCode || text.portal.notSet} icon={KeyRound} />
             </StaggerItem>
           </Stagger>
-          <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-            <PortalBookingCard home={data} />
-            <PortalAccount home={data} />
-          </div>
+          <BookingRow
+            viewAllHref="/portal/bookings"
+            items={(data.bookings ?? []).map((booking) => ({
+              id: booking.reference,
+              href: `/portal/bookings/${booking.reference}`,
+              status: booking.decision || text.portal.pending,
+              tone: bookingTone(booking.decision || "pending"),
+              title: booking.spaces?.length ? booking.spaces.map((number) => `#${number}`).join(", ") : booking.spaceType,
+              meta: [data.yardName, booking.bookedOn].filter(Boolean).join(" · "),
+            }))}
+          />
+          <PortalAccount home={data} />
         </div>
       ) : null}
     </PageTransition>

@@ -163,14 +163,16 @@ function LocationCard({
           <h2 className="text-[1.35rem] font-bold leading-snug text-[#0b1846]">
             {property.name}
           </h2>
-          <p className="mt-1.5 flex items-start gap-1.5 text-sm text-[#6b7280]">
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>
-              {property.address}
-              <br />
-              {property.city}
-            </span>
-          </p>
+          {property.address !== property.name ? (
+            <p className="mt-1.5 flex items-start gap-1.5 text-sm text-[#6b7280]">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                {property.address}
+                <br />
+                {property.city}
+              </span>
+            </p>
+          ) : null}
         </div>
         <span
           className={cn(

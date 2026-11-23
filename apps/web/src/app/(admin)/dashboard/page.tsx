@@ -217,9 +217,9 @@ export default function DashboardPage() {
                             No open spots
                           </span>
                         ) : (
-                          p.inventory.availableSpots.slice(0, 12).map((s) => (
+                          p.inventory.availableSpots.slice(0, 12).map((s, i) => (
                             <span
-                              key={s}
+                              key={`${p.id}-${s}-${i}`}
                               className="rounded-lg bg-[var(--ink)] px-2 py-1 text-xs font-medium text-[var(--accent)]"
                             >
                               {s}

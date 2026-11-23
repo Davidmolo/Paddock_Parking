@@ -17,6 +17,7 @@ import { endpoints, type LotType } from "@/lib/api";
 import { isValidAbaRouting } from "@/lib/aba-routing";
 import { text } from "@/constants/text";
 import { formatCurrency, cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { isBookablePropertyId } from "@/lib/yards";
 
@@ -184,6 +185,8 @@ export default function BookWizardPage() {
   /** Photo ID File kept outside form (not JSON-serializable for drafts) */
   const [idFile, setIdFile] = useState<File | null>(null);
   const [error, setError] = useState("");
+  const [accountPrompt, setAccountPrompt] = useState<null | "invited" | "active">(null);
+  const [checking, setChecking] = useState(false);
   const [doneId, setDoneId] = useState<string | null>(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [cvvFocused, setCvvFocused] = useState(false);
@@ -314,6 +317,7 @@ export default function BookWizardPage() {
   function patch<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
     setError("");
+    setAccountPrompt(null);
     setDraftSaved(false);
   }
 
@@ -490,6 +494,7 @@ export default function BookWizardPage() {
         autoPullAgreed: form.agreeAutoPull,
         paymentMethod: form.paymentMethod,
         lotId: primaryLot?.id,
+        lotIds: selectedLots.map((lot) => lot.id),
         lesseeName: form.lesseeName,
         lesseeSignature: form.lesseeSignature,
         guarantorName: form.guarantorName,
@@ -645,8 +650,12 @@ export default function BookWizardPage() {
             Phoenix Storage Yards
           </p>
           <h1 className="mt-2 text-center text-2xl font-bold text-[#0b1846] sm:text-3xl">
-            {property?.name ?? "Book"} —{" "}
-            {property?.address ?? "Contractor & Equipment Storage"}
+            {property?.name ?? "Book"}
+            {property?.address && property.address !== property.name
+              ? ` — ${property.address}`
+              : property
+                ? ""
+                : " — Contractor & Equipment Storage"}
           </h1>
           <p className="mx-auto mt-2 max-w-xl text-center text-sm text-[#64748b]">
             Secure storage for contractors and equipment. Month-to-month leases
@@ -1197,6 +1206,19 @@ export default function BookWizardPage() {
               {error}
             </p>
           )}
+          {accountPrompt ? (
+            <ConfirmDialog
+              tone="neutral"
+              title={accountPrompt === "active" ? text.book.welcomeTitle : text.book.invitedTitle}
+              body={accountPrompt === "active" ? text.book.welcomeBody : text.book.invitedBody}
+              confirm={accountPrompt === "active" ? text.book.welcomeAction : text.book.invitedAction}
+              onCancel={() => setAccountPrompt(null)}
+              onConfirm={() => {
+                if (accountPrompt === "active") router.push("/portal");
+                else setAccountPrompt(null);
+              }}
+            />
+          ) : null}
           {draftSaved && (
             <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
               Draft saved in this browser.
@@ -1225,11 +1247,21 @@ export default function BookWizardPage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (validateStep()) setStep((s) => s + 1);
+                  if (!validateStep()) return;
+                  if (step !== 0) {
+                    setStep((s) => s + 1);
+                    return;
+                  }
+                  setChecking(true);
+                  void endpoints.portalAccount(form.email.trim()).then((result) => {
+                    if (result.state === "new") setStep((s) => s + 1);
+                    else setAccountPrompt(result.state);
+                  }).catch(() => setError(text.portal.genericError)).finally(() => setChecking(false));
                 }}
-                className="rounded-xl bg-[#0b1846] px-5 py-2.5 text-sm font-bold text-white"
+                disabled={checking}
+                className="rounded-xl bg-[#0b1846] px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50"
               >
-                Next
+                {checking ? text.portal.pleaseWait : "Next"}
               </button>
             ) : (
               <button

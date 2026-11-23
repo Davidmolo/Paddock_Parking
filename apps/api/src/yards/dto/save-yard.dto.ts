@@ -1,5 +1,5 @@
 import { IsArray, IsIn, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
-import type { StoredSpace } from '../yard-store.js';
+import type { StoredMark, StoredSpace } from '../yard-store.js';
 
 export class SaveYardDto {
   @IsString()
@@ -38,4 +38,8 @@ export class SaveYardDto {
   @IsOptional()
   @IsArray()
   spaces?: StoredSpace[];
+
+  @IsOptional()
+  @IsArray()
+  marks?: StoredMark[];
 }

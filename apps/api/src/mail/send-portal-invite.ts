@@ -110,6 +110,38 @@ export async function sendPortalInviteEmail(opts: {
   return info;
 }
 
+export async function sendBookingNote(opts: {
+  to: string;
+  name: string;
+  approved: boolean;
+  hasOthers: boolean;
+}) {
+  const from = required('MAIL_FROM');
+  const contact = opts.name || opts.to;
+  const portalUrl = `${process.env.APP_URL || 'http://localhost:3000'}/portal`;
+  const subject = opts.approved
+    ? `Your ${APP_NAME} booking is approved`
+    : `Your ${APP_NAME} request`;
+  const line = opts.approved
+    ? 'Your booking is approved. Sign in to the portal to see it.'
+    : opts.hasOthers
+      ? 'We are not able to proceed with this request. Your other bookings are unchanged.'
+      : 'Thank you for your request. We are not able to offer this space at this time.';
+  const info = await mailer().sendMail({
+    from,
+    to: opts.to,
+    subject,
+    attachments: [logoAttachment],
+    text: [`Hi ${contact},`, '', line, '', opts.approved ? portalUrl : '', APP_NAME].filter(Boolean).join('\n'),
+    html: emailHtml(
+      `<p style="margin:0 0 12px">Hi ${escapeHtml(contact)},</p><p style="margin:0">${escapeHtml(line)}</p>`,
+      opts.approved ? { href: portalUrl, label: 'Open the portal' } : undefined,
+    ),
+  });
+  console.info(`[mail] booking ${opts.approved ? 'approved' : 'denied'} → ${opts.to} messageId=${info.messageId}`);
+  return info;
+}
+
 export async function sendManualInvoiceEmail(opts: {
   to: string;
   name: string;

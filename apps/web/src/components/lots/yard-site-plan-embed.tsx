@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Lot } from "@/lib/api";
 import {
   SITE_PLAN_OPTIONS,
@@ -24,6 +24,7 @@ type Props = {
   selectedId: string | null;
   dimmedSpaces?: Record<string, true>;
   onSelectByNumber: (spaceNumber: string) => void;
+  actions?: ReactNode;
 };
 
 /** Preloaded Inventory site plans. Click opens the edit drawer only (no public booking). */
@@ -34,6 +35,7 @@ export function YardSitePlanEmbed({
   selectedId,
   dimmedSpaces,
   onSelectByNumber,
+  actions,
 }: Props) {
   const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
   const readyRef = useRef<Record<string, boolean>>({});
@@ -142,7 +144,7 @@ export function YardSitePlanEmbed({
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[#dde7d0]">
       <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] bg-white/90 px-4 py-2.5 text-xs text-[var(--muted)]">
         <span className="font-medium text-[var(--ink)]">Site plan</span>
-        <span>Hover for details · click to edit space</span>
+        {actions ?? <span>Hover for details · click to edit space</span>}
       </div>
       <div className="relative min-h-0 flex-1 bg-[#dde7d0]">
         {!loaded[slug] && (

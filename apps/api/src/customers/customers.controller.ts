@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import { IsBoolean, IsIn, IsOptional } from 'class-validator';
+import { IsBoolean, IsIn, IsNumber, IsOptional } from 'class-validator';
 import { CustomersService } from './customers.service.js';
 import { UpsertCoiDto } from './dto/upsert-coi.dto.js';
 import { UploadDocumentDto } from './dto/upload-document.dto.js';
@@ -12,6 +12,20 @@ class PatchBillingDto {
   @IsOptional()
   @IsIn(['card', 'ach'])
   payMethod?: 'card' | 'ach';
+}
+
+class PatchUtilitiesDto {
+  @IsOptional()
+  @IsBoolean()
+  usesElectricity?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  usesWater?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  utilityRate?: number;
 }
 
 @Controller('customers')
@@ -34,6 +48,14 @@ export class CustomersController {
   @Patch(':id/billing')
   setBilling(@Param('id') id: string, @Body() dto: PatchBillingDto) {
     return this.customersService.setBilling(id, dto);
+  }
+
+  @Patch(':id/utilities')
+  setUtilities(
+    @Param('id') id: string,
+    @Body() body: PatchUtilitiesDto,
+  ) {
+    return this.customersService.setUtilities(id, body);
   }
 
   @Post(':id/send-invoices')

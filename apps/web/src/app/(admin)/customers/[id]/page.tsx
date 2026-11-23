@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BookingRow, bookingTone } from "@/components/bookings/booking-row";
 import { text } from "@/constants/text";
 import { formatCurrency } from "@/lib/utils";
 
@@ -51,6 +52,11 @@ export default function CustomerDetailPage() {
     queryFn: () => endpoints.customer(id),
   });
 
+  const { data: allBookings } = useQuery({
+    queryKey: ["bookings", "customer", id],
+    queryFn: () => endpoints.bookings(),
+  });
+
   const { data: plateQueue } = useQuery({
     queryKey: ["compliance-queue"],
     queryFn: () => endpoints.complianceQueue(),
@@ -77,6 +83,9 @@ export default function CustomerDetailPage() {
   const [notifyError, setNotifyError] = useState("");
   const [billMsg, setBillMsg] = useState("");
   const [billError, setBillError] = useState("");
+  const [power, setPower] = useState(false);
+  const [water, setWater] = useState(false);
+  const [utilityRate, setUtilityRate] = useState("");
   const leaseFileRef = useRef<HTMLInputElement>(null);
   const coiFileRef = useRef<HTMLInputElement>(null);
 
@@ -121,6 +130,31 @@ export default function CustomerDetailPage() {
       setCoiError(
         err instanceof ApiError ? err.message : "Could not save COI",
       );
+    },
+  });
+
+  useEffect(() => {
+    if (!data) return;
+    setPower(Boolean(data.usesElectricity));
+    setWater(Boolean(data.usesWater));
+    setUtilityRate(data.utilityRate ? String(data.utilityRate) : "");
+  }, [data]);
+
+  const utilities = useMutation({
+    mutationFn: () =>
+      endpoints.patchCustomerUtilities(id, {
+        usesElectricity: power,
+        usesWater: water,
+        utilityRate: Number(utilityRate) || 0,
+      }),
+    onSuccess: (next) => {
+      queryClient.setQueryData(queryKeys.customer(id), next);
+      setBillError("");
+      setBillMsg(text.admin.utilitySave);
+    },
+    onError: (err) => {
+      setBillMsg("");
+      setBillError(err instanceof ApiError ? err.message : text.portal.genericError);
     },
   });
 
@@ -282,6 +316,19 @@ export default function CustomerDetailPage() {
           </div>
         }
       />
+      <BookingRow
+        viewAllHref={`/customers/${data.id}/bookings`}
+        items={(allBookings ?? [])
+          .filter((booking) => booking.customerId === data.id || booking.email.toLowerCase() === data.email.toLowerCase())
+          .map((booking) => ({
+            id: booking.id,
+            href: `/customers/${data.id}/bookings/${booking.id}`,
+            status: booking.decisionLabel ?? "Pending",
+            tone: bookingTone(booking.decision ?? "pending"),
+            title: booking.lotNumbers?.length ? booking.lotNumbers.map((number) => `#${number}`).join(", ") : booking.lotTypeLabel,
+            meta: [booking.propertyName, booking.createdAt].filter(Boolean).join(" · "),
+          }))}
+      />
 
       {/* Greta: one place — name, contact, monthly, paid, yard + lot, contract notify */}
       <Card interactive={false} className="mb-5">
@@ -411,6 +458,30 @@ export default function CustomerDetailPage() {
               </Button>
             ) : null}
           </div>
+        </CardBody>
+      </Card>
+
+      <Card interactive={false} className="mb-5">
+        <CardHeader>
+          <h2 className="font-semibold">{text.admin.utilities}</h2>
+        </CardHeader>
+        <CardBody className="grid gap-3">
+          <p className="text-sm text-[var(--muted)]">{text.admin.utilityHint}</p>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={power} onChange={(e) => setPower(e.target.checked)} />
+            {text.admin.electricity}
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={water} onChange={(e) => setWater(e.target.checked)} />
+            {text.admin.water}
+          </label>
+          <label className="block space-y-1.5">
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">{text.admin.utilityRate}</span>
+            <Input value={utilityRate} onChange={(e) => setUtilityRate(e.target.value)} />
+          </label>
+          <Button size="sm" className="w-fit" disabled={utilities.isPending} onClick={() => utilities.mutate()}>
+            {utilities.isPending ? text.portal.pleaseWait : text.admin.utilitySave}
+          </Button>
         </CardBody>
       </Card>
 

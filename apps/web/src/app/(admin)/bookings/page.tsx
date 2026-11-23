@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import {
@@ -52,6 +53,7 @@ const STEP_NAMES = [
 /** FMS-style Onboarding Profiles — table + detail panel (Paddock theme). */
 export default function BookingsPage() {
   const { propertyId, properties } = useApp();
+  const focus = useSearchParams().get("focus");
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<Filter>("pending");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -103,6 +105,12 @@ export default function BookingsPage() {
       ),
     [lots, selected],
   );
+
+  useEffect(() => {
+    if (!focus || !data || selectedId === focus) return;
+    const row = data.find((item) => item.id === focus);
+    if (row) selectProfile(row);
+  }, [focus, data, selectedId]);
 
   useEffect(() => {
     if (!selected) return;
@@ -175,8 +183,8 @@ export default function BookingsPage() {
       } else if (res.customerId) {
         setFlash(
           vars.decision === "conditional"
-            ? "Conditionally approved — customer created. Portal still Not invited."
-            : "Approved — customer created. Portal still Not invited.",
+            ? text.admin.conditionalSpaces
+            : text.admin.approvedSpaces,
         );
         setSelectedId(res.booking.id);
       }
@@ -688,6 +696,16 @@ function ProfileDetail({
 
         {pending ? (
           <div className="space-y-3 border-t border-[var(--border)] pt-3">
+            {(booking.lotIds?.length ?? 0) > 1 ? (
+              <p className="text-sm text-[var(--ink)]">
+                {text.admin.requestedSpaces}{" "}
+                {booking.lotIds!
+                  .map((id) => availableLots.find((lot) => lot.id === id)?.number)
+                  .filter(Boolean)
+                  .map((number) => `#${number}`)
+                  .join(", ")}
+              </p>
+            ) : null}
             <label className="block space-y-1.5">
               <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--muted)]">
                 Assign space (required)
@@ -813,7 +831,7 @@ function ProfileDetail({
                 Open customer record →
               </Link>
             )}
-            {approved && booking.portalStatus !== "active" && (
+            {approved && !booking.portalReady && booking.portalStatus !== "active" && (
               <Button
                 className="w-full"
                 disabled={inviting}
@@ -826,7 +844,7 @@ function ProfileDetail({
                     : "Send portal invitation"}
               </Button>
             )}
-            {booking.portalStatus === "active" && (
+            {(booking.portalReady || booking.portalStatus === "active") && (
               <p className="text-sm text-emerald-800">
                 Portal active — customer set their password.
               </p>

@@ -87,6 +87,9 @@ export type Customer = {
   portalInviteExpiresAt?: string;
   documents: CustomerDocument[];
   notes?: string;
+  usesElectricity?: boolean;
+  usesWater?: boolean;
+  utilityRate?: number;
 };
 
 /**
@@ -202,6 +205,8 @@ export type Booking = {
   createdAt: string;
   notes?: string;
   lotId?: string;
+  /** Every space on this request. One customer keeps all of them. */
+  lotIds?: string[];
   /** Set after convert / approve to tenant */
   customerId?: string;
   productType?: BookingProductType;

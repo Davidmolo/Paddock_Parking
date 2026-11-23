@@ -9,6 +9,7 @@ import {
   UserPlus,
   ScrollText,
   ShieldCheck,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 
@@ -47,6 +48,7 @@ export const NAV_GROUPS: NavGroup[] = [
     expandable: true,
     items: [
       { href: "/customers", label: "All customers", icon: Users },
+      { href: "/customers/vendors", label: "Vendors", icon: Wrench },
       { href: "/customers/compliance", label: "Compliance", icon: ShieldCheck },
       { href: "/leases", label: "Leases", icon: ScrollText },
     ],

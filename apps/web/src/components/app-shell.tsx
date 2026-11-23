@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { text } from "@/constants/text";
 import { NAV_GROUPS, NAV_ITEMS, type NavGroup } from "@/lib/nav";
 import { useApp } from "@/components/app-provider";
+import { BookingBell } from "@/components/booking-bell";
 import { ProfileMenu } from "@/components/profile-menu";
 import { ScreenTitleProvider } from "@/components/screen-title";
 import { SelectMenu } from "@/components/ui/select-menu";
@@ -22,7 +23,7 @@ function isNavActive(pathname: string, href: string) {
   const path = hrefPath(href);
   if (path === "/dashboard") return pathname === "/dashboard";
   if (path === "/customers") {
-    return pathname === "/customers" || pathname.startsWith("/customers/");
+    return pathname === "/customers" || (pathname.startsWith("/customers/") && !pathname.startsWith("/customers/vendors") && !pathname.startsWith("/customers/compliance"));
   }
   return pathname === path || pathname.startsWith(`${path}/`);
 }
@@ -196,6 +197,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {screenTitle}
             </h1>
             <div className="flex shrink-0 items-center gap-2">
+                <BookingBell />
                 <div className="relative w-28 sm:w-40 lg:w-52">
                   <Building2 className="pointer-events-none absolute left-3 top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
                   <SelectMenu

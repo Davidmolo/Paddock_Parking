@@ -49,7 +49,11 @@ export function PortalBookingCard({ home }: PortalBookingCardProps) {
         [text.portal.spaceType, shown(booking.spaceType)],
         [
           text.portal.spots,
-          booking.spotCount == null ? text.portal.notSet : String(booking.spotCount),
+          home.plots.length
+            ? String(home.plots.length)
+            : booking.spotCount == null
+              ? text.portal.notSet
+              : String(booking.spotCount),
         ],
         [
           text.portal.acres,
@@ -58,7 +62,7 @@ export function PortalBookingCard({ home }: PortalBookingCardProps) {
         [text.portal.storing, shown(booking.storing)],
         [text.portal.payment, paymentLabel[booking.paymentMethod]],
         [text.portal.leaseStart, formatPortalDate(booking.leaseStart) || text.portal.notSet],
-        [text.portal.monthlyRate, money(booking.monthlyRate)],
+        [text.portal.monthlyRate, money(home.monthlyRate ?? booking.monthlyRate)],
       ]
     : [];
 
@@ -116,6 +120,16 @@ export function PortalBookingCard({ home }: PortalBookingCardProps) {
         ) : (
           <p className="text-sm text-[var(--muted)]">{text.portal.noBooking}</p>
         )}
+        {home.plots.length > 0 ? (
+          <div className="mt-4 border-t border-[var(--border)] pt-4">
+            <p className={labelClass}>{text.portal.yourSpaces}</p>
+            {home.plots.map((plot) => (
+              <p key={plot.number} className="mt-1 text-sm font-semibold text-[var(--ink)]">
+                #{plot.number}{plot.size ? ` · ${plot.size}` : ""} · {formatCurrency(plot.monthlyRate)}/mo
+              </p>
+            ))}
+          </div>
+        ) : null}
         {home.yardAddress ? (
           <p className="mt-4 text-sm text-[var(--muted)]">{home.yardAddress}</p>
         ) : null}

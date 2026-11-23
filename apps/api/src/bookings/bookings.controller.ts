@@ -117,6 +117,11 @@ class CreateBookingDto {
   lotId?: string;
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  lotIds?: string[];
+
+  @IsOptional()
   @IsString()
   referredBy?: string;
 

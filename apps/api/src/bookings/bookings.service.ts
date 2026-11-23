@@ -15,7 +15,7 @@ import type {
   LotType,
 } from '../data/seed.js';
 import { LOT_TYPE_LABELS } from '../data/seed.js';
-import { sendPortalInviteEmail } from '../mail/send-portal-invite.js';
+import { sendBookingNote, sendPortalInviteEmail } from '../mail/send-portal-invite.js';
 import { mirrorLot } from '../yards/yard-store.js';
 
 @Injectable()
@@ -95,6 +95,7 @@ export class BookingsService {
     paymentMethod?: 'card' | 'ach' | 'pending';
     autoPullAgreed?: boolean;
     lotId?: string;
+    lotIds?: string[];
     referredBy?: string;
     lesseeName?: string;
     lesseeSignature?: string;
@@ -128,6 +129,11 @@ export class BookingsService {
       autoPullAgreed: input.autoPullAgreed ?? false,
       autoPullWaived: false,
       lotId: input.lotId,
+      lotIds: input.lotIds?.length
+        ? [...new Set(input.lotIds)]
+        : input.lotId
+          ? [input.lotId]
+          : undefined,
       referredBy: input.referredBy,
       lesseeName: input.lesseeName,
       lesseeSignature: input.lesseeSignature,
@@ -180,7 +186,7 @@ export class BookingsService {
    * FMS Onboarding Profiles: staff decide once —
    * approve | conditional | deny.
    */
-  decide(
+  async decide(
     id: string,
     body: {
       decision: 'approve' | 'conditional' | 'deny';
@@ -205,8 +211,8 @@ export class BookingsService {
       booking.status = 'cancelled';
       booking.decidedAt = new Date().toISOString().slice(0, 10);
       booking.decisionNotes =
-        body.notes ?? 'Denied by staff — customer emailed (demo).';
-      booking.portalStatus = 'not_invited';
+        body.notes ?? 'Denied. The customer is emailed.';
+      await this.emailDecision(booking, false);
       return {
         booking: this.enrich(booking),
         customerId: undefined as string | undefined,
@@ -247,16 +253,19 @@ export class BookingsService {
       body.decision === 'conditional' ? 'conditional' : 'approved';
     updated.conditions = conditions;
     updated.decidedAt = new Date().toISOString().slice(0, 10);
+    const customer = this.store.customers.find(
+      (c) => c.id === converted.customerId,
+    );
+    const ready = Boolean(customer?.portalPassword);
     updated.decisionNotes =
       body.notes ??
       (body.decision === 'conditional'
         ? `Conditionally approved: ${conditions.join(', ')}`
-        : 'Approved — customer created. Portal invite still Not invited.');
-    updated.portalStatus = 'not_invited';
-
-    const customer = this.store.customers.find(
-      (c) => c.id === converted.customerId,
-    );
+        : ready
+          ? 'Approved. The customer can see this booking in the portal.'
+          : 'Approved. Send the portal invite when you are ready.');
+    updated.portalStatus = ready ? 'active' : 'not_invited';
+    if (ready) await this.emailDecision(updated, true);
     if (customer && conditions.length) {
       customer.notes = [
         customer.notes,
@@ -340,73 +349,119 @@ export class BookingsService {
   convert(id: string, lotId: string, giveGateCode = true) {
     const booking = this.store.bookings.find((b) => b.id === id);
     if (!booking) throw new NotFoundException(`Booking ${id} not found`);
-    const lot = this.store.lots.find((l) => l.id === lotId);
-    if (!lot) throw new NotFoundException(`Lot ${lotId} not found`);
+    const chosen = this.store.lots.find((l) => l.id === lotId);
+    if (!chosen) throw new NotFoundException(`Lot ${lotId} not found`);
+    if (chosen.propertyId !== booking.propertyId) {
+      throw new BadRequestException(
+        'That space is on a different yard than this application.',
+      );
+    }
+    if (chosen.status !== 'available' && chosen.status !== 'available_soon') {
+      throw new BadRequestException(
+        `Space #${chosen.number} is ${chosen.status.replace('_', ' ')} — pick an available lot.`,
+      );
+    }
+    const lots = [chosen];
+    for (const item of booking.lotIds ?? []) {
+      if (lots.some((lot) => lot.id === item)) continue;
+      const lot = this.store.lots.find((row) => row.id === item);
+      if (!lot || lot.propertyId !== booking.propertyId) continue;
+      if (lot.status !== 'available' && lot.status !== 'available_soon') continue;
+      lots.push(lot);
+    }
 
-    const customerId = `c${Date.now()}`;
-    this.store.customers.unshift({
-      id: customerId,
-      name: booking.customerName,
-      contactName: booking.customerName,
-      email: booking.email,
-      phone: booking.phone,
-      propertyId: booking.propertyId,
-      contractType: 'month_to_month',
-      paymentStatus: 'current',
-      balanceDue: 0,
-      securityDeposit: booking.monthlyRate ?? lot.monthlyRate,
-      leaseStatus: 'Pending setup',
-      insuranceOk: false,
-      achEnabled:
-        booking.autoPullWaived
-          ? false
-          : Boolean(booking.autoPullAgreed) ||
-            booking.paymentMethod === 'ach',
-      gateCode: giveGateCode
-        ? String(Math.floor(1000 + Math.random() * 9000))
-        : '',
-      isActive: true,
-      lotIds: [lot.id],
-      leaseStart: booking.leaseStart ?? new Date().toISOString().slice(0, 10),
-      createdAt: new Date().toISOString().slice(0, 10),
-      documents: [],
-      notes: booking.autoPullWaived
-        ? 'Approved from onboarding — autopull turned off by staff'
-        : 'Approved from onboarding application',
-    });
+    const email = booking.email.trim().toLowerCase();
+    const existing = this.store.customers.find(
+      (customer) => customer.email.toLowerCase() === email,
+    );
+    const customerId = existing?.id ?? `c${Date.now()}`;
+    const start = booking.leaseStart ?? new Date().toISOString().slice(0, 10);
+    if (existing) {
+      for (const lot of lots) {
+        if (!existing.lotIds.includes(lot.id)) existing.lotIds.push(lot.id);
+      }
+      if (giveGateCode && !existing.gateCode) {
+        existing.gateCode = String(Math.floor(1000 + Math.random() * 9000));
+      }
+    } else {
+      this.store.customers.unshift({
+        id: customerId,
+        name: booking.customerName,
+        contactName: booking.customerName,
+        email: booking.email,
+        phone: booking.phone,
+        propertyId: booking.propertyId,
+        contractType: 'month_to_month',
+        paymentStatus: 'current',
+        balanceDue: 0,
+        securityDeposit: booking.monthlyRate ?? chosen.monthlyRate,
+        leaseStatus: 'Pending setup',
+        insuranceOk: false,
+        achEnabled:
+          booking.autoPullWaived
+            ? false
+            : Boolean(booking.autoPullAgreed) ||
+              booking.paymentMethod === 'ach',
+        gateCode: giveGateCode
+          ? String(Math.floor(1000 + Math.random() * 9000))
+          : '',
+        isActive: true,
+        lotIds: lots.map((lot) => lot.id),
+        leaseStart: start,
+        createdAt: new Date().toISOString().slice(0, 10),
+        documents: [],
+        notes: booking.autoPullWaived
+          ? 'Approved from onboarding — autopull turned off by staff'
+          : 'Approved from onboarding application',
+      });
+    }
 
-    lot.status = 'occupied';
-    lot.customerId = customerId;
-    if (booking.monthlyRate) lot.monthlyRate = booking.monthlyRate;
-    mirrorLot(this.store, lot);
+    for (const lot of lots) {
+      lot.status = 'occupied';
+      lot.customerId = customerId;
+      if (lots.length === 1 && booking.monthlyRate) lot.monthlyRate = booking.monthlyRate;
+      mirrorLot(this.store, lot);
+    }
 
-    const start =
-      booking.leaseStart ?? new Date().toISOString().slice(0, 10);
-    const renewal = new Date(start);
-    renewal.setFullYear(renewal.getFullYear() + 1);
-    this.store.leases.unshift({
-      id: `ls${Date.now()}`,
-      direction: 'tenant',
-      customerId,
-      propertyId: booking.propertyId,
-      lotNumbers: [lot.number],
-      startDate: start,
-      renewalDate: renewal.toISOString().slice(0, 10),
-      notificationLeadDays: 30,
-      monthlyRent: booking.monthlyRate ?? lot.monthlyRate,
-      status: 'pending',
-      stage: 'not_contacted',
-      achEnabled:
-        booking.autoPullWaived
-          ? false
-          : Boolean(booking.autoPullAgreed) ||
-            booking.paymentMethod === 'ach',
-      notes:
-        'Created from onboarding — awaiting COI with correct additional insured',
-    });
+    const lease = this.store.leases.find(
+      (item) => item.direction === 'tenant' && item.customerId === customerId,
+    );
+    if (lease) {
+      for (const lot of lots) {
+        if (lease.lotNumbers.includes(lot.number)) continue;
+        lease.lotNumbers.push(lot.number);
+        lease.monthlyRent += lot.monthlyRate;
+      }
+    } else {
+      const renewal = new Date(start);
+      renewal.setFullYear(renewal.getFullYear() + 1);
+      this.store.leases.unshift({
+        id: `ls${Date.now()}`,
+        direction: 'tenant',
+        customerId,
+        propertyId: booking.propertyId,
+        lotNumbers: lots.map((lot) => lot.number),
+        startDate: start,
+        renewalDate: renewal.toISOString().slice(0, 10),
+        notificationLeadDays: 30,
+        monthlyRent:
+          booking.monthlyRate ??
+          lots.reduce((sum, lot) => sum + lot.monthlyRate, 0),
+        status: 'pending',
+        stage: 'not_contacted',
+        achEnabled:
+          booking.autoPullWaived
+            ? false
+            : Boolean(booking.autoPullAgreed) ||
+              booking.paymentMethod === 'ach',
+        notes:
+          'Created from onboarding — awaiting COI with correct additional insured',
+      });
+    }
 
     booking.status = 'converted';
-    booking.lotId = lot.id;
+    booking.lotId = chosen.id;
+    booking.lotIds = lots.map((lot) => lot.id);
     booking.customerId = customerId;
     booking.wizardStep = booking.wizardStep ?? 5;
     if (!booking.decision || booking.decision === 'pending') {
@@ -415,7 +470,7 @@ export class BookingsService {
     }
     if (!booking.portalStatus) booking.portalStatus = 'not_invited';
 
-    return { booking: this.enrich(booking), customerId, lotId: lot.id };
+    return { booking: this.enrich(booking), customerId, lotId: chosen.id };
   }
 
   private inferDecision(b: Booking): BookingDecision {
@@ -443,7 +498,11 @@ export class BookingsService {
     return {
       ...booking,
       decision,
-      portalStatus: b.portalStatus ?? 'not_invited',
+      portalStatus: customer?.portalPassword ? 'active' : b.portalStatus ?? 'not_invited',
+      portalReady: Boolean(customer?.portalPassword),
+      lotNumbers: (b.lotIds ?? (b.lotId ? [b.lotId] : []))
+        .map((id) => this.store.lots.find((lot) => lot.id === id)?.number)
+        .filter((number): number is string => Boolean(number)),
       gateCode: customer?.gateCode,
       lotTypeLabel: LOT_TYPE_LABELS[b.lotType],
       propertyName: property?.name,
@@ -461,6 +520,27 @@ export class BookingsService {
       stepLabel: stepLabel(step),
       stepsComplete: Math.min(step, 4),
     };
+  }
+
+  private async emailDecision(booking: Booking, approved: boolean) {
+    const hasOthers = this.store.bookings.some(
+      (item) =>
+        item.id !== booking.id &&
+        item.email.toLowerCase() === booking.email.toLowerCase() &&
+        (item.decision === 'approved' || item.decision === 'conditional'),
+    );
+    try {
+      await sendBookingNote({
+        to: booking.email,
+        name: booking.customerName,
+        approved,
+        hasOthers,
+      });
+    } catch {
+      booking.decisionNotes = [booking.decisionNotes, 'The email could not be sent.']
+        .filter(Boolean)
+        .join(' · ');
+    }
   }
 }
 

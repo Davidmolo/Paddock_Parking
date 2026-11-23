@@ -195,6 +195,18 @@ export type CustomerSummary = {
   /** When added to the system */
   createdAt?: string;
   lotIds?: string[];
+  usesElectricity?: boolean;
+  usesWater?: boolean;
+  utilityRate?: number;
+};
+
+export type Vendor = {
+  id: string;
+  name: string;
+  trade: string;
+  phone: string;
+  propertyId: string;
+  job: string;
 };
 
 export type CustomerDetail = CustomerSummary & {
@@ -415,6 +427,8 @@ export type Booking = {
   createdAt: string;
   notes?: string;
   lotId?: string;
+  lotIds?: string[];
+  lotNumbers?: string[];
   customerId?: string;
   productType?: "parking_spot" | "storage_acre";
   spotCount?: number;
@@ -436,6 +450,7 @@ export type Booking = {
   decisionNotes?: string;
   referredBy?: string;
   portalStatus?: "not_invited" | "invited" | "active";
+  portalReady?: boolean;
   gateCode?: string;
   portalInviteToken?: string;
   stepLabel?: string;
@@ -486,8 +501,12 @@ export const endpoints = {
       method: "PUT",
       body: JSON.stringify(yard),
     }),
-  deleteYard: (id: string) =>
-    api<{ ok: boolean }>(`/yards/${id}`, { method: "DELETE" }),
+  archiveYard: (id: string) =>
+    api<{ ok: boolean; archived: boolean }>(`/yards/${id}/archive`, { method: "POST" }),
+  archiveYardSpace: (yardId: string, spaceId: string) =>
+    api<{ ok: boolean; archived: boolean }>(`/yards/${yardId}/spaces/${spaceId}/archive`, {
+      method: "POST",
+    }),
   patchLot: (
     id: string,
     body: {
@@ -573,6 +592,7 @@ export const endpoints = {
     paymentMethod?: "card" | "ach" | "pending";
     autoPullAgreed?: boolean;
     lotId?: string;
+    lotIds?: string[];
     referredBy?: string;
     lesseeName?: string;
     lesseeSignature?: string;
@@ -612,6 +632,11 @@ export const endpoints = {
     }),
   inviteBookingPortal: (id: string) =>
     api<Booking>(`/bookings/${id}/invite-portal`, { method: "POST" }),
+  portalAccount: (email: string) =>
+    api<{ state: "new" | "invited" | "active" }>("/portal/account", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
   portalHome: (email: string) =>
     api<PortalHome>(
       `/portal/home?email=${encodeURIComponent(email)}`,
@@ -640,6 +665,52 @@ export const endpoints = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  vendors: (propertyId?: string) =>
+    api<Vendor[]>(`/vendors${propertyId && propertyId !== "all" ? `?propertyId=${propertyId}` : ""}`),
+  saveVendor: (body: Omit<Vendor, "id">) =>
+    api<Vendor>("/vendors", { method: "POST", body: JSON.stringify(body) }),
+  patchCustomerUtilities: (
+    id: string,
+    body: { usesElectricity?: boolean; usesWater?: boolean; utilityRate?: number },
+  ) =>
+    api<CustomerDetail>(`/customers/${id}/utilities`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  portalAddSpace: (body: {
+    email: string;
+    lotId: string;
+    plate?: string;
+    chargeOnFile: boolean;
+    agreed: boolean;
+  }) =>
+    api<{ number: string; monthlyRate: number }>("/portal/add-space", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  portalEditBooking: (body: {
+    email: string;
+    reference: string;
+    phone?: string;
+    storageDescription?: string;
+    leaseStart?: string;
+    paymentMethod?: "card" | "ach";
+    docsSubmitLater?: boolean;
+    vehicles?: {
+      index: number;
+      make?: string;
+      color?: string;
+      truckNumber?: string;
+      licensePlate?: string;
+      submitLater?: boolean;
+    }[];
+  }) =>
+    api<PortalHome>("/portal/edit-booking", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  quickBooksStatus: () =>
+    api<{ ready: boolean; connected: boolean; message: string }>("/quickbooks/status"),
   patchCustomerBilling: (
     id: string,
     body: { autoPull?: boolean; payMethod?: "card" | "ach" },

@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatCurrency } from "@/lib/utils";
+import { text } from "@/constants/text";
 
 const ISSUE_COI: CoiStatus[] = [
   "missing",
@@ -353,6 +354,11 @@ export default function CustomersPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="font-semibold">{customer.name}</p>
+                            {customer.usesElectricity || customer.usesWater ? (
+                              <p className="text-xs text-[var(--muted)]">
+                                {[customer.usesElectricity ? text.admin.electricity : "", customer.usesWater ? text.admin.water : ""].filter(Boolean).join(" · ")}
+                              </p>
+                            ) : null}
                             <p className="text-sm text-[var(--muted)]">
                               {customer.contactName}
                             </p>
@@ -437,6 +443,11 @@ export default function CustomersPage() {
                           <p className="truncate font-medium text-[var(--ink)]">
                             {customer.name}
                           </p>
+                          {customer.usesElectricity || customer.usesWater ? (
+                            <p className="truncate text-xs text-[var(--muted)]">
+                              {[customer.usesElectricity ? text.admin.electricity : "", customer.usesWater ? text.admin.water : ""].filter(Boolean).join(" · ")}
+                            </p>
+                          ) : null}
                           <p className="truncate text-xs text-[var(--muted)]">
                             {customer.contactName} · {customer.email}
                           </p>
