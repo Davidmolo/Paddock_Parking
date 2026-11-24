@@ -297,12 +297,9 @@ export default function LotsPage() {
       item.id === id ? { ...item, archived: true } : item,
     );
     const yard = { ...customYard, spaces };
-    void endpoints.archiveYardSpace(customYard.id, id).then(() =>
-      persistYard(
-        yard,
-        yards.map((item) => (item.id === yard.id ? yard : item)),
-      ),
-    );
+    const next = yards.map((item) => (item.id === yard.id ? yard : item));
+    remember(next);
+    void endpoints.archiveYardSpace(customYard.id, id).then(() => persistYard(yard, next));
   }
 
   const planScoped = !customId && propertyId !== "all" && propertyId !== activePlan.propertyId;

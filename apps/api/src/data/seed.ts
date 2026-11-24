@@ -52,6 +52,8 @@ export type CustomerDocument = {
   sizeKb: number;
   /** Relative path under /uploads when file was stored locally */
   storagePath?: string;
+  /** Lease files belong to one yard. Insurance stays on the customer. */
+  propertyId?: string;
 };
 
 export type Customer = {

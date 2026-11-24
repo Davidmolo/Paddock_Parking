@@ -87,6 +87,7 @@ export default function CustomerDetailPage() {
   const [water, setWater] = useState(false);
   const [utilityRate, setUtilityRate] = useState("");
   const leaseFileRef = useRef<HTMLInputElement>(null);
+  const leaseYard = useRef("");
   const coiFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -245,6 +246,7 @@ export default function CustomerDetailPage() {
   async function onUpload(
     file: File,
     kind: "lease" | "insurance" | "other",
+    propertyId?: string,
   ) {
     setUploadMsg("");
     setUploadError("");
@@ -260,6 +262,7 @@ export default function CustomerDetailPage() {
         fileName: file.name,
         kind,
         contentBase64,
+        propertyId,
       });
       await queryClient.invalidateQueries({ queryKey: queryKeys.customer(id) });
       setUploadMsg(`${file.name} uploaded.`);
@@ -296,6 +299,34 @@ export default function CustomerDetailPage() {
       </PageTransition>
     );
   }
+
+  const yardLeases = data.leases?.length
+    ? data.leases
+    : [
+        {
+          id: data.lease?.id ?? data.id,
+          propertyId: data.propertyId,
+          propertyName: data.property?.name ?? "—",
+          address: data.property ? `${data.property.address}, ${data.property.city}` : "",
+          legalEntityName: data.property?.legalEntityName ?? "",
+          lotNumbers: data.lots.map((lot) => lot.number),
+          monthlyRent:
+            data.lease?.monthlyRent ??
+            data.lots.reduce((sum, lot) => sum + lot.monthlyRate, 0),
+          startDate: data.lease?.startDate ?? data.leaseStart,
+          renewalDate: data.lease?.renewalDate ?? data.leaseEnd,
+          notificationLeadDays: data.lease?.notificationLeadDays ?? 0,
+          status: data.lease?.status ?? data.leaseStatus,
+          notes: data.lease?.notes,
+        },
+      ];
+  const lotSummary =
+    yardLeases
+      .map((yard) => {
+        const lots = yard.lotNumbers.map((number) => `#${number}`).join(", ") || "Unassigned";
+        return `${yard.propertyName}: ${lots}`;
+      })
+      .join(" · ") || "Unassigned";
 
   return (
     <PageTransition>
@@ -348,13 +379,9 @@ export default function CustomerDetailPage() {
           <Meta
             label="Monthly payment"
             value={
-              data.lease
-                ? formatCurrency(data.lease.monthlyRent)
-                : data.lots.length
-                  ? formatCurrency(
-                      data.lots.reduce((s, l) => s + l.monthlyRate, 0),
-                    )
-                  : "—"
+              yardLeases.length
+                ? formatCurrency(yardLeases.reduce((sum, yard) => sum + yard.monthlyRent, 0))
+                : "—"
             }
           />
           <Meta
@@ -367,14 +394,9 @@ export default function CustomerDetailPage() {
           />
           <Meta
             label="Yard"
-            value={data.property?.name ?? "—"}
+            value={yardLeases.map((yard) => yard.propertyName).filter(Boolean).join(" · ") || "—"}
           />
-          <Meta
-            label="Lot number(s)"
-            value={
-              data.lots.map((l) => `#${l.number}`).join(", ") || "Unassigned"
-            }
-          />
+          <Meta label="Lot number(s)" value={lotSummary} />
           <Meta
             label="Contract"
             value={
@@ -550,6 +572,15 @@ export default function CustomerDetailPage() {
             </Badge>
           </CardHeader>
           <CardBody className="space-y-3">
+            {yardLeases.length > 1 ? (
+              <ul className="text-sm text-[var(--muted)]">
+                {yardLeases.map((yard) => (
+                  <li key={yard.id}>
+                    {yard.propertyName} · {yard.renewalDate || "—"}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             <p className="text-sm text-[var(--muted)]">
               {data.contractType === "fixed"
                 ? "Fixed term — notify before the contract end / renewal date."
@@ -630,90 +661,64 @@ export default function CustomerDetailPage() {
               <FileText className="h-4 w-4 text-[var(--muted)]" />
             </CardHeader>
             <CardBody className="space-y-8">
-              <section className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-semibold">{text.portal.lease}</h3>
-                  <Badge
-                    tone={
-                      data.lease?.noticeDue
-                        ? "warning"
-                        : data.lease?.status === "active"
-                          ? "success"
-                          : "neutral"
-                    }
-                  >
-                    {data.lease?.noticeDue
-                      ? "Renewal notice due"
-                      : data.leaseStatus}
-                  </Badge>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Meta label="Property" value={data.property?.name ?? "—"} />
-                  <Meta
-                    label="Legal entity"
-                    value={data.property?.legalEntityName ?? "—"}
-                  />
-                  <Meta
-                    label="Contract"
-                    value={data.contractType.replaceAll("_", " ")}
-                  />
-                  <Meta label="Lease start" value={data.lease?.startDate ?? data.leaseStart} />
-                  <Meta
-                    label="Renewal date"
-                    value={data.lease?.renewalDate ?? data.leaseEnd ?? "—"}
-                  />
-                  <Meta
-                    label="Notice lead time"
-                    value={
-                      data.lease
-                        ? `${data.lease.notificationLeadDays} days before renewal`
-                        : "—"
-                    }
-                  />
-                  <Meta
-                    label="Lots"
-                    value={
-                      data.lots.map((l) => `#${l.number}`).join(", ") ||
-                      "Unassigned"
-                    }
-                  />
-                  <Meta
-                    label="Monthly rent"
-                    value={
-                      data.lease
-                        ? formatCurrency(data.lease.monthlyRent)
-                        : data.lots.length
-                          ? formatCurrency(
-                              data.lots.reduce((s, l) => s + l.monthlyRate, 0),
-                            )
-                          : "—"
-                    }
-                  />
-                  <Meta
-                    label="Security deposit"
-                    value={formatCurrency(data.securityDeposit)}
-                  />
+              <section className="space-y-6">
+                <h3 className="font-semibold">{text.portal.lease}</h3>
+                {yardLeases.map((yard) => (
+                  <div key={yard.id} className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <h4 className="font-semibold">{yard.propertyName}</h4>
+                      <Badge tone={yard.status === "active" ? "success" : "neutral"}>
+                        {yard.status || data.leaseStatus}
+                      </Badge>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Meta label="Legal entity" value={yard.legalEntityName || "—"} />
+                      <Meta label="Lease start" value={yard.startDate || "—"} />
+                      <Meta label="Renewal date" value={yard.renewalDate || "—"} />
+                      <Meta
+                        label="Notice lead time"
+                        value={
+                          yard.notificationLeadDays
+                            ? `${yard.notificationLeadDays} days before renewal`
+                            : "—"
+                        }
+                      />
+                      <Meta
+                        label="Lots"
+                        value={yard.lotNumbers.map((number) => `#${number}`).join(", ") || "Unassigned"}
+                      />
+                      <Meta label="Monthly rent" value={formatCurrency(yard.monthlyRent)} />
+                    </div>
+                    {yard.notes ? <p className="text-sm text-[var(--muted)]">{yard.notes}</p> : null}
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      type="button"
+                      onClick={() => {
+                        leaseYard.current = yard.propertyId;
+                        leaseFileRef.current?.click();
+                      }}
+                    >
+                      {text.admin.uploadLease}
+                    </Button>
+                    <DocList
+                      docs={data.documents.filter(
+                        (doc) =>
+                          doc.kind === "lease" &&
+                          (doc.propertyId === yard.propertyId ||
+                            (!doc.propertyId && yard.propertyId === data.propertyId)),
+                      )}
+                      empty={text.portal.noDocuments}
+                    />
+                  </div>
+                ))}
+                <div className="grid gap-3 border-t border-[var(--border)] pt-4 sm:grid-cols-2">
+                  <Meta label="Contract" value={data.contractType.replaceAll("_", " ")} />
+                  <Meta label="Security deposit" value={formatCurrency(data.securityDeposit)} />
                   <Meta label="Gate code" value={data.gateCode || "—"} />
-                  <Meta
-                    label="ACH"
-                    value={data.achEnabled ? "Enabled" : "Not set up"}
-                  />
-                  <Meta
-                    label="Portal last login"
-                    value={data.portalLastLogin ?? "Never"}
-                  />
+                  <Meta label="ACH" value={data.achEnabled ? "Enabled" : "Not set up"} />
+                  <Meta label="Portal last login" value={data.portalLastLogin ?? "Never"} />
                 </div>
-                {data.lease?.notes && (
-                  <p className="text-sm text-[var(--muted)]">{data.lease.notes}</p>
-                )}
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  type="button"
-                  onClick={() => leaseFileRef.current?.click()}
-                >
-                  {text.admin.uploadLease}
-                </Button>
                 <input
                   ref={leaseFileRef}
                   type="file"
@@ -721,13 +726,9 @@ export default function CustomerDetailPage() {
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) void onUpload(file, "lease");
+                    if (file) void onUpload(file, "lease", leaseYard.current);
                     e.target.value = "";
                   }}
-                />
-                <DocList
-                  docs={data.documents.filter((doc) => doc.kind === "lease")}
-                  empty={text.portal.noDocuments}
                 />
               </section>
 
@@ -751,9 +752,12 @@ export default function CustomerDetailPage() {
                   </a>
                 </details>
                 <p className="text-sm text-[var(--ink)]">{text.portal.coiHint}</p>
-                {data.property?.address ? (
-                  <p className="text-sm text-[var(--muted)]">{data.property.address}</p>
-                ) : null}
+                {yardLeases.map((yard) => (
+                  <p key={yard.id} className="text-sm text-[var(--muted)]">
+                    {yard.propertyName}
+                    {yard.address ? ` · ${yard.address}` : ""}
+                  </p>
+                ))}
                 <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block space-y-1.5">
                   <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">

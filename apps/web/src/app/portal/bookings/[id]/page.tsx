@@ -149,7 +149,7 @@ export default function PortalBookingPage() {
       insurance={booking.docsLater ? text.admin.insuranceLater : text.admin.insuranceAccount}
       plates={plateLabels}
       facts={[
-        { label: text.portal.yard, value: home.data.yardName || text.portal.notSet },
+        { label: text.portal.yard, value: booking.yardName || home.data.yardName || text.portal.notSet },
         { label: text.portal.spaceType, value: booking.spaceType },
         { label: text.portal.monthlyRate, value: booking.monthlyRate == null ? text.portal.notSet : `${formatCurrency(booking.monthlyRate)}/mo` },
         { label: text.portal.leaseStart, value: booking.leaseStart || text.portal.notSet },

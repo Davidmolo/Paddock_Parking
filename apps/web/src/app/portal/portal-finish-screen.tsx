@@ -171,14 +171,47 @@ export function PortalFinishScreen() {
                 ) : null}
               </CardBody>
             </Card>
+          {(data.yards ?? []).map((yard) => (
+            <Card key={yard.propertyId} interactive={false}>
+              <CardHeader>
+                <h2 className="text-base font-semibold text-[var(--ink)]">
+                  {yard.name} · {text.portal.lease}
+                </h2>
+              </CardHeader>
+              <CardBody>
+                {yard.documents.length === 0 ? (
+                  <p className="text-sm text-[var(--muted)]">{text.portal.noDocuments}</p>
+                ) : (
+                  <ul className="grid gap-2">
+                    {yard.documents.map((doc) => {
+                      const src = doc.storagePath ? `${apiUrl}/uploads/${doc.storagePath}` : "";
+                      return (
+                        <li key={doc.id} className="text-sm">
+                          {src ? (
+                            <a className="font-semibold text-[var(--accent-ink)]" href={src} target="_blank" rel="noreferrer">
+                              {doc.name}
+                            </a>
+                          ) : (
+                            <span className="font-semibold text-[var(--ink)]">{doc.name}</span>
+                          )}
+                          <span className="text-[var(--muted)]"> · {formatPortalDate(doc.uploadedAt)}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </CardBody>
+            </Card>
+          ))}
           <Card interactive={false}>
             <CardHeader>
               <h2 className="text-base font-semibold text-[var(--ink)]">
                 {text.portal.onFile}
               </h2>
+              <p className="text-sm text-[var(--muted)]">{text.portal.accountFiles}</p>
             </CardHeader>
             <CardBody className="p-0">
-              {data.documents.length === 0 ? (
+              {data.documents.filter((doc) => doc.kind !== "lease").length === 0 ? (
                 <p className="p-4 text-sm text-[var(--muted)]">{text.portal.noDocuments}</p>
               ) : (
                 <div className="max-h-72 overflow-auto">
@@ -192,7 +225,7 @@ export function PortalFinishScreen() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.documents.map((doc) => {
+                      {data.documents.filter((doc) => doc.kind !== "lease").map((doc) => {
                         const src = doc.storagePath ? `${apiUrl}/uploads/${doc.storagePath}` : "";
                         return (
                           <tr key={doc.id} className="border-b border-[var(--border)] last:border-0">

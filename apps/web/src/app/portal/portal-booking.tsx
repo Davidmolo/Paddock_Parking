@@ -45,7 +45,7 @@ export function PortalBookingCard({ home }: PortalBookingCardProps) {
         [text.portal.company, booking.companyName],
         [text.portal.reference, booking.reference],
         [text.portal.bookedOn, formatPortalDate(booking.bookedOn) || text.portal.notSet],
-        [text.portal.yard, shown(home.yardName)],
+        [text.portal.yard, shown(booking.yardName || home.yardName)],
         [text.portal.spaceType, shown(booking.spaceType)],
         [
           text.portal.spots,
@@ -124,8 +124,8 @@ export function PortalBookingCard({ home }: PortalBookingCardProps) {
           <div className="mt-4 border-t border-[var(--border)] pt-4">
             <p className={labelClass}>{text.portal.yourSpaces}</p>
             {home.plots.map((plot) => (
-              <p key={plot.number} className="mt-1 text-sm font-semibold text-[var(--ink)]">
-                #{plot.number}{plot.size ? ` · ${plot.size}` : ""} · {formatCurrency(plot.monthlyRate)}/mo
+              <p key={`${plot.propertyId}-${plot.number}`} className="mt-1 text-sm font-semibold text-[var(--ink)]">
+                #{plot.number}{plot.yardName ? ` · ${plot.yardName}` : ""}{plot.size ? ` · ${plot.size}` : ""} · {formatCurrency(plot.monthlyRate)}/mo
               </p>
             ))}
           </div>

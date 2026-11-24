@@ -53,6 +53,9 @@ export default function PropertiesPage() {
                     </p>
                     <p className="mt-1 text-xs text-[var(--muted)]">
                       {text.admin.quickBooks}: {qbLine}
+                      {qbCompany(property.name, qb.data?.companies)
+                        ? ` · ${text.admin.quickBooksCompany}: ${qbCompany(property.name, qb.data?.companies)}`
+                        : ""}
                     </p>
                     {property.legalEntityName && (
                       <p className="mt-1 text-xs font-medium text-[var(--accent-ink)]">
@@ -149,6 +152,14 @@ export default function PropertiesPage() {
         </Stagger>
       )}
     </PageTransition>
+  );
+}
+
+function qbCompany(name: string, companies?: { yard: string; company: string }[]) {
+  return (
+    (companies ?? []).find(
+      (item) => item.yard === name || (item.yard.includes("925") && name.includes("925")),
+    )?.company ?? ""
   );
 }
 

@@ -147,6 +147,10 @@ class PortalAddSpaceDto {
 
   @IsBoolean()
   agreed!: boolean;
+
+  @IsOptional()
+  @IsString()
+  lesseeName?: string;
 }
 
 class PortalDocumentDto {

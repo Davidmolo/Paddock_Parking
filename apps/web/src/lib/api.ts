@@ -222,6 +222,7 @@ export type CustomerDetail = CustomerSummary & {
     uploadedAt: string;
     sizeKb: number;
     storagePath?: string;
+    propertyId?: string;
   }[];
   notes?: string;
   property?: Property;
@@ -254,6 +255,20 @@ export type CustomerDetail = CustomerSummary & {
     notifyByDate?: string;
     notes?: string;
   };
+  leases?: {
+    id: string;
+    propertyId: string;
+    propertyName: string;
+    address: string;
+    legalEntityName: string;
+    lotNumbers: string[];
+    monthlyRent: number;
+    startDate: string;
+    renewalDate?: string;
+    notificationLeadDays: number;
+    status: string;
+    notes?: string;
+  }[];
   certificate: CertificateInfo;
 };
 
@@ -683,6 +698,7 @@ export const endpoints = {
     plate?: string;
     chargeOnFile: boolean;
     agreed: boolean;
+    lesseeName?: string;
   }) =>
     api<{ number: string; monthlyRate: number }>("/portal/add-space", {
       method: "POST",
@@ -710,7 +726,12 @@ export const endpoints = {
       body: JSON.stringify(body),
     }),
   quickBooksStatus: () =>
-    api<{ ready: boolean; connected: boolean; message: string }>("/quickbooks/status"),
+    api<{
+      ready: boolean;
+      connected: boolean;
+      message: string;
+      companies: { yard: string; company: string }[];
+    }>("/quickbooks/status"),
   patchCustomerBilling: (
     id: string,
     body: { autoPull?: boolean; payMethod?: "card" | "ach" },
@@ -825,6 +846,7 @@ export const endpoints = {
       fileName: string;
       kind: "lease" | "insurance" | "other";
       contentBase64: string;
+      propertyId?: string;
     },
   ) =>
     api<{

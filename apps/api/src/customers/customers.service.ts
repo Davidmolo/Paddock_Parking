@@ -138,10 +138,12 @@ export class CustomersService {
       (lot) =>
         lot.customerId === customer.id || customer.lotIds.includes(lot.id),
     );
-    const lease = this.store.leases.find(
-      (item) =>
-        item.direction === 'tenant' && item.customerId === customer.id,
+    const leases = this.store.leases.filter(
+      (item) => item.direction === 'tenant' && item.customerId === customer.id,
     );
+    const lease =
+      leases.find((item) => item.propertyId === customer.propertyId) ??
+      leases[0];
     const booking = this.portalBooking(customer);
     const bill = this.billing(customer);
     const bookingLot = booking?.lotId
@@ -152,12 +154,23 @@ export class CustomersService {
           (lot, index, all) => all.findIndex((item) => item.id === lot.id) === index,
         )
       : lots;
-    const monthlyRate =
-      lease?.monthlyRent ??
-      booking?.monthlyRate ??
-      (spaceLots.length
-        ? spaceLots.reduce((sum, lot) => sum + lot.monthlyRate, 0)
-        : null);
+    const monthlyRate = leases.length
+      ? leases.reduce((sum, item) => sum + item.monthlyRent, 0)
+      : booking?.monthlyRate ??
+        (spaceLots.length
+          ? spaceLots.reduce((sum, lot) => sum + lot.monthlyRate, 0)
+          : null);
+    const yardIds = [
+      ...new Set([
+        customer.propertyId,
+        ...leases.map((item) => item.propertyId),
+        ...lots.map((lot) => lot.propertyId),
+      ]),
+    ];
+    const yardName = yardIds
+      .map((id) => this.store.properties.find((item) => item.id === id)?.name)
+      .filter((name): name is string => Boolean(name))
+      .join(' · ');
 
     return {
       name: customer.name,
@@ -165,7 +178,7 @@ export class CustomersService {
       phone: customer.phone,
       gateCode: customer.gateCode,
       propertyId: customer.propertyId,
-      yardName: property?.name ?? '',
+      yardName: yardName || property?.name || '',
       yardAddress: property
         ? `${property.address}, ${property.city}`
         : '',
@@ -207,6 +220,10 @@ export class CustomersService {
         number: lot.number,
         size: lot.size,
         monthlyRate: lot.monthlyRate,
+        propertyId: lot.propertyId,
+        yardName:
+          this.store.properties.find((item) => item.id === lot.propertyId)?.name ??
+          '',
       })),
       documents: customer.documents.map((doc) => ({
         id: doc.id,
@@ -214,7 +231,9 @@ export class CustomersService {
         kind: doc.kind,
         uploadedAt: doc.uploadedAt,
         storagePath: doc.storagePath ?? '',
+        propertyId: doc.propertyId ?? '',
       })),
+      yards: this.portalYards(customer),
       payments: this.store.payments
         .filter((payment) => payment.customerId === customer.id)
         .map((payment) => ({
@@ -464,15 +483,13 @@ export class CustomersService {
     return this.detail(customer);
   }
 
-  addSpace(body: { email: string; lotId: string; plate?: string; chargeOnFile: boolean; agreed: boolean }) {
+  addSpace(body: { email: string; lotId: string; plate?: string; chargeOnFile: boolean; agreed: boolean; lesseeName?: string }) {
     if (!body.chargeOnFile || !body.agreed) {
       throw new BadRequestException('Confirm the charge on file and the short agreement.');
     }
     const customer = this.portalCustomer(body.email);
     const lot = this.store.lots.find((item) => item.id === body.lotId);
-    if (!lot || lot.propertyId !== customer.propertyId) {
-      throw new NotFoundException('That space is not on your yard.');
-    }
+    if (!lot) throw new NotFoundException('That space is not open.');
     if (lot.status !== 'available') throw new BadRequestException('That space is not open.');
     const plate = body.plate?.trim() ?? '';
     const needsPlate = lot.lotType === 'truck_trailer' || lot.lotType === 'bobtail';
@@ -485,7 +502,7 @@ export class CustomersService {
     if (held) throw new BadRequestException('That space already has a request.');
     const request: Booking = {
       id: `bk${Date.now()}`,
-      propertyId: customer.propertyId,
+      propertyId: lot.propertyId,
       lotType: lot.lotType,
       customerName: customer.name,
       email: customer.email,
@@ -506,6 +523,8 @@ export class CustomersService {
       paymentMethod: customer.payMethod ?? 'pending',
       decision: 'pending',
       portalStatus: customer.portalPassword ? 'active' : 'not_invited',
+      lesseeName: body.lesseeName?.trim() || undefined,
+      signatureDate: body.lesseeName?.trim() ? new Date().toISOString().slice(0, 10) : undefined,
     };
     this.store.bookings.unshift(request);
     return { number: lot.number, monthlyRate: lot.monthlyRate };
@@ -592,6 +611,9 @@ export class CustomersService {
         monthlyRate: item.monthlyRate ?? null,
         paymentMethod: item.paymentMethod ?? ('' as const),
         decision: item.decision ?? ('pending' as const),
+        yardName:
+          this.store.properties.find((property) => property.id === item.propertyId)?.name ??
+          '',
         vehicles: item.vehicles ?? [],
         spaces: (item.lotIds ?? (item.lotId ? [item.lotId] : []))
           .map((id) => this.store.lots.find((lot) => lot.id === id)?.number)
@@ -633,6 +655,76 @@ export class CustomersService {
     );
     if (!customer) throw new NotFoundException('No customer found for that email.');
     return customer;
+  }
+
+  private portalYards(customer: Customer) {
+    const leases = this.store.leases.filter(
+      (item) => item.direction === 'tenant' && item.customerId === customer.id,
+    );
+    const propertyIds = [
+      ...new Set([
+        customer.propertyId,
+        ...leases.map((item) => item.propertyId),
+        ...this.store.lots
+          .filter(
+            (lot) => lot.customerId === customer.id || customer.lotIds.includes(lot.id),
+          )
+          .map((lot) => lot.propertyId),
+      ]),
+    ].filter(Boolean);
+    return propertyIds.map((propertyId) => {
+      const property = this.store.properties.find((item) => item.id === propertyId);
+      const lease = leases.find((item) => item.propertyId === propertyId);
+      const lots = this.store.lots.filter(
+        (lot) =>
+          lot.propertyId === propertyId &&
+          (lot.customerId === customer.id || customer.lotIds.includes(lot.id)),
+      );
+      const booking = this.store.bookings.find(
+        (item) =>
+          item.propertyId === propertyId &&
+          (item.customerId === customer.id ||
+            item.email.toLowerCase() === customer.email.toLowerCase()) &&
+          Boolean(item.lesseeSignature || item.lesseeName),
+      );
+      return {
+        propertyId,
+        name: property?.name ?? '',
+        address: property ? `${property.address}, ${property.city}` : '',
+        lotNumbers: lease?.lotNumbers?.length
+          ? lease.lotNumbers
+          : lots.map((lot) => lot.number),
+        monthlyRent:
+          lease?.monthlyRent ?? lots.reduce((sum, lot) => sum + lot.monthlyRate, 0),
+        startDate:
+          lease?.startDate ??
+          (propertyId === customer.propertyId ? customer.leaseStart : ''),
+        documents: customer.documents
+          .filter(
+            (doc) =>
+              doc.kind === 'lease' &&
+              (doc.propertyId === propertyId ||
+                (!doc.propertyId && propertyId === customer.propertyId)),
+          )
+          .map((doc) => ({
+            id: doc.id,
+            name: doc.name,
+            kind: doc.kind,
+            uploadedAt: doc.uploadedAt,
+            storagePath: doc.storagePath ?? '',
+            propertyId: doc.propertyId ?? propertyId,
+          })),
+        signedLease: booking
+          ? {
+              lesseeName: booking.lesseeName ?? '',
+              lesseeSignature: booking.lesseeSignature ?? '',
+              guarantorName: booking.guarantorName ?? '',
+              guarantorSignature: booking.guarantorSignature ?? '',
+              signatureDate: booking.signatureDate ?? '',
+            }
+          : null,
+      };
+    });
   }
 
   private portalBooking(customer: { id: string; email: string }) {
@@ -736,6 +828,8 @@ export class CustomersService {
     mkdirSync(uploadsDir, { recursive: true });
     writeFileSync(join(uploadsDir, storageName), buffer);
 
+    const propertyId =
+      dto.kind === 'lease' ? dto.propertyId?.trim() || customer.propertyId : undefined;
     const doc: CustomerDocument = {
       id,
       name: dto.fileName,
@@ -743,6 +837,7 @@ export class CustomersService {
       uploadedAt: new Date().toISOString().slice(0, 10),
       sizeKb: Math.max(1, Math.round(buffer.length / 1024)),
       storagePath: storageName,
+      propertyId,
     };
     customer.documents.unshift(doc);
 
@@ -759,7 +854,10 @@ export class CustomersService {
     }
     if (dto.kind === 'lease') {
       const lease = this.store.leases.find(
-        (l) => l.direction === 'tenant' && l.customerId === customerId,
+        (l) =>
+          l.direction === 'tenant' &&
+          l.customerId === customerId &&
+          l.propertyId === propertyId,
       );
       if (lease) lease.signedDocId = doc.id;
     }
@@ -811,9 +909,12 @@ export class CustomersService {
     const payments = this.store.payments.filter(
       (p) => p.customerId === customer.id,
     );
-    const lease = this.store.leases.find(
+    const tenantLeases = this.store.leases.filter(
       (l) => l.direction === 'tenant' && l.customerId === customer.id,
     );
+    const lease =
+      tenantLeases.find((l) => l.propertyId === customer.propertyId) ??
+      tenantLeases[0];
     const coi = this.store.certificates.find(
       (c) => c.customerId === customer.id,
     );
@@ -845,6 +946,23 @@ export class CustomersService {
                 : undefined,
           }
         : undefined,
+      leases: tenantLeases.map((item) => {
+        const yard = this.store.properties.find((property) => property.id === item.propertyId);
+        return {
+          id: item.id,
+          propertyId: item.propertyId,
+          propertyName: yard?.name ?? '',
+          address: yard ? `${yard.address}, ${yard.city}` : '',
+          legalEntityName: yard?.legalEntityName ?? '',
+          lotNumbers: item.lotNumbers,
+          monthlyRent: item.monthlyRent,
+          startDate: item.startDate,
+          renewalDate: item.renewalDate,
+          notificationLeadDays: item.notificationLeadDays,
+          status: item.status,
+          notes: item.notes,
+        };
+      }),
       certificate: this.enrichCertificate(coi, coiEval),
     };
   }

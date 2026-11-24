@@ -521,7 +521,7 @@ function drawYard(yard: AddedYard, names: boolean) {
         return {
           depth: depth(cx, cy),
           node: (
-            <g key={space.id} data-space={space.id} className="cursor-grab">
+            <g key={space.id} data-space={space.id} role="button" aria-label={space.label} className="cursor-grab">
               <polygon points={chain(shadow)} fill="rgba(22,32,44,0.10)" />
               {walls(corners, ground, top, shade(tone.fill, 0.78))}
               <polygon
@@ -1970,6 +1970,7 @@ export function YardSolid({
   const spot = useRef({ x: 0, y: 0 });
   const [tick, setTick] = useState(0);
   const [hoverId, setHoverId] = useState<string | null>(null);
+  const trashBar = useRef<HTMLDivElement>(null);
   const [stampPreview, setStampPreview] = useState<StampPlacement | null>(null);
   const stampCarry = useRef(false);
   const scene = useMemo(() => drawYard(yard, Boolean(moving)), [yard, moving]);
@@ -2129,13 +2130,17 @@ export function YardSolid({
       y: Math.min(held.maxY, Math.max(0, rawY)),
     };
     const host = svgRef.current?.parentElement?.getBoundingClientRect();
-    const atBottom = host ? clientY >= host.top + host.height * 0.86 : false;
-    if (atBottom && rawY > held.maxY + 6) {
-      held.trash = true;
-      held.at = { x: next.x, y: rawY };
+    const edge = host ? host.bottom - (held.trash ? 110 : 64) : 0;
+    const atBottom = Boolean(host && clientY >= edge);
+    if (held.trash !== atBottom) {
+      held.trash = atBottom;
+      trashBar.current?.classList.toggle("bg-rose-600", atBottom);
+      trashBar.current?.classList.toggle("bg-rose-950/80", !atBottom);
+    }
+    if (atBottom) {
+      held.at = { x: next.x, y: Math.max(0, rawY) };
       return;
     }
-    held.trash = false;
     const self = yard.spaces?.find((space) => space.id === held.id);
     const stuck = self ? alignSpace(yard, self, next.x, next.y) : null;
     if (stuck) {
@@ -2148,16 +2153,19 @@ export function YardSolid({
   }
 
   function endHold(e?: { clientX: number; clientY: number }) {
-    if (e) track(e.clientX, e.clientY);
+    const heldNow = hold.current;
+    if (e && heldNow && !heldNow.trash) track(e.clientX, e.clientY);
     if (raf.current) cancelAnimationFrame(raf.current);
     raf.current = 0;
     const held = hold.current;
     const pan = drag.current;
     hold.current = null;
     drag.current = null;
+    trashBar.current?.classList.remove("bg-rose-600");
+    trashBar.current?.classList.add("bg-rose-950/80");
     if (held && moving && held.moved) {
       if (held.trash) {
-        held.node?.removeAttribute("transform");
+        (held.node as SVGElement | null)?.setAttribute("display", "none");
         dragPaint.current = null;
         onRemove?.(held.id);
         return;
@@ -2255,7 +2263,7 @@ export function YardSolid({
             "absolute inset-0 h-full w-full touch-none select-none",
             layoutDraw && stamp ? "cursor-copy" : "cursor-grab active:cursor-grabbing",
           )}
-          role="img"
+          role="group"
           aria-label={yard.name}
           onPointerLeave={() => {
             setHoverId(null);
@@ -2372,7 +2380,10 @@ export function YardSolid({
               setStampPreview(stamp ? stampAtClient(e.clientX, e.clientY) : null);
               return;
             }
-            endHold(e);
+            endHold();
+          }}
+          onContextMenu={(e) => {
+            if (moving || hold.current) e.preventDefault();
           }}
         >
           <rect x={scene.grass.x} y={scene.grass.y} width={scene.grass.w} height={scene.grass.h} fill="#dde7d0" />
@@ -2438,6 +2449,14 @@ export function YardSolid({
           </div>
         ) : null}
         <span className="sr-only">{tick}</span>
+        {moving ? (
+          <div
+            ref={trashBar}
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-16 items-center justify-center bg-rose-950/80 text-sm font-semibold text-white"
+          >
+            {text.blankYard.spaceDrop}
+          </div>
+        ) : null}
       </div>
     </div>
   );

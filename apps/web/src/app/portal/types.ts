@@ -30,6 +30,7 @@ export type PortalBooking = {
   monthlyRate: number | null;
   paymentMethod: "" | "card" | "ach" | "pending";
   decision: "" | "pending" | "approved" | "conditional" | "denied";
+  yardName?: string;
   vehicles: PortalVehicle[];
   spaces: string[];
   docsLater: boolean;
@@ -107,6 +108,18 @@ export type PortalHome = {
   owedPlates: PortalOwedPlate[];
   docsOwed: boolean;
   signedLease: PortalSignedLease | null;
+  yards: PortalYard[];
+};
+
+export type PortalYard = {
+  propertyId: string;
+  name: string;
+  address: string;
+  lotNumbers: string[];
+  monthlyRent: number;
+  startDate: string;
+  documents: PortalDocument[];
+  signedLease: PortalSignedLease | null;
 };
 
 export type PortalSignedLease = {
@@ -121,6 +134,10 @@ export type PortalSignatureBlockProps = {
   label: string;
   name: string;
   signature: string;
+};
+
+export type PortalYardLeaseProps = {
+  yard: PortalYard;
 };
 
 export type PortalInvoice = {
@@ -139,6 +156,7 @@ export type PortalDocument = {
   kind: "lease" | "insurance" | "other";
   uploadedAt: string;
   storagePath: string;
+  propertyId?: string;
 };
 
 export type PortalPayment = {
@@ -154,6 +172,8 @@ export type PortalPlot = {
   number: string;
   size: string;
   monthlyRate: number;
+  propertyId?: string;
+  yardName?: string;
 };
 
 export type PortalOwedPlate = {

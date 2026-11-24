@@ -1,4 +1,4 @@
-import { IsIn, IsString, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class UploadDocumentDto {
   @IsString()
@@ -12,4 +12,9 @@ export class UploadDocumentDto {
   @IsString()
   @MinLength(1)
   contentBase64!: string;
+
+  /** Which yard a lease file belongs to. */
+  @IsOptional()
+  @IsString()
+  propertyId?: string;
 }

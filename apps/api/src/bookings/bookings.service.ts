@@ -424,7 +424,10 @@ export class BookingsService {
     }
 
     const lease = this.store.leases.find(
-      (item) => item.direction === 'tenant' && item.customerId === customerId,
+      (item) =>
+        item.direction === 'tenant' &&
+        item.customerId === customerId &&
+        item.propertyId === booking.propertyId,
     );
     if (lease) {
       for (const lot of lots) {

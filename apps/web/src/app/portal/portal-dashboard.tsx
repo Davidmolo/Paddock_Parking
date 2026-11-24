@@ -78,7 +78,7 @@ export function PortalDashboard() {
               status: booking.decision || text.portal.pending,
               tone: bookingTone(booking.decision || "pending"),
               title: booking.spaces?.length ? booking.spaces.map((number) => `#${number}`).join(", ") : booking.spaceType,
-              meta: [data.yardName, booking.bookedOn].filter(Boolean).join(" · "),
+              meta: [booking.yardName || data.yardName, booking.bookedOn].filter(Boolean).join(" · "),
             }))}
           />
           <PortalAccount home={data} />

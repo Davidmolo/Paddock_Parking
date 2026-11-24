@@ -77,6 +77,16 @@ export function PortalAccount({ home }: PortalAccountProps) {
               <dd className="mt-1 text-sm font-semibold text-[var(--ink)]">{value}</dd>
             </div>
           ))}
+          {(home.yards ?? []).map((yard) => (
+            <div key={yard.propertyId} className="min-w-0">
+              <dt className={labelClass}>{yard.name || text.portal.yard}</dt>
+              <dd className="mt-1 text-sm font-semibold text-[var(--ink)]">
+                {yard.lotNumbers.map((number) => `#${number}`).join(", ") || text.portal.notSet}
+                {" · "}
+                {formatCurrency(yard.monthlyRent)}
+              </dd>
+            </div>
+          ))}
           <div>
             <dt className={labelClass}>{text.portal.insurance}</dt>
             <dd className="mt-1">
