@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { text } from "@/constants/text";
 import type { AddedYard } from "./types";
 import type { DrawStamp, YardMarkCategory } from "./yard-design-types";
 import { InventoryDrawPalette } from "./inventory-draw-palette";
@@ -21,6 +22,8 @@ const SAVE_MS = 650;
 export function InventoryDrawLayout({ yard, actions, moving, onMove, onRemove, onYardChange }: LayoutProps) {
   const [category, setCategory] = useState<YardMarkCategory>("roads");
   const [stamp, setStamp] = useState<DrawStamp | null>(null);
+  const [labelText, setLabelText] = useState(text.blankYard.entrance);
+  const [labelId, setLabelId] = useState<string | null>(null);
   const [draft, setDraft] = useState(yard);
   const latest = useRef(yard);
   const saveAt = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,6 +45,21 @@ export function InventoryDrawLayout({ yard, actions, moving, onMove, onRemove, o
     setDraft(next);
     if (saveAt.current) clearTimeout(saveAt.current);
     saveAt.current = setTimeout(() => onYardChange(latest.current), SAVE_MS);
+  }
+
+  function setWords(value: string) {
+    setLabelText(value);
+    setStamp((current) => (current?.category === "labels" ? { ...current, text: value } : current));
+    if (!labelId) return;
+    const marks = latest.current.marks ?? [];
+    if (marks.some((item) => item.id === labelId)) {
+      queueSave({ ...latest.current, marks: marks.map((item) => (item.id === labelId ? { ...item, text: value } : item)) });
+      return;
+    }
+    queueSave({
+      ...latest.current,
+      spaces: (latest.current.spaces ?? []).map((item) => (item.id === labelId ? { ...item, text: value } : item)),
+    });
   }
 
   function placeAt(picked: DrawStamp, placement: StampPlacement) {
@@ -88,6 +106,7 @@ export function InventoryDrawLayout({ yard, actions, moving, onMove, onRemove, o
             queueSave({ ...latest.current, marks });
           }}
           onMarkRemove={(id) => {
+            if (labelId === id) setLabelId(null);
             const marks = (latest.current.marks ?? []).filter((item) => item.id !== id);
             const next = { ...latest.current, marks };
             latest.current = next;
@@ -95,14 +114,29 @@ export function InventoryDrawLayout({ yard, actions, moving, onMove, onRemove, o
             if (saveAt.current) clearTimeout(saveAt.current);
             onYardChange(next);
           }}
+          onLabel={(id) => {
+            const mark = latest.current.marks?.find((item) => item.id === id);
+            const space = latest.current.spaces?.find((item) => item.id === id);
+            if (!mark && !space) return;
+            setCategory("labels");
+            setLabelId(id);
+            setLabelText(mark ? mark.text ?? "" : space?.text ?? "");
+            setStamp(null);
+          }}
           actions={actions}
         />
       </div>
       <InventoryDrawPalette
         category={category}
-        onCategory={setCategory}
+        onCategory={(next) => {
+          setCategory(next);
+          if (next === "labels") setStamp(null);
+        }}
         stamp={stamp}
         onStamp={setStamp}
+        labelText={labelText}
+        onLabelText={setWords}
+        onLabelTarget={setLabelId}
       />
     </div>
   );

@@ -111,6 +111,10 @@ export function snapStampTopLeft(
   return { x, y };
 }
 
+export function markHits(a: SpaceRect, b: SpaceRect) {
+  return acreInteriorOverlap(a, b);
+}
+
 /** True only when lots share interior area (edge-to-edge touch is OK). */
 export function acreInteriorOverlap(a: SpaceRect, b: SpaceRect, pad = 0.35) {
   const left = Math.max(a.x, b.x);

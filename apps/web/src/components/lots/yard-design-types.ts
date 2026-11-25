@@ -1,6 +1,6 @@
 export type CompassFacing = "n" | "e" | "s" | "w";
 
-export type YardMarkCategory = "roads" | "gates" | "acres" | "trees";
+export type YardMarkCategory = "roads" | "gates" | "acres" | "trees" | "labels";
 
 export type RoadShape =
   | "road_h"
@@ -22,7 +22,9 @@ export type TreeShape = "tree_single" | "tree_row";
 
 export type AcreShape = "0.25" | "0.5" | "1" | "2" | "3" | "4" | "5";
 
-export type YardMarkShape = RoadShape | GateShape | TreeShape | AcreShape;
+export type LabelShape = "entrance";
+
+export type YardMarkShape = RoadShape | GateShape | TreeShape | AcreShape | LabelShape;
 
 export type YardMark = {
   id: string;
@@ -34,10 +36,12 @@ export type YardMark = {
   width: number;
   facing?: CompassFacing;
   rotation?: number;
+  text?: string;
 };
 
 export type DrawStamp = {
   category: YardMarkCategory;
   shape: YardMarkShape;
   facing?: CompassFacing;
+  text?: string;
 };

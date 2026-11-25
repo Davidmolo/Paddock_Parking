@@ -6,12 +6,41 @@ const ROAD_EDGE = "#3d4046";
 const LANE = "#cfd5de";
 const LANE_EDGE = "#b9c0cb";
 
+function caption(mark: YardMark, x: number, y: number, events: "auto" | "none") {
+  const words = mark.text?.trim();
+  if (!words) return null;
+  const [lx, ly] = iso(x, y, SURFACE + 8);
+  return (
+    <text
+      x={lx}
+      y={ly}
+      textAnchor="middle"
+      dominantBaseline="central"
+      pointerEvents={events}
+      style={{
+        font: "700 14px Inter, sans-serif",
+        fill: "#5a6069",
+        letterSpacing: "0.6px",
+        textTransform: "uppercase",
+        paintOrder: "stroke",
+        stroke: "#fff",
+        strokeWidth: 4.6,
+        strokeLinejoin: "round",
+      }}
+    >
+      {words}
+    </text>
+  );
+}
+
 function chain(points: [number, number][], h: number) {
   return points.map(([x, y]) => iso(x, y, h)).map((p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
 }
 
+const SURFACE = 20;
+
 function roadPoly(corners: [number, number][], fill = ROAD, edge = ROAD_EDGE, events: "auto" | "none" = "auto") {
-  return <polygon points={chain(corners, 2)} fill={fill} stroke={edge} strokeWidth={0.6} strokeLinejoin="round" pointerEvents={events} />;
+  return <polygon points={chain(corners, SURFACE)} fill={fill} stroke={edge} strokeWidth={0.6} strokeLinejoin="round" pointerEvents={events} />;
 }
 
 function postPrism(x: number, y: number, w: number, h: number, events: "auto" | "none") {
@@ -21,12 +50,12 @@ function postPrism(x: number, y: number, w: number, h: number, events: "auto" | 
     [x + w, y + h],
     [x, y + h],
   ];
-  const lift = 36;
+  const lift = SURFACE + 30;
   return (
     <g>
       {base.map((point, index) => {
         const next = base[(index + 1) % base.length];
-        const low = [iso(point[0], point[1], 2), iso(next[0], next[1], 2)];
+        const low = [iso(point[0], point[1], SURFACE), iso(next[0], next[1], SURFACE)];
         const high = [iso(next[0], next[1], lift), iso(point[0], point[1], lift)];
         return (
           <polygon
@@ -192,16 +221,18 @@ export function YardMarkGraphic({
     if (outline) {
       return (
         <g key={key} data-mark={mark.id} pointerEvents={hit}>
-          {hit === "auto" ? <polygon points={chain(outline, 1)} fill="transparent" /> : null}
+          {hit === "auto" ? <polygon points={chain(outline, SURFACE)} fill="transparent" /> : null}
           {roadPoly(outline, ROAD, ROAD_EDGE, hit)}
+          {caption(mark, cx, cy, "none")}
         </g>
       );
     }
     const lane = mark.id.includes("-lane");
     return (
       <g key={key} data-mark={mark.id} pointerEvents={hit}>
-        {hit === "auto" ? <polygon points={chain(corners, 1)} fill="transparent" /> : null}
+        {hit === "auto" ? <polygon points={chain(corners, SURFACE)} fill="transparent" /> : null}
         {roadPoly(corners, lane ? LANE : ROAD, lane ? LANE_EDGE : ROAD_EDGE, hit)}
+        {caption(mark, cx, cy, "none")}
       </g>
     );
   }
@@ -227,8 +258,9 @@ export function YardMarkGraphic({
     ];
     return (
       <g key={key} data-mark={mark.id} pointerEvents={hit}>
-        {hit === "auto" ? <polygon points={chain(corners, 1)} fill="transparent" /> : null}
+        {hit === "auto" ? <polygon points={chain(corners, SURFACE)} fill="transparent" /> : null}
         {gatePosts(corners, hit)}
+        {caption(mark, cx, cy, "none")}
       </g>
     );
   }
@@ -251,6 +283,22 @@ export function YardMarkGraphic({
             </g>
           );
         })}
+        {caption(mark, cx, cy, "none")}
+      </g>
+    );
+  }
+
+  if (mark.category === "labels") {
+    const box: [number, number][] = [
+      [px, py],
+      [px + w, py],
+      [px + w, py + h],
+      [px, py + h],
+    ];
+    return (
+      <g key={key} data-mark={mark.id} pointerEvents={hit}>
+        {hit === "auto" ? <polygon points={chain(box, SURFACE)} fill="transparent" /> : null}
+        {caption(mark, cx, cy, hit)}
       </g>
     );
   }

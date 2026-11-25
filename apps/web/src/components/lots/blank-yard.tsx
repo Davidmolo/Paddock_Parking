@@ -10,7 +10,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { blankLease, filledLease, leaseKeys, leaseNotes, type AddedYard, type YardFormKind, type YardGround, type YardLease, type YardShot, type YardSpace, type YardSpaceStatus, type YardSpaceUse } from "./types";
 import type { DrawStamp } from "./yard-design-types";
-import { acreInteriorOverlap, markParts, snapSpaceTopLeft } from "./draw-snap";
+import { markHits, markParts, snapSpaceTopLeft } from "./draw-snap";
 import { placementForStamp, type StampPlacement } from "./inventory-draw-actions";
 import { acreBox } from "./yard-plan-math";
 import { YardMarkGraphic } from "./yard-mark-svgs";
@@ -57,6 +57,8 @@ function uniso(sx: number, sy: number, h = 0): Pt {
   const v = (sy - OY + h) / KY;
   return [CX + u * COS + v * SIN, CY - u * SIN + v * COS];
 }
+
+const FLOOR = 20;
 
 function depth(px: number, py: number) {
   return (px - CX) * SIN + (py - CY) * COS;
@@ -350,18 +352,19 @@ function markPeers(yard: AddedYard, ignoreId: string) {
     ...peerRects(yard, ignoreId),
     ...(yard.marks ?? [])
       .filter((mark) => mark.id !== ignoreId)
-      .flatMap((mark) => markParts(mark).map((part) => ({ x: mark.x + part.dx, y: mark.y + part.dy, length: part.length, width: part.width }))),
+      .flatMap((mark) => markParts(mark).map((part) => ({ x: mark.x + part.dx, y: mark.y + part.dy, length: part.length, width: part.width, kind: mark.category }))),
   ];
 }
 
 function alignMark(yard: AddedYard, self: { id: string; length: number; width: number; shape: string; facing?: string; category?: string }, x: number, y: number) {
+  if (self.category === "labels") return clampSpace(yard, self.length, self.width, x, y);
   const box = lotBox(yard);
   const parts = markParts(self);
   const peers = markPeers(yard, self.id);
   const stuck = snapSpaceTopLeft(x + self.length / 2, y + self.width / 2, self.length, self.width, box, peers, parts);
   const open =
     spaceOnLand(yard, self.length, self.width, stuck.x, stuck.y) &&
-    parts.every((part) => !peers.some((item) => acreInteriorOverlap({ x: stuck.x + part.dx, y: stuck.y + part.dy, length: part.length, width: part.width }, item)));
+      parts.every((part) => !peers.some((item) => markHits({ x: stuck.x + part.dx, y: stuck.y + part.dy, length: part.length, width: part.width }, item)));
   return open ? stuck : null;
 }
 
@@ -375,7 +378,7 @@ function settleMark(yard: AddedYard, id: string, x: number, y: number) {
   const peers = markPeers(yard, id);
   if (
     spaceOnLand(yard, self.length, self.width, raw.x, raw.y) &&
-    parts.every((part) => !peers.some((item) => acreInteriorOverlap({ x: raw.x + part.dx, y: raw.y + part.dy, length: part.length, width: part.width }, item)))
+      parts.every((part) => !peers.some((item) => markHits({ x: raw.x + part.dx, y: raw.y + part.dy, length: part.length, width: part.width }, item)))
   ) {
     return raw;
   }
@@ -571,6 +574,25 @@ function drawYard(yard: AddedYard, names: boolean) {
               {names || !smallSpace(space) ? (
                 <text x={at[0]} y={at[1]} textAnchor="middle" style={{ font: "700 11px Inter, sans-serif", fill: "#2b3038" }}>
                   {space.label}
+                </text>
+              ) : null}
+              {space.text?.trim() ? (
+                <text
+                  x={at[0]}
+                  y={at[1] - 16}
+                  textAnchor="middle"
+                  pointerEvents="none"
+                  style={{
+                    font: "700 14px Inter, sans-serif",
+                    fill: "#5a6069",
+                    letterSpacing: "0.6px",
+                    textTransform: "uppercase",
+                    paintOrder: "stroke",
+                    stroke: "#fff",
+                    strokeWidth: 4.6,
+                  }}
+                >
+                  {space.text}
                 </text>
               ) : null}
             </g>
@@ -1963,6 +1985,7 @@ function StampPlacementGhost({
           length: placement.length,
           width: placement.width,
           facing: stamp.facing,
+          text: stamp.text,
         }}
         boxLeft={box.left}
         boxTop={box.top}
@@ -1983,6 +2006,7 @@ export function YardSolid({
   onRemove,
   onMarkMove,
   onMarkRemove,
+  onLabel,
   onOpen,
   actions,
 }: {
@@ -1996,6 +2020,7 @@ export function YardSolid({
   onRemove?: (id: string) => void;
   onMarkMove?: (id: string, x: number, y: number) => void;
   onMarkRemove?: (id: string) => void;
+  onLabel?: (id: string) => void;
   onOpen?: (id: string) => void;
   actions?: React.ReactNode;
 }) {
@@ -2114,7 +2139,7 @@ export function YardSolid({
     point.x = clientX;
     point.y = clientY;
     const spot = point.matrixTransform(m.inverse());
-    return uniso((spot.x - view.current.x) / view.current.k, (spot.y - view.current.y) / view.current.k, 0);
+    return uniso((spot.x - view.current.x) / view.current.k, (spot.y - view.current.y) / view.current.k, FLOOR);
   }
 
   function stampAtClient(clientX: number, clientY: number, tool?: DrawStamp) {
@@ -2201,7 +2226,7 @@ export function YardSolid({
     point.x = clientX;
     point.y = clientY;
     const spot = point.matrixTransform(held.inv);
-    const now = uniso((spot.x - view.current.x) / view.current.k, (spot.y - view.current.y) / view.current.k, 0);
+    const now = uniso((spot.x - view.current.x) / view.current.k, (spot.y - view.current.y) / view.current.k, FLOOR);
     const rawY = held.oy + (now[1] - held.planY) / UPFT;
     const next = {
       x: Math.min(held.maxX, Math.max(0, held.ox + (now[0] - held.planX) / UPFT)),
@@ -2275,6 +2300,9 @@ export function YardSolid({
       return;
     }
     dragPaint.current = null;
+    const naming = Boolean(layoutDraw);
+    if (held?.kind === "mark" && !held.moved && naming) onLabel?.(held.id);
+    if (!held && pan?.id && !pan.moved && naming) onLabel?.(pan.id);
     svgRef.current?.querySelectorAll("[data-space]").forEach((node) => node.removeAttribute("transform"));
     if (pan?.id && !pan.moved && inspect) onOpen?.(pan.id);
   }
@@ -2400,7 +2428,7 @@ export function YardSolid({
                 point.x = e.clientX;
                 point.y = e.clientY;
                 const spot = point.matrixTransform(inv);
-                const plan = uniso((spot.x - view.current.x) / view.current.k, (spot.y - view.current.y) / view.current.k, 0);
+                const plan = uniso((spot.x - view.current.x) / view.current.k, (spot.y - view.current.y) / view.current.k, FLOOR);
                 planX = plan[0];
                 planY = plan[1];
               }
@@ -2430,6 +2458,10 @@ export function YardSolid({
                 length,
                 width,
               };
+            } else if (layoutDraw && stamp?.category === "labels" && id && !moving) {
+              stampCarry.current = false;
+              hold.current = null;
+              drag.current = { x: e.clientX, y: e.clientY, id, moved: false };
             } else if (layoutDraw && stamp && !moving) {
               stampCarry.current = true;
               drag.current = null;
@@ -2511,8 +2543,9 @@ export function YardSolid({
             {scene.lotWalls}
             <polygon points={scene.lotTop} fill="#57a5f5" stroke="#4a97ea" strokeWidth={0.8} />
             {scene.spaces}
-            {(yard.marks ?? [])
+            {[...(yard.marks ?? [])]
               .filter((mark) => mark?.id && mark?.category)
+              .sort((a, b) => (a.category === "gates" ? 2 : a.category === "labels" ? 3 : 0) - (b.category === "gates" ? 2 : b.category === "labels" ? 3 : 0))
               .map((mark) => {
                 const box = lotBox(yard);
                 return (

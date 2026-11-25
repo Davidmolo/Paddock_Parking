@@ -17,6 +17,7 @@ export type StoredSpace = {
   customerId?: string;
   customerName?: string;
   archived?: boolean;
+  text?: string;
 };
 
 export type StoredMark = {
@@ -29,6 +30,7 @@ export type StoredMark = {
   width: number;
   facing?: string;
   rotation?: number;
+  text?: string;
 };
 
 export type StoredYard = {

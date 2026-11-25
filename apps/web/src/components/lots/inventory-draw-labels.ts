@@ -6,6 +6,7 @@ export const DRAW_CATEGORY_LABELS: Record<YardMarkCategory, string> = {
   gates: "Gates",
   acres: "Acres",
   trees: "Trees",
+  labels: "Labels",
 };
 
 export const DRAW_SHAPE_LABELS: Record<YardMarkShape, string> = {
@@ -35,6 +36,7 @@ export const DRAW_SHAPE_LABELS: Record<YardMarkShape, string> = {
   "3": "3 ac",
   "4": "4 ac",
   "5": "5 ac",
+  entrance: "Entrance",
 };
 
 export function drawCategoryLabel(category: YardMarkCategory) {

@@ -188,6 +188,7 @@ export type YardSpace = {
   customerId?: string;
   customerName?: string;
   archived?: boolean;
+  text?: string;
 };
 
 export type AddedYard = {

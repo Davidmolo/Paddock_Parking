@@ -9,13 +9,14 @@ import { drawCategoryLabel, drawShapeLabel } from "./inventory-draw-labels";
 const BLANK_DRAG =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
-const CATEGORIES: YardMarkCategory[] = ["roads", "gates", "acres", "trees"];
+const CATEGORIES: YardMarkCategory[] = ["roads", "gates", "acres", "trees", "labels"];
 
 const SHAPES: Record<YardMarkCategory, YardMarkShape[]> = {
   roads: ["road_h", "road_v", "road_ne", "road_nw", "road_se", "road_sw", "road_tn", "road_te", "road_ts", "road_tw", "road_cross"],
   gates: ["gate"],
   acres: ["0.25", "0.5", "1", "2", "3", "4", "5"],
   trees: ["tree_single", "tree_row"],
+  labels: ["entrance"],
 };
 
 type PaletteProps = {
@@ -23,9 +24,12 @@ type PaletteProps = {
   onCategory: (cat: YardMarkCategory) => void;
   stamp: DrawStamp | null;
   onStamp: (stamp: DrawStamp | null) => void;
+  labelText: string;
+  onLabelText: (value: string) => void;
+  onLabelTarget: (id: string | null) => void;
 };
 
-export function InventoryDrawPalette({ category, onCategory, stamp, onStamp }: PaletteProps) {
+export function InventoryDrawPalette({ category, onCategory, stamp, onStamp, labelText, onLabelText, onLabelTarget }: PaletteProps) {
   const shapes = SHAPES[category] ?? SHAPES.roads;
 
   function pickGate(event: DragEvent, facing: "s" | "e") {
@@ -85,6 +89,17 @@ export function InventoryDrawPalette({ category, onCategory, stamp, onStamp }: P
             />
           </ul>
         ) : null}
+        {category === "labels" ? (
+          <label className="mb-3 block text-xs font-semibold text-[var(--ink)]">
+            {text.blankYard.labelWords}
+            <input
+              value={labelText}
+              onChange={(event) => onLabelText(event.target.value)}
+              className="mt-1 h-9 w-full rounded-lg border border-[var(--border)] bg-white px-2 text-sm font-medium"
+            />
+            <span className="mt-1 block font-normal leading-5 text-[var(--muted)]">{text.blankYard.labelHint}</span>
+          </label>
+        ) : null}
         {category === "gates" ? null : (
         <ul className="grid grid-cols-2 gap-2">
           {shapes.map((shape) => {
@@ -95,15 +110,19 @@ export function InventoryDrawPalette({ category, onCategory, stamp, onStamp }: P
                   type="button"
                   draggable
                   onDragStart={(e) => {
-                    const picked = { category, shape };
+                    const picked = { category, shape, text: category === "labels" ? labelText : undefined };
                     e.dataTransfer.setData("application/x-yard-stamp", JSON.stringify(picked));
                     e.dataTransfer.effectAllowed = "move";
                     const ghost = new Image();
                     ghost.src = BLANK_DRAG;
                     e.dataTransfer.setDragImage(ghost, 0, 0);
+                    onLabelTarget(null);
                     onStamp(picked);
                   }}
-                  onClick={() => onStamp(active ? null : { category, shape })}
+                  onClick={() => {
+                    onLabelTarget(null);
+                    onStamp(active ? null : { category, shape, text: category === "labels" ? labelText : undefined });
+                  }}
                   className={cn(
                     "flex h-16 w-full flex-col items-center justify-center rounded-xl border px-2 text-center text-xs font-semibold",
                     active
@@ -231,6 +250,7 @@ function ShapeIcon({ category, shape }: { category: YardMarkCategory; shape: Yar
   if (category === "acres") {
     return <span className="text-sm font-bold tabular-nums">{shape} ac</span>;
   }
+  if (category === "labels") return null;
   return (
     <svg viewBox="0 0 24 24" className="h-6 w-6 text-emerald-600" aria-hidden>
       <circle cx="12" cy="8" r="6" fill="currentColor" />
