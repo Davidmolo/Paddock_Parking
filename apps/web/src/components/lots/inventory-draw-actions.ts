@@ -1,10 +1,8 @@
 import type { AddedYard, YardSpace } from "./types";
 import type { CompassFacing, DrawStamp, YardMark, YardMarkShape } from "./yard-design-types";
-import { acreInteriorOverlap, snapSpaceTopLeft, snapStampTopLeft } from "./draw-snap";
-import { acreBox, clampInBox, gateFacingAt } from "./yard-plan-math";
+import { acreInteriorOverlap, markParts, snapSpaceTopLeft } from "./draw-snap";
+import { acreBox, gateFacingAt } from "./yard-plan-math";
 import { spaceOnLand, spaceRectsForPlacement, yardFeetBox } from "./blank-yard";
-
-const GAP = 2;
 
 export type StampPlacement = {
   x: number;
@@ -14,38 +12,40 @@ export type StampPlacement = {
   valid: boolean;
 };
 
-function rectsOverlap(
-  a: { x: number; y: number; length: number; width: number },
-  b: { x: number; y: number; length: number; width: number },
-  gap = GAP,
-) {
-  return (
-    a.x < b.x + b.length + gap &&
-    a.x + a.length + gap > b.x &&
-    a.y < b.y + b.width + gap &&
-    a.y + a.width + gap > b.y
-  );
+function placedRects(yard: AddedYard) {
+  return [
+    ...spaceRectsForPlacement(yard),
+    ...(yard.marks ?? []).flatMap((mark) =>
+      markParts(mark).map((part) => ({ x: mark.x + part.dx, y: mark.y + part.dy, length: part.length, width: part.width })),
+    ),
+  ];
+}
+
+function orientedSize(stamp: DrawStamp) {
+  const size = stampSize(stamp.shape);
+  if (stamp.shape === "gate" && (stamp.facing === "e" || stamp.facing === "w")) {
+    return { ...size, length: size.width, width: size.length };
+  }
+  return size;
 }
 
 function resolveStampFeet(yard: AddedYard, stamp: DrawStamp, clickX: number, clickY: number) {
   const box = yardFeetBox(yard);
-  const spaces = spaceRectsForPlacement(yard);
-  const size = stampSize(stamp.shape);
-  const snapped = snapStampTopLeft(stamp.shape, size.length, size.width, clickX, clickY, yard.marks ?? []);
-
+  const peers = placedRects(yard);
   if (stamp.category === "acres") {
     const span = acreBox(Number(stamp.shape));
-    const at = snapSpaceTopLeft(clickX, clickY, span.length, span.width, box, spaces);
+    const at = snapSpaceTopLeft(clickX, clickY, span.length, span.width, box, peers);
     return { x: at.x, y: at.y, length: span.length, width: span.width };
   }
-
-  const at = clampInBox(box, size.length, size.width, snapped.x, snapped.y);
+  const size = orientedSize(stamp);
+  const parts = markParts({ ...stamp, length: size.length, width: size.width });
+  const at = snapSpaceTopLeft(clickX, clickY, size.length, size.width, box, peers, parts);
   return { x: at.x, y: at.y, length: size.length, width: size.width };
 }
 
 export function placementForStamp(yard: AddedYard, stamp: DrawStamp, clickX: number, clickY: number): StampPlacement {
   const box = yardFeetBox(yard);
-  const size = stampSize(stamp.shape);
+  const size = orientedSize(stamp);
   if (size.length > box.wide + 0.5 || size.width > box.tall + 0.5) {
     return { x: 0, y: 0, length: size.length, width: size.width, valid: false };
   }
@@ -56,27 +56,23 @@ export function placementForStamp(yard: AddedYard, stamp: DrawStamp, clickX: num
     rect.x + rect.length <= box.wide + 0.01 &&
     rect.y + rect.width <= box.tall + 0.01;
   if (!inBox || !spaceOnLand(yard, rect.length, rect.width, rect.x, rect.y)) return { ...rect, valid: false };
-  const hitSpace =
-    stamp.category === "acres"
-      ? spaceRectsForPlacement(yard).some((space) => acreInteriorOverlap(rect, space))
-      : spaceRectsForPlacement(yard).some((space) => rectsOverlap(rect, space, GAP));
-  if (hitSpace) return { ...rect, valid: false };
-  const markGap = stamp.category === "roads" ? 0 : GAP;
-  const hitMark = (yard.marks ?? []).some((mark) =>
-    rectsOverlap(rect, { x: mark.x, y: mark.y, length: mark.length, width: mark.width }, markGap),
+  const parts = markParts({ ...stamp, length: rect.length, width: rect.width });
+  const blocked = parts.some((part) =>
+    placedRects(yard).some((item) => acreInteriorOverlap({ x: rect.x + part.dx, y: rect.y + part.dy, length: part.length, width: part.width }, item)),
   );
-  return { ...rect, valid: !hitMark };
+  return { ...rect, valid: !blocked };
 }
 
 export function stampSize(shape: YardMarkShape): { length: number; width: number; category: YardMark["category"] } {
   if (shape.startsWith("road_")) {
     if (shape === "road_h") return { category: "roads", length: 96, width: 18 };
     if (shape === "road_v") return { category: "roads", length: 18, width: 96 };
-    if (shape === "road_ne" || shape === "road_nw") return { category: "roads", length: 72, width: 72 };
-    if (shape === "road_t" || shape === "road_cross") return { category: "roads", length: 80, width: 80 };
-    return { category: "roads", length: 80, width: 18 };
+    if (shape === "road_t" || shape.startsWith("road_t") || shape === "road_cross") {
+      return { category: "roads", length: 72, width: 72 };
+    }
+    return { category: "roads", length: 64, width: 64 };
   }
-  if (shape.startsWith("gate_")) return { category: "gates", length: 32, width: 12 };
+  if (shape === "gate" || shape.startsWith("gate_")) return { category: "gates", length: 40, width: 14 };
   if (shape === "tree_row") return { category: "trees", length: 48, width: 20 };
   if (shape === "tree_single") return { category: "trees", length: 16, width: 16 };
   const span = acreBox(Number(shape));
@@ -100,7 +96,7 @@ export function applyDrawStampPlacement(yard: AddedYard, stamp: DrawStamp, place
 
   const at = { x: placement.x, y: placement.y };
   const box = yardFeetBox(yard);
-  const size = stampSize(stamp.shape);
+  const size = { length: placement.length, width: placement.width, category: stamp.category };
 
   if (stamp.category === "acres") {
     const acres = Number(stamp.shape);
@@ -119,7 +115,7 @@ export function applyDrawStampPlacement(yard: AddedYard, stamp: DrawStamp, place
     return { ...yard, spaces: [...(yard.spaces ?? []), made] };
   }
 
-  const picked = gateFromShape(stamp.shape);
+  const picked = stamp.facing ?? gateFromShape(stamp.shape);
   const facing =
     picked ??
     (stamp.category === "gates"

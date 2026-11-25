@@ -7,10 +7,16 @@ export type RoadShape =
   | "road_v"
   | "road_ne"
   | "road_nw"
+  | "road_se"
+  | "road_sw"
   | "road_t"
+  | "road_tn"
+  | "road_te"
+  | "road_ts"
+  | "road_tw"
   | "road_cross";
 
-export type GateShape = "gate_n" | "gate_e" | "gate_s" | "gate_w";
+export type GateShape = "gate" | "gate_n" | "gate_e" | "gate_s" | "gate_w";
 
 export type TreeShape = "tree_single" | "tree_row";
 
@@ -33,4 +39,5 @@ export type YardMark = {
 export type DrawStamp = {
   category: YardMarkCategory;
   shape: YardMarkShape;
+  facing?: CompassFacing;
 };

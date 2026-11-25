@@ -10,7 +10,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { blankLease, filledLease, leaseKeys, leaseNotes, type AddedYard, type YardFormKind, type YardGround, type YardLease, type YardShot, type YardSpace, type YardSpaceStatus, type YardSpaceUse } from "./types";
 import type { DrawStamp } from "./yard-design-types";
-import { snapSpaceTopLeft } from "./draw-snap";
+import { acreInteriorOverlap, markParts, snapSpaceTopLeft } from "./draw-snap";
 import { placementForStamp, type StampPlacement } from "./inventory-draw-actions";
 import { acreBox } from "./yard-plan-math";
 import { YardMarkGraphic } from "./yard-mark-svgs";
@@ -343,6 +343,43 @@ function alignSpace(yard: AddedYard, self: YardSpace, x: number, y: number) {
     spaceOnLand(yard, self.length, self.width, stuck.x, stuck.y) &&
     spaceFitsOpen(yard, self, stuck.x, stuck.y, self.id, 0);
   return open ? stuck : null;
+}
+
+function markPeers(yard: AddedYard, ignoreId: string) {
+  return [
+    ...peerRects(yard, ignoreId),
+    ...(yard.marks ?? [])
+      .filter((mark) => mark.id !== ignoreId)
+      .flatMap((mark) => markParts(mark).map((part) => ({ x: mark.x + part.dx, y: mark.y + part.dy, length: part.length, width: part.width }))),
+  ];
+}
+
+function alignMark(yard: AddedYard, self: { id: string; length: number; width: number; shape: string; facing?: string; category?: string }, x: number, y: number) {
+  const box = lotBox(yard);
+  const parts = markParts(self);
+  const peers = markPeers(yard, self.id);
+  const stuck = snapSpaceTopLeft(x + self.length / 2, y + self.width / 2, self.length, self.width, box, peers, parts);
+  const open =
+    spaceOnLand(yard, self.length, self.width, stuck.x, stuck.y) &&
+    parts.every((part) => !peers.some((item) => acreInteriorOverlap({ x: stuck.x + part.dx, y: stuck.y + part.dy, length: part.length, width: part.width }, item)));
+  return open ? stuck : null;
+}
+
+function settleMark(yard: AddedYard, id: string, x: number, y: number) {
+  const self = yard.marks?.find((mark) => mark.id === id);
+  if (!self) return { x, y };
+  const stuck = alignMark(yard, self, x, y);
+  if (stuck) return stuck;
+  const raw = clampSpace(yard, self.length, self.width, x, y);
+  const parts = markParts(self);
+  const peers = markPeers(yard, id);
+  if (
+    spaceOnLand(yard, self.length, self.width, raw.x, raw.y) &&
+    parts.every((part) => !peers.some((item) => acreInteriorOverlap({ x: raw.x + part.dx, y: raw.y + part.dy, length: part.length, width: part.width }, item)))
+  ) {
+    return raw;
+  }
+  return { x: self.x, y: self.y };
 }
 
 function settleSpace(yard: AddedYard, id: string, x: number, y: number) {
@@ -1882,35 +1919,56 @@ export function AddSpaces({
 function StampPlacementGhost({
   box,
   placement,
+  stamp,
 }: {
   box: { left: number; top: number };
   placement: StampPlacement;
+  stamp: DrawStamp;
 }) {
-  const px = box.left + placement.x * UPFT;
-  const py = box.top + placement.y * UPFT;
-  const w = placement.length * UPFT;
-  const d = placement.width * UPFT;
-  const roadLike = placement.length > placement.width * 2.2 || placement.width > placement.length * 2.2;
-  const tops = iso(px, py, 34);
-  const topn = iso(px + w, py, 34);
-  const tope = iso(px + w, py + d, 34);
-  const topw = iso(px, py + d, 34);
-  const fill = placement.valid
-    ? roadLike
-      ? "rgba(92,95,102,0.55)"
-      : "rgba(34,197,94,0.42)"
-    : roadLike
-      ? "rgba(220,38,38,0.5)"
-      : "rgba(239,68,68,0.48)";
-  const stroke = placement.valid ? (roadLike ? "#3d4046" : "#15803d") : "#b91c1c";
+  if (stamp.category === "acres") {
+    const corners = cornersAt(box, placement.x, placement.y, placement.length, placement.width);
+    const fill = placement.valid ? "#e3f0e4" : "#f8d7d3";
+    const ground = 20;
+    const top = ground + 18;
+    const at = iso(
+      corners.reduce((sum, point) => sum + point[0], 0) / corners.length,
+      corners.reduce((sum, point) => sum + point[1], 0) / corners.length,
+      top + 2,
+    );
+    return (
+      <g pointerEvents="none" opacity={placement.valid ? 0.92 : 0.75}>
+        {walls(corners, ground, top, shade(fill, 0.78))}
+        <polygon
+          points={chain(corners.map((point) => iso(point[0], point[1], top)))}
+          fill={fill}
+          stroke={shade(fill, 0.86)}
+          strokeWidth={0.8}
+          strokeLinejoin="round"
+        />
+        <text x={at[0]} y={at[1]} textAnchor="middle" style={{ font: "700 11px Inter, sans-serif", fill: "#2b3038" }}>
+          {`AC${stamp.shape}`}
+        </text>
+      </g>
+    );
+  }
   return (
-    <polygon
-      points={`${tops[0]},${tops[1]} ${topn[0]},${topn[1]} ${tope[0]},${tope[1]} ${topw[0]},${topw[1]}`}
-      fill={fill}
-      stroke={stroke}
-      strokeWidth={1.2}
-      pointerEvents="none"
-    />
+    <g opacity={placement.valid ? 0.9 : 0.55} pointerEvents="none">
+      <YardMarkGraphic
+        mark={{
+          id: "preview",
+          category: stamp.category,
+          shape: stamp.shape,
+          x: placement.x,
+          y: placement.y,
+          length: placement.length,
+          width: placement.width,
+          facing: stamp.facing,
+        }}
+        boxLeft={box.left}
+        boxTop={box.top}
+        upft={UPFT}
+      />
+    </g>
   );
 }
 
@@ -1923,6 +1981,8 @@ export function YardSolid({
   onStampPick,
   onMove,
   onRemove,
+  onMarkMove,
+  onMarkRemove,
   onOpen,
   actions,
 }: {
@@ -1934,6 +1994,8 @@ export function YardSolid({
   onStampPick?: (stamp: DrawStamp) => void;
   onMove?: (id: string, x: number, y: number) => void;
   onRemove?: (id: string) => void;
+  onMarkMove?: (id: string, x: number, y: number) => void;
+  onMarkRemove?: (id: string) => void;
   onOpen?: (id: string) => void;
   actions?: React.ReactNode;
 }) {
@@ -1960,6 +2022,9 @@ export function YardSolid({
     planX: number;
     planY: number;
     trash: boolean;
+    kind: "space" | "mark";
+    length: number;
+    width: number;
   } | null>(null);
   const dragPaint = useRef<{ id: string; x: number; y: number; dx: number; dy: number } | null>(null);
   const raf = useRef(0);
@@ -1973,6 +2038,7 @@ export function YardSolid({
   const trashBar = useRef<HTMLDivElement>(null);
   const [stampPreview, setStampPreview] = useState<StampPlacement | null>(null);
   const stampCarry = useRef(false);
+  const pointer = useRef<{ x: number; y: number } | null>(null);
   const scene = useMemo(() => drawYard(yard, Boolean(moving)), [yard, moving]);
   const inspect = !moving && !layoutDraw;
 
@@ -1980,9 +2046,14 @@ export function YardSolid({
     if (!inspect) setHoverId(null);
   }, [inspect]);
 
-  useEffect(() => {
-    if (!layoutDraw || !stamp) setStampPreview(null);
-  }, [layoutDraw, stamp]);
+  useLayoutEffect(() => {
+    const at = pointer.current;
+    if (!layoutDraw || !stamp || !at) {
+      if (!layoutDraw || !stamp) setStampPreview(null);
+      return;
+    }
+    setStampPreview(stampAtClient(at.x, at.y));
+  }, [layoutDraw, stamp, yard]);
 
   useLayoutEffect(() => {
     if (hold.current || gliding.current) return;
@@ -1990,15 +2061,19 @@ export function YardSolid({
     const svg = svgRef.current;
     if (!svg || !paint) return;
     const space = yard.spaces?.find((item) => item.id === paint.id);
-    const node = svg.querySelector(`[data-space="${paint.id}"]`);
-    if (!space || !node) return;
-    if (Math.abs((space.x ?? NaN) - paint.x) < 0.05 && Math.abs((space.y ?? NaN) - paint.y) < 0.05) {
+    const mark = yard.marks?.find((item) => item.id === paint.id);
+    const placed = space ?? mark;
+    const node = svg.querySelector(`[data-space="${paint.id}"], [data-mark="${paint.id}"]`);
+    if (!placed || !node) return;
+    const originX = space ? (space.x ?? NaN) : (mark?.x ?? NaN);
+    const originY = space ? (space.y ?? NaN) : (mark?.y ?? NaN);
+    if (Math.abs(originX - paint.x) < 0.05 && Math.abs(originY - paint.y) < 0.05) {
       dragPaint.current = null;
       node.removeAttribute("transform");
       return;
     }
     const box = lotBox(yard);
-    const from = iso(box.left + (space.x ?? 0) * UPFT, box.top + (space.y ?? 0) * UPFT, 0);
+    const from = iso(box.left + (originX || 0) * UPFT, box.top + (originY || 0) * UPFT, 0);
     const to = iso(box.left + paint.x * UPFT, box.top + paint.y * UPFT, 0);
     node.setAttribute("transform", `translate(${to[0] - from[0]} ${to[1] - from[1]})`);
   });
@@ -2067,10 +2142,13 @@ export function YardSolid({
     const held = hold.current;
     if (!held?.moved) return;
     const self = yard.spaces?.find((space) => space.id === held.id);
+    const mark = held.kind === "mark" ? yard.marks?.find((item) => item.id === held.id) : undefined;
     const ok = self
       ? Boolean(spaceFitsOpen(yard, self, held.at.x, held.at.y, held.id, 0)) &&
         spaceOnLand(yard, self.length, self.width, held.at.x, held.at.y)
-      : true;
+      : mark
+        ? Boolean(alignMark(yard, mark, held.at.x, held.at.y))
+        : true;
     const to = iso(held.boxLeft + held.at.x * UPFT, held.boxTop + held.at.y * UPFT, 0);
     const dx = to[0] - held.fromX;
     const dy = to[1] - held.fromY;
@@ -2141,14 +2219,20 @@ export function YardSolid({
       held.at = { x: next.x, y: Math.max(0, rawY) };
       return;
     }
-    const self = yard.spaces?.find((space) => space.id === held.id);
-    const stuck = self ? alignSpace(yard, self, next.x, next.y) : null;
+    const space = held.kind === "space" ? yard.spaces?.find((item) => item.id === held.id) : undefined;
+    const mark = held.kind === "mark" ? yard.marks?.find((item) => item.id === held.id) : undefined;
+    const stuck = space
+      ? alignSpace(yard, space, next.x, next.y)
+      : mark
+        ? alignMark(yard, mark, next.x, next.y)
+        : null;
     if (stuck) {
       held.at = stuck;
       return;
     }
-    const onLand = self ? spaceOnLand(yard, self.length, self.width, next.x, next.y) : true;
-    const was = self ? spaceOnLand(yard, self.length, self.width, held.at.x, held.at.y) : true;
+    const piece = space ?? mark;
+    const onLand = piece ? spaceOnLand(yard, piece.length, piece.width, next.x, next.y) : true;
+    const was = piece ? spaceOnLand(yard, piece.length, piece.width, held.at.x, held.at.y) : true;
     if (onLand || !was) held.at = next;
   }
 
@@ -2163,19 +2247,27 @@ export function YardSolid({
     drag.current = null;
     trashBar.current?.classList.remove("bg-rose-600");
     trashBar.current?.classList.add("bg-rose-950/80");
-    if (held && moving && held.moved) {
+    if (held && (moving || held.kind === "mark") && held.moved) {
       if (held.trash) {
         (held.node as SVGElement | null)?.setAttribute("display", "none");
         dragPaint.current = null;
-        onRemove?.(held.id);
+        if (held.kind === "mark") onMarkRemove?.(held.id);
+        else onRemove?.(held.id);
         return;
       }
-      const at = settleSpace(yard, held.id, held.at.x, held.at.y);
+      const at = held.kind === "mark"
+        ? settleMark(yard, held.id, held.at.x, held.at.y)
+        : settleSpace(yard, held.id, held.at.x, held.at.y);
       if (at.x !== held.ox || at.y !== held.oy) {
         const end = iso(held.boxLeft + at.x * UPFT, held.boxTop + at.y * UPFT, 0);
         const dx = end[0] - held.fromX;
         const dy = end[1] - held.fromY;
-        commitHold(held.id, at, dx, dy);
+        if (held.kind === "mark") {
+          dragPaint.current = { id: held.id, x: at.x, y: at.y, dx, dy };
+          onMarkMove?.(held.id, at.x, at.y);
+        } else {
+          commitHold(held.id, at, dx, dy);
+        }
       } else {
         held.node?.removeAttribute("transform");
         dragPaint.current = null;
@@ -2229,7 +2321,8 @@ export function YardSolid({
         onDragOver={(e) => {
           if (!layoutDraw) return;
           e.preventDefault();
-          if (e.dataTransfer.types.includes("application/x-yard-stamp")) e.dataTransfer.dropEffect = "copy";
+          e.dataTransfer.dropEffect = "move";
+          pointer.current = { x: e.clientX, y: e.clientY };
           if (!stamp) return;
           const plan = stampAtClient(e.clientX, e.clientY, stamp);
           if (plan) setStampPreview(plan);
@@ -2261,7 +2354,7 @@ export function YardSolid({
           preserveAspectRatio="xMidYMid meet"
           className={cn(
             "absolute inset-0 h-full w-full touch-none select-none",
-            layoutDraw && stamp ? "cursor-copy" : "cursor-grab active:cursor-grabbing",
+            layoutDraw && stamp ? "cursor-crosshair" : "cursor-grab active:cursor-grabbing",
           )}
           role="group"
           aria-label={yard.name}
@@ -2276,21 +2369,28 @@ export function YardSolid({
             if (raf.current) cancelAnimationFrame(raf.current);
             raf.current = 0;
             setHoverId(null);
-            if (layoutDraw && stamp && !moving) {
-              stampCarry.current = true;
-              drag.current = null;
-              hold.current = null;
-              const plan = stampAtClient(e.clientX, e.clientY);
-              if (plan) setStampPreview(plan);
-              e.currentTarget.setPointerCapture(e.pointerId);
-              return;
+            const target = e.target as Element;
+            const id = target.closest?.("[data-space]")?.getAttribute("data-space") ?? "";
+            const seen = target.closest?.("[data-mark]")?.getAttribute("data-mark") ?? "";
+            let markId = id || seen === "preview" ? "" : seen;
+            if (!id && !markId && (moving || layoutDraw)) {
+              for (const node of document.elementsFromPoint(e.clientX, e.clientY)) {
+                const found = (node as Element).closest?.("[data-mark]")?.getAttribute("data-mark") ?? "";
+                if (found && found !== "preview") {
+                  markId = found;
+                  break;
+                }
+              }
             }
-            const id = (e.target as Element).closest?.("[data-space]")?.getAttribute("data-space") ?? "";
-            if (id && moving) {
-              const pad = laidSpaces(yard).find((item) => item.space.id === id);
+            const mark = markId ? yard.marks?.find((item) => item.id === markId) : undefined;
+            if ((id && moving) || (mark && (moving || layoutDraw))) {
+              stampCarry.current = false;
+              const pad = id ? laidSpaces(yard).find((item) => item.space.id === id) : undefined;
               const box = lotBox(yard);
-              const ox = pad ? (pad.corners[0][0] - box.left) / UPFT : 0;
-              const oy = pad ? (pad.corners[0][1] - box.top) / UPFT : 0;
+              const length = mark?.length ?? pad?.space.length ?? 1;
+              const width = mark?.width ?? pad?.space.width ?? 1;
+              const ox = mark ? mark.x : pad ? (pad.corners[0][0] - box.left) / UPFT : 0;
+              const oy = mark ? mark.y : pad ? (pad.corners[0][1] - box.top) / UPFT : 0;
               const from = iso(box.left + ox * UPFT, box.top + oy * UPFT, 0);
               const inv = e.currentTarget.getScreenCTM()?.inverse() ?? null;
               const point = e.currentTarget.createSVGPoint();
@@ -2304,20 +2404,21 @@ export function YardSolid({
                 planX = plan[0];
                 planY = plan[1];
               }
+              const heldId = mark?.id ?? id;
               drag.current = null;
               hold.current = {
-                id,
+                id: heldId,
                 x: e.clientX,
                 y: e.clientY,
                 ox,
                 oy,
                 moved: false,
                 at: { x: ox, y: oy },
-                node: e.currentTarget.querySelector(`[data-space="${id}"]`),
+                node: e.currentTarget.querySelector(mark ? `[data-mark="${heldId}"]` : `[data-space="${heldId}"]`),
                 inv,
                 point,
-                maxX: Math.max(0, box.wide - (pad?.space.length ?? 1)),
-                maxY: Math.max(0, box.tall - (pad?.space.width ?? 1)),
+                maxX: Math.max(0, box.wide - length),
+                maxY: Math.max(0, box.tall - width),
                 boxLeft: box.left,
                 boxTop: box.top,
                 fromX: from[0],
@@ -2325,7 +2426,16 @@ export function YardSolid({
                 planX,
                 planY,
                 trash: false,
+                kind: mark ? "mark" : "space",
+                length,
+                width,
               };
+            } else if (layoutDraw && stamp && !moving) {
+              stampCarry.current = true;
+              drag.current = null;
+              hold.current = null;
+              const plan = stampAtClient(e.clientX, e.clientY);
+              if (plan) setStampPreview(plan);
             } else {
               hold.current = null;
               drag.current = { x: e.clientX, y: e.clientY, id, moved: false };
@@ -2333,16 +2443,17 @@ export function YardSolid({
             e.currentTarget.setPointerCapture(e.pointerId);
           }}
           onPointerMove={(e) => {
-            if (layoutDraw && stamp && !moving) {
-              const plan = stampAtClient(e.clientX, e.clientY);
-              if (plan) setStampPreview(plan);
-              return;
-            }
             const held = hold.current;
-            if (held && moving) {
+            if (held && (moving || held.kind === "mark")) {
               if (Math.hypot(e.clientX - held.x, e.clientY - held.y) > 3) held.moved = true;
               track(e.clientX, e.clientY);
               paintHold();
+              return;
+            }
+            if (layoutDraw && stamp && !moving) {
+              pointer.current = { x: e.clientX, y: e.clientY };
+              const plan = stampAtClient(e.clientX, e.clientY);
+              if (plan) setStampPreview(plan);
               return;
             }
             const start = drag.current;
@@ -2364,6 +2475,12 @@ export function YardSolid({
           }}
           onPointerUp={(e) => {
             pointing.current = false;
+            if (hold.current && (hold.current.kind === "mark" || hold.current.kind === "space")) {
+              stampCarry.current = false;
+              endHold(e);
+              e.currentTarget.releasePointerCapture(e.pointerId);
+              return;
+            }
             if (layoutDraw && stamp && stampCarry.current) {
               tryPlaceStamp(e.clientX, e.clientY);
               stampCarry.current = false;
@@ -2393,15 +2510,29 @@ export function YardSolid({
             {scene.trees}
             {scene.lotWalls}
             <polygon points={scene.lotTop} fill="#57a5f5" stroke="#4a97ea" strokeWidth={0.8} />
+            {scene.spaces}
             {(yard.marks ?? [])
               .filter((mark) => mark?.id && mark?.category)
               .map((mark) => {
                 const box = lotBox(yard);
-                return <YardMarkGraphic key={mark.id} mark={mark} boxLeft={box.left} boxTop={box.top} upft={UPFT} />;
+                return (
+                  <YardMarkGraphic
+                    key={mark.id}
+                    mark={mark}
+                    boxLeft={box.left}
+                    boxTop={box.top}
+                    upft={UPFT}
+                    interactive={Boolean(moving || layoutDraw)}
+                  />
+                );
               })}
-            {scene.spaces}
             {stampPreview && layoutDraw && stamp ? (
-              <StampPlacementGhost box={lotBox(yard)} placement={stampPreview} />
+              <StampPlacementGhost
+                key={`${stamp.category}-${stamp.shape}-${stamp.facing ?? ""}`}
+                box={lotBox(yard)}
+                placement={stampPreview}
+                stamp={stamp}
+              />
             ) : null}
             {yard.spaces?.length ? null : (
               <text
@@ -2449,7 +2580,7 @@ export function YardSolid({
           </div>
         ) : null}
         <span className="sr-only">{tick}</span>
-        {moving ? (
+        {moving || layoutDraw ? (
           <div
             ref={trashBar}
             className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-16 items-center justify-center bg-rose-950/80 text-sm font-semibold text-white"

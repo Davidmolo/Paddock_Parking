@@ -1,15 +1,19 @@
 "use client";
 
+import type { DragEvent } from "react";
 import { text } from "@/constants/text";
 import { cn } from "@/lib/utils";
 import type { DrawStamp, YardMarkCategory, YardMarkShape } from "./yard-design-types";
 import { drawCategoryLabel, drawShapeLabel } from "./inventory-draw-labels";
 
+const BLANK_DRAG =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
 const CATEGORIES: YardMarkCategory[] = ["roads", "gates", "acres", "trees"];
 
 const SHAPES: Record<YardMarkCategory, YardMarkShape[]> = {
-  roads: ["road_h", "road_v", "road_ne", "road_nw", "road_t", "road_cross"],
-  gates: ["gate_n", "gate_e", "gate_s", "gate_w"],
+  roads: ["road_h", "road_v", "road_ne", "road_nw", "road_se", "road_sw", "road_tn", "road_te", "road_ts", "road_tw", "road_cross"],
+  gates: ["gate"],
   acres: ["0.25", "0.5", "1", "2", "3", "4", "5"],
   trees: ["tree_single", "tree_row"],
 };
@@ -23,6 +27,16 @@ type PaletteProps = {
 
 export function InventoryDrawPalette({ category, onCategory, stamp, onStamp }: PaletteProps) {
   const shapes = SHAPES[category] ?? SHAPES.roads;
+
+  function pickGate(event: DragEvent, facing: "s" | "e") {
+    const picked = { category: "gates" as const, shape: "gate" as const, facing };
+    event.dataTransfer.setData("application/x-yard-stamp", JSON.stringify(picked));
+    event.dataTransfer.effectAllowed = "move";
+    const ghost = new Image();
+    ghost.src = BLANK_DRAG;
+    event.dataTransfer.setDragImage(ghost, 0, 0);
+    onStamp(picked);
+  }
 
   return (
     <aside className="flex w-[min(100%,320px)] shrink-0 flex-col border-l border-[var(--border)] bg-[var(--surface)]">
@@ -53,6 +67,25 @@ export function InventoryDrawPalette({ category, onCategory, stamp, onStamp }: P
         ))}
       </div>
       <div className="flex-1 overflow-y-auto p-3">
+        {category === "gates" ? (
+          <ul className="grid grid-cols-2 gap-2">
+            <GateFace
+              label={text.blankYard.gateFaceY}
+              alongX={false}
+              active={stamp?.shape === "gate" && stamp.facing !== "e" && stamp.facing !== "w"}
+              onPick={(event) => pickGate(event, "s")}
+              onClick={() => onStamp(stamp?.shape === "gate" && stamp.facing !== "e" && stamp.facing !== "w" ? null : { category: "gates", shape: "gate", facing: "s" })}
+            />
+            <GateFace
+              label={text.blankYard.gateFaceX}
+              alongX
+              active={stamp?.shape === "gate" && (stamp.facing === "e" || stamp.facing === "w")}
+              onPick={(event) => pickGate(event, "e")}
+              onClick={() => onStamp(stamp?.shape === "gate" && (stamp.facing === "e" || stamp.facing === "w") ? null : { category: "gates", shape: "gate", facing: "e" })}
+            />
+          </ul>
+        ) : null}
+        {category === "gates" ? null : (
         <ul className="grid grid-cols-2 gap-2">
           {shapes.map((shape) => {
             const active = stamp?.category === category && stamp.shape === shape;
@@ -64,7 +97,10 @@ export function InventoryDrawPalette({ category, onCategory, stamp, onStamp }: P
                   onDragStart={(e) => {
                     const picked = { category, shape };
                     e.dataTransfer.setData("application/x-yard-stamp", JSON.stringify(picked));
-                    e.dataTransfer.effectAllowed = "copy";
+                    e.dataTransfer.effectAllowed = "move";
+                    const ghost = new Image();
+                    ghost.src = BLANK_DRAG;
+                    e.dataTransfer.setDragImage(ghost, 0, 0);
                     onStamp(picked);
                   }}
                   onClick={() => onStamp(active ? null : { category, shape })}
@@ -82,6 +118,7 @@ export function InventoryDrawPalette({ category, onCategory, stamp, onStamp }: P
             );
           })}
         </ul>
+        )}
       </div>
       {stamp ? (
         <p className="border-t border-[var(--border)] px-3 py-2 text-xs text-[var(--muted)]">
@@ -96,28 +133,98 @@ export function InventoryDrawPalette({ category, onCategory, stamp, onStamp }: P
   );
 }
 
+function GateFace({
+  label,
+  alongX,
+  active,
+  onPick,
+  onClick,
+}: {
+  label: string;
+  alongX: boolean;
+  active: boolean;
+  onPick: (event: DragEvent) => void;
+  onClick: () => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        draggable
+        onDragStart={onPick}
+        onClick={onClick}
+        className={cn(
+          "flex h-16 w-full flex-col items-center justify-center rounded-xl border px-2 text-center text-xs font-semibold",
+          active
+            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
+            : "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--ink)] hover:border-[var(--accent)]",
+        )}
+      >
+        <svg viewBox="0 0 40 24" className="h-6 w-10" aria-hidden>
+          {alongX ? (
+            <>
+              <rect x="8" y="2" width="24" height="5" fill="#2b3038" />
+              <rect x="8" y="17" width="24" height="5" fill="#2b3038" />
+            </>
+          ) : (
+            <>
+              <rect x="6" y="4" width="6" height="16" fill="#2b3038" />
+              <rect x="28" y="4" width="6" height="16" fill="#2b3038" />
+            </>
+          )}
+        </svg>
+        <span className="mt-1 leading-tight">{label}</span>
+      </button>
+    </li>
+  );
+}
+
 function ShapeIcon({ category, shape }: { category: YardMarkCategory; shape: YardMarkShape }) {
   if (category === "roads") {
     return (
       <svg viewBox="0 0 40 24" className="h-6 w-10 text-[var(--muted)]" aria-hidden>
-        {shape === "road_v" ? <rect x="17" y="2" width="6" height="20" fill="currentColor" /> : null}
-        {shape === "road_h" ? <rect x="2" y="9" width="36" height="6" fill="currentColor" /> : null}
-        {shape === "road_ne" ? <polygon points="4,20 36,4 30,10 10,20" fill="currentColor" /> : null}
-        {shape === "road_nw" ? <polygon points="4,4 36,20 30,14 10,4" fill="currentColor" /> : null}
-        {shape === "road_t" || shape === "road_cross" ? (
+        {shape === "road_v" || shape === "road_te" || shape === "road_tw" || shape === "road_cross" ? (
+          <rect x="17" y="2" width="6" height="20" fill="currentColor" />
+        ) : null}
+        {shape === "road_h" || shape === "road_tn" || shape === "road_ts" || shape === "road_t" || shape === "road_cross" ? (
+          <rect x="2" y="9" width="36" height="6" fill="currentColor" />
+        ) : null}
+        {shape === "road_ne" ? (
           <>
-            <rect x="17" y="2" width="6" height="20" fill="currentColor" />
-            <rect x="2" y="9" width="36" height="6" fill="currentColor" />
+            <rect x="4" y="4" width="32" height="6" fill="currentColor" />
+            <rect x="30" y="4" width="6" height="16" fill="currentColor" />
           </>
         ) : null}
+        {shape === "road_nw" ? (
+          <>
+            <rect x="4" y="4" width="32" height="6" fill="currentColor" />
+            <rect x="4" y="4" width="6" height="16" fill="currentColor" />
+          </>
+        ) : null}
+        {shape === "road_se" ? (
+          <>
+            <rect x="4" y="14" width="32" height="6" fill="currentColor" />
+            <rect x="30" y="4" width="6" height="16" fill="currentColor" />
+          </>
+        ) : null}
+        {shape === "road_sw" ? (
+          <>
+            <rect x="4" y="14" width="32" height="6" fill="currentColor" />
+            <rect x="4" y="4" width="6" height="16" fill="currentColor" />
+          </>
+        ) : null}
+        {shape === "road_tn" ? <rect x="17" y="2" width="6" height="10" fill="currentColor" /> : null}
+        {shape === "road_ts" || shape === "road_t" ? <rect x="17" y="12" width="6" height="10" fill="currentColor" /> : null}
+        {shape === "road_te" ? <rect x="20" y="9" width="16" height="6" fill="currentColor" /> : null}
+        {shape === "road_tw" ? <rect x="4" y="9" width="16" height="6" fill="currentColor" /> : null}
       </svg>
     );
   }
   if (category === "gates") {
     return (
       <svg viewBox="0 0 40 24" className="h-6 w-10" aria-hidden>
-        <rect x="4" y="4" width="16" height="14" fill="#ffffff" stroke="#1d1d1f" strokeWidth="1.4" />
-        <rect x="20" y="9" width="16" height="4" fill="#1d1d1f" />
+        <rect x="6" y="6" width="6" height="12" fill="#2b3038" />
+        <rect x="28" y="6" width="6" height="12" fill="#2b3038" />
       </svg>
     );
   }

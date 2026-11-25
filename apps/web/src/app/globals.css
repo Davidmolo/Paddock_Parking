@@ -180,6 +180,11 @@ input, select, textarea { max-width: 100%; }
   animation: drawer-out 180ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .page-enter,
   .stagger-fast > .stagger-item,

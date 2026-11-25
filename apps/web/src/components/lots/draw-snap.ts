@@ -144,6 +144,79 @@ function along(a0: number, a1: number, b0: number, b1: number, slack: number) {
   return a0 < b1 + slack && a1 + slack > b0;
 }
 
+export function markParts(mark: {
+  category?: string;
+  shape: string;
+  facing?: string;
+  length: number;
+  width: number;
+}): { dx: number; dy: number; length: number; width: number }[] {
+  const length = mark.length;
+  const width = mark.width;
+  const arm = Math.min(18, Math.min(length, width) * 0.5);
+  const alongX = mark.facing === "e" || mark.facing === "w" || mark.shape === "gate_e" || mark.shape === "gate_w";
+  if ((mark.category === "gates" || mark.shape === "gate" || mark.shape.startsWith("gate_")) && alongX === (length >= width)) {
+    return [{ dx: length / 2 - width / 2, dy: width / 2 - length / 2, length: width, width: length }];
+  }
+  if (mark.shape === "road_ne") {
+    return [
+      { dx: 0, dy: 0, length, width: arm },
+      { dx: length - arm, dy: 0, length: arm, width },
+    ];
+  }
+  if (mark.shape === "road_nw") {
+    return [
+      { dx: 0, dy: 0, length, width: arm },
+      { dx: 0, dy: 0, length: arm, width },
+    ];
+  }
+  if (mark.shape === "road_se") {
+    return [
+      { dx: 0, dy: width - arm, length, width: arm },
+      { dx: length - arm, dy: 0, length: arm, width },
+    ];
+  }
+  if (mark.shape === "road_sw") {
+    return [
+      { dx: 0, dy: width - arm, length, width: arm },
+      { dx: 0, dy: 0, length: arm, width },
+    ];
+  }
+  const midX = length / 2 - arm / 2;
+  const midY = width / 2 - arm / 2;
+  if (mark.shape === "road_t" || mark.shape === "road_ts") {
+    return [
+      { dx: 0, dy: midY, length, width: arm },
+      { dx: midX, dy: width / 2, length: arm, width: width / 2 },
+    ];
+  }
+  if (mark.shape === "road_tn") {
+    return [
+      { dx: 0, dy: midY, length, width: arm },
+      { dx: midX, dy: 0, length: arm, width: width / 2 },
+    ];
+  }
+  if (mark.shape === "road_te") {
+    return [
+      { dx: midX, dy: 0, length: arm, width },
+      { dx: length / 2, dy: midY, length: length / 2, width: arm },
+    ];
+  }
+  if (mark.shape === "road_tw") {
+    return [
+      { dx: midX, dy: 0, length: arm, width },
+      { dx: 0, dy: midY, length: length / 2, width: arm },
+    ];
+  }
+  if (mark.shape === "road_cross") {
+    return [
+      { dx: midX, dy: 0, length: arm, width },
+      { dx: 0, dy: midY, length, width: arm },
+    ];
+  }
+  return [{ dx: 0, dy: 0, length, width }];
+}
+
 function nearestEdge(origin: number, edges: number[], pull: number) {
   let best = origin;
   let bestD = pull + 1;
@@ -164,25 +237,32 @@ export function snapSpaceTopLeft(
   width: number,
   box: { wide: number; tall: number },
   spaces: SpaceRect[],
+  parts?: { dx: number; dy: number; length: number; width: number }[],
 ): { x: number; y: number } {
   const origin = clampLot(box, length, width, clickX - length / 2, clickY - width / 2);
   const pull = 12;
-  const xs = [0, box.wide - length];
-  const ys = [0, box.tall - width];
-  for (const s of spaces) {
-    if (along(origin.y, origin.y + width, s.y, s.y + s.width, pull)) {
-      xs.push(s.x + s.length, s.x - length, s.x, s.x + s.length - length);
-    }
-    if (along(origin.x, origin.x + length, s.x, s.x + s.length, pull)) {
-      ys.push(s.y + s.width, s.y - width, s.y, s.y + s.width - width);
+  const pieces = parts?.length ? parts : [{ dx: 0, dy: 0, length, width }];
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (const piece of pieces) {
+    xs.push(-piece.dx, box.wide - piece.length - piece.dx);
+    ys.push(-piece.dy, box.tall - piece.width - piece.dy);
+    for (const s of spaces) {
+      const px = origin.x + piece.dx;
+      const py = origin.y + piece.dy;
+      if (along(py, py + piece.width, s.y, s.y + s.width, pull)) {
+        xs.push(s.x + s.length - piece.dx, s.x - piece.length - piece.dx, s.x - piece.dx, s.x + s.length - piece.length - piece.dx);
+      }
+      if (along(px, px + piece.length, s.x, s.x + s.length, pull)) {
+        ys.push(s.y + s.width - piece.dy, s.y - piece.width - piece.dy, s.y - piece.dy, s.y + s.width - piece.width - piece.dy);
+      }
     }
   }
   const x = nearestEdge(origin.x, xs, pull);
   const y = nearestEdge(origin.y, ys, pull);
-  const fits = (at: { x: number; y: number }) => {
-    const rect: SpaceRect = { ...at, length, width };
-    return fitsBox(box, rect) && !lotOverlaps(rect, spaces);
-  };
+  const seats = (at: { x: number; y: number }) =>
+    pieces.map((piece) => ({ x: at.x + piece.dx, y: at.y + piece.dy, length: piece.length, width: piece.width }));
+  const fits = (at: { x: number; y: number }) => seats(at).every((rect) => fitsBox(box, rect) && !lotOverlaps(rect, spaces));
   if (fits({ x, y })) return { x, y };
   if (fits({ x, y: origin.y })) return { x, y: origin.y };
   if (fits({ x: origin.x, y })) return { x: origin.x, y };

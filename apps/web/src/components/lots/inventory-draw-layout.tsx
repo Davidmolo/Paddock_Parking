@@ -81,6 +81,20 @@ export function InventoryDrawLayout({ yard, actions, moving, onMove, onRemove, o
             onYardChange(next);
             onRemove?.(id);
           }}
+          onMarkMove={(id, x, y) => {
+            const marks = (latest.current.marks ?? []).map((item) =>
+              item.id === id ? { ...item, x, y } : item,
+            );
+            queueSave({ ...latest.current, marks });
+          }}
+          onMarkRemove={(id) => {
+            const marks = (latest.current.marks ?? []).filter((item) => item.id !== id);
+            const next = { ...latest.current, marks };
+            latest.current = next;
+            setDraft(next);
+            if (saveAt.current) clearTimeout(saveAt.current);
+            onYardChange(next);
+          }}
           actions={actions}
         />
       </div>

@@ -229,7 +229,8 @@ export default function LotsPage() {
         setSpacing(true);
       } else if (mode === "move") {
         setSpacing(false);
-        setMoving((on) => !on);
+        setRedraw(false);
+        setMoving((on) => (redraw ? true : !on));
       } else {
         setSpacing(false);
         setMoving(false);
@@ -280,6 +281,15 @@ export default function LotsPage() {
     await refreshProperties();
     void queryClient.invalidateQueries({ queryKey: ["lots"] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.yards() });
+  }
+
+  function saveMarks(marks: NonNullable<AddedYard["marks"]>) {
+    if (!customYard) return;
+    const yard = { ...customYard, marks };
+    void persistYard(
+      yard,
+      yards.map((item) => (item.id === yard.id ? yard : item)),
+    );
   }
 
   function saveSpaces(spaces: YardSpace[]) {
@@ -712,6 +722,10 @@ export default function LotsPage() {
                     )
                   }
                   onRemove={removeSpace}
+                  onMarkMove={(id, x, y) =>
+                    saveMarks((customYard.marks ?? []).map((item) => (item.id === id ? { ...item, x, y } : item)))
+                  }
+                  onMarkRemove={(id) => saveMarks((customYard.marks ?? []).filter((item) => item.id !== id))}
                 />
               )
             ) : (
